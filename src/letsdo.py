@@ -32,7 +32,6 @@ dbg = lambda x: logger.debug(x)
 
 dbg(args)
 
-
 def get_data():
     if os.path.exists(TASK_FILENAME):
         with open(TASK_FILENAME, 'r') as f:
@@ -45,6 +44,8 @@ if __name__ == '__main__':
     TASK_FILENAME = '/home/carlolo/.gtd-task'
 
     if args['start']:
+        if args['<name>'] is None:
+            args['<name>'] = 'unknown'
         if os.path.exists(TASK_FILENAME):
             warn('Another task is running!')
         else:
