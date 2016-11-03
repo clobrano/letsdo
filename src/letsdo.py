@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    gtd start  [--debug] [<name>]
-    gtd stop   [--debug]
-    gtd status [--debug]
-    gtd report
+    letsdo start  [--debug] [<name>]
+    letsdo stop   [--debug]
+    letsdo status [--debug]
+    letsdo report
 '''
 import os
 import pickle
@@ -28,7 +28,9 @@ logger = logging.getLogger(__name__)
 info = lambda x: logger.info(x)
 err = lambda x: logger.error(x)
 warn = lambda x: logger.warn(x)
-rbg = lambda x: logger.debug(x)
+dbg = lambda x: logger.debug(x)
+
+dbg(args)
 
 
 def get_data():
@@ -60,7 +62,7 @@ if __name__ == '__main__':
                 status = ('Stopped task \'%s\' after %s of work' % (d['name'], work)).split('.')[0]
 
                 date = datetime.date.today()
-                report = '%s,%s,%s' % (date, d['name'], work)
+                report = '%s,%s,%s\n' % (date, d['name'], work)
                 with open(DATA_FILENAME, mode='a') as f:
                     f.writelines(report)
             else:
@@ -77,7 +79,11 @@ if __name__ == '__main__':
                 date = entry[0]
                 name = entry[1]
                 wtime_str = entry[2].split('.')[0].strip()
-                wtime = datetime.datetime.strptime(wtime_str, '%H:%M:%S')
+                wtime_date = datetime.datetime.strptime(wtime_str, '%H:%M:%S')
+                wtime = datetime.timedelta(
+                        hours=wtime_date.hour,
+                        minutes=wtime_date.minute,
+                        seconds=wtime_date.second)
 
                 if date not in report.keys():
                     report[date] = {name: wtime}
@@ -85,20 +91,18 @@ if __name__ == '__main__':
                     if name not in report[date].keys():
                         report[date][name] = wtime
                     else:
-                        cur = report[date][name]
-                        newtime = datetime.datetime(
-                                year=wtime.year,
-                                month=wtime.month,
-                                day=wtime.day,
-                                hour=wtime.hour+cur.hour,
-                                minute=wtime.minute+cur.minute,
-                                second=wtime.second+cur.second)
-                        report[date][name] = newtime
+                        report[date][name] += wtime
+
         dates = sorted(report.keys())
         for date in dates:
             entry = report[date]
+            tot_time = datetime.timedelta()
+            column = ''
             for name, wtime in entry.items():
-                print('%s| %s: %s' % (date, name, datetime.datetime.strftime(wtime, '%H:%M')))
-
-
+                tot_time += wtime
+                column += ('%s| %s\n' % (date, (str(wtime) + ' - ' + name)))
+            print('%s| Total time: %s' % (date, tot_time))
+            print('-----------------------------------')
+            print(column)
+            print('===================================')
 
