@@ -22,6 +22,8 @@ import sys
 import logging
 
 # Configuration
+DATA_FILENAME = '/home/carlolo/.gtd-data'
+TASK_FILENAME = '/home/carlolo/.gtd-task'
 args = docopt.docopt(__doc__)
 
 # Logger
@@ -126,12 +128,7 @@ def rename(name):
         data['name'] = name
         save_data(data)
 
-
-if __name__ == '__main__':
-    now = datetime.datetime.now()
-    DATA_FILENAME = '/home/carlolo/.gtd-data'
-    TASK_FILENAME = '/home/carlolo/.gtd-task'
-
+def main():
     if args['start']:
         if args['<task>'] is None:
             args['<task>'] = 'unknown'
@@ -152,3 +149,7 @@ if __name__ == '__main__':
 
     if args['report']:
         report()
+
+
+if __name__ == '__main__':
+    main()
