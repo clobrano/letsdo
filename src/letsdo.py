@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo start  [--debug] [<task>] [--rename=name]
+    letsdo start  [--debug] <task> [--rename=name]
+    letsdo rename [--debug] <newname>
     letsdo stop   [--debug]
     letsdo status [--debug]
     letsdo report [--debug]
@@ -40,6 +41,7 @@ def get_data():
     if os.path.exists(TASK_FILENAME):
         with open(TASK_FILENAME, 'r') as f:
             return pickle.load(f)
+    warn('No task is running')
 
 
 def save_data(data):
@@ -57,22 +59,19 @@ def start(name):
 
 
 def stop():
-    if not os.path.exists(TASK_FILENAME):
-        warn('No task is running!')
-        return
-
     task = get_data()
-    os.remove(TASK_FILENAME)
+    if task:
+        os.remove(TASK_FILENAME)
 
-    now = datetime.datetime.now()
-    work = now - task['time']
-    status = ('Stopped task \'%s\' after %s of work' % (task['name'], work)).split('.')[0]
-    info(status)
+        now = datetime.datetime.now()
+        work = now - task['time']
+        status = ('Stopped task \'%s\' after %s of work' % (task['name'], work)).split('.')[0]
+        info(status)
 
-    date = datetime.date.today()
-    report = '%s,%s,%s\n' % (date, task['name'], work)
-    with open(DATA_FILENAME, mode='a') as f:
-        f.writelines(report)
+        date = datetime.date.today()
+        report = '%s,%s,%s\n' % (date, task['name'], work)
+        with open(DATA_FILENAME, mode='a') as f:
+            f.writelines(report)
 
 if __name__ == '__main__':
     now = datetime.datetime.now()
@@ -82,14 +81,16 @@ if __name__ == '__main__':
     if args['start']:
         if args['<task>'] is None:
             args['<task>'] = 'unknown'
-        if args['--rename']:
-            data = get_data()
-            data['name'] = args['--rename']
-            save_data(data)
         elif os.path.exists(TASK_FILENAME):
             warn('Another task is running!')
         else:
             save_data({'time': now, 'name': args['<task>']})
+
+    if args['rename']:
+        data = get_data()
+        if data:
+            data['name'] = args['<newname>']
+            save_data(data)
 
     if args['to']:
         stop()
