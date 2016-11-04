@@ -2,10 +2,14 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo start [--debug] [<task>] [--rename=name]
+    letsdo start  [--debug] [<task>] [--rename=name]
     letsdo stop   [--debug]
     letsdo status [--debug]
-    letsdo report
+    letsdo report [--debug]
+    letsdo to     [--debug] <task>
+
+Notes:
+    letsdo to     Stop the current task and start a new one.
 '''
 import os
 import pickle
@@ -37,9 +41,38 @@ def get_data():
         with open(TASK_FILENAME, 'r') as f:
             return pickle.load(f)
 
+
 def save_data(data):
    with open(TASK_FILENAME, 'w') as f:
         pickle.dump(data, f)
+
+
+def start(name):
+    if os.path.exists(TASK_FILENAME):
+        warn('Another task is running!')
+    else:
+        now = datetime.datetime.now()
+        save_data({'time': now, 'name': name})
+        info('Starting task \'%s\' now' % name)
+
+
+def stop():
+    if not os.path.exists(TASK_FILENAME):
+        warn('No task is running!')
+        return
+
+    task = get_data()
+    os.remove(TASK_FILENAME)
+
+    now = datetime.datetime.now()
+    work = now - task['time']
+    status = ('Stopped task \'%s\' after %s of work' % (task['name'], work)).split('.')[0]
+    info(status)
+
+    date = datetime.date.today()
+    report = '%s,%s,%s\n' % (date, task['name'], work)
+    with open(DATA_FILENAME, mode='a') as f:
+        f.writelines(report)
 
 if __name__ == '__main__':
     now = datetime.datetime.now()
@@ -57,9 +90,10 @@ if __name__ == '__main__':
             warn('Another task is running!')
         else:
             save_data({'time': now, 'name': args['<task>']})
-            #data = {'time': now, 'name': args['task']}
-            #with open(TASK_FILENAME, 'w') as f:
-            #    pickle.dump(data, f)
+
+    if args['to']:
+        stop()
+        start(args['<task>'])
 
     if args['status'] or args['stop']:
         d = get_data()
@@ -110,8 +144,8 @@ if __name__ == '__main__':
             for name, wtime in entry.items():
                 tot_time += wtime
                 column += ('%s| %s\n' % (date, (str(wtime) + ' - ' + name)))
+            print('===================================')
             print('%s| Total time: %s' % (date, tot_time))
             print('-----------------------------------')
             print(column)
-            print('===================================')
 
