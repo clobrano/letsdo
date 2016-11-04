@@ -12,6 +12,7 @@ Usage:
 Notes:
     letsdo to     Stop the current task and start a new one.
 '''
+
 import os
 import pickle
 import datetime
@@ -73,6 +74,59 @@ def stop():
         with open(DATA_FILENAME, mode='a') as f:
             f.writelines(report)
 
+
+def report():
+    report = {}
+    with open(DATA_FILENAME) as f:
+        for line in f.readlines():
+            entry = line.split(',')
+            date = entry[0]
+            name = entry[1]
+            wtime_str = entry[2].split('.')[0].strip()
+            wtime_date = datetime.datetime.strptime(wtime_str, '%H:%M:%S')
+            wtime = datetime.timedelta(
+                    hours=wtime_date.hour,
+                    minutes=wtime_date.minute,
+                    seconds=wtime_date.second)
+
+            if date not in report.keys():
+                report[date] = {name: wtime}
+            else:
+                if name not in report[date].keys():
+                    report[date][name] = wtime
+                else:
+                    report[date][name] += wtime
+
+    dates = sorted(report.keys(), reverse=True)
+    for date in dates:
+        entry = report[date]
+        tot_time = datetime.timedelta()
+        column = ''
+        for name, wtime in entry.items():
+            tot_time += wtime
+            column += ('%s| %s\n' % (date, (str(wtime) + ' - ' + name)))
+        print('===================================')
+        print('%s| Total time: %s' % (date, tot_time))
+        print('-----------------------------------')
+        print(column)
+
+
+def status():
+    data = get_data()
+    if data:
+        now = datetime.datetime.now()
+        work = now - data['time']
+        status = ('Working on \'%s\' for %s' % (data['name'], work)).split('.')[0]
+        info(status)
+
+
+def rename(name):
+    data = get_data()
+    if data:
+        data['name'] = name
+        save_data(data)
+
+
 if __name__ == '__main__':
     now = datetime.datetime.now()
     DATA_FILENAME = '/home/carlolo/.gtd-data'
@@ -81,72 +135,20 @@ if __name__ == '__main__':
     if args['start']:
         if args['<task>'] is None:
             args['<task>'] = 'unknown'
-        elif os.path.exists(TASK_FILENAME):
-            warn('Another task is running!')
-        else:
-            save_data({'time': now, 'name': args['<task>']})
+        start(args['<task>'])
 
     if args['rename']:
-        data = get_data()
-        if data:
-            data['name'] = args['<newname>']
-            save_data(data)
+        rename(args['<newname>'])
 
     if args['to']:
         stop()
         start(args['<task>'])
 
-    if args['status'] or args['stop']:
-        d = get_data()
+    if args['stop']:
+        stop()
 
-        if d:
-            work = now - d['time']
-            if args['stop']:
-                os.remove(TASK_FILENAME)
-                status = ('Stopped task \'%s\' after %s of work' % (d['name'], work)).split('.')[0]
-
-                date = datetime.date.today()
-                report = '%s,%s,%s\n' % (date, d['name'], work)
-                with open(DATA_FILENAME, mode='a') as f:
-                    f.writelines(report)
-            else:
-                status = ('Working on \'%s\' for %s' % (d['name'], work)).split('.')[0]
-            info(status)
-        else:
-            info('No running tasks')
+    if args['status']:
+        status()
 
     if args['report']:
-        report = {}
-        with open(DATA_FILENAME) as f:
-            for line in f.readlines():
-                entry = line.split(',')
-                date = entry[0]
-                name = entry[1]
-                wtime_str = entry[2].split('.')[0].strip()
-                wtime_date = datetime.datetime.strptime(wtime_str, '%H:%M:%S')
-                wtime = datetime.timedelta(
-                        hours=wtime_date.hour,
-                        minutes=wtime_date.minute,
-                        seconds=wtime_date.second)
-
-                if date not in report.keys():
-                    report[date] = {name: wtime}
-                else:
-                    if name not in report[date].keys():
-                        report[date][name] = wtime
-                    else:
-                        report[date][name] += wtime
-
-        dates = sorted(report.keys(), reverse=True)
-        for date in dates:
-            entry = report[date]
-            tot_time = datetime.timedelta()
-            column = ''
-            for name, wtime in entry.items():
-                tot_time += wtime
-                column += ('%s| %s\n' % (date, (str(wtime) + ' - ' + name)))
-            print('===================================')
-            print('%s| Total time: %s' % (date, tot_time))
-            print('-----------------------------------')
-            print(column)
-
+        report()
