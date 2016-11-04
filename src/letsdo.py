@@ -125,6 +125,7 @@ def status():
 def rename(name):
     data = get_data()
     if data:
+        info('Renaming task \'%s\' to \'%s\'' % (data['name'], name))
         data['name'] = name
         save_data(data)
 
