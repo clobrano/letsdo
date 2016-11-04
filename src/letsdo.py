@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo start  [--debug] [<name>]
+    letsdo start [--debug] [<task>] [--rename=name]
     letsdo stop   [--debug]
     letsdo status [--debug]
     letsdo report
@@ -37,6 +37,9 @@ def get_data():
         with open(TASK_FILENAME, 'r') as f:
             return pickle.load(f)
 
+def save_data(data):
+   with open(TASK_FILENAME, 'w') as f:
+        pickle.dump(data, f)
 
 if __name__ == '__main__':
     now = datetime.datetime.now()
@@ -44,14 +47,19 @@ if __name__ == '__main__':
     TASK_FILENAME = '/home/carlolo/.gtd-task'
 
     if args['start']:
-        if args['<name>'] is None:
-            args['<name>'] = 'unknown'
-        if os.path.exists(TASK_FILENAME):
+        if args['<task>'] is None:
+            args['<task>'] = 'unknown'
+        if args['--rename']:
+            data = get_data()
+            data['name'] = args['--rename']
+            save_data(data)
+        elif os.path.exists(TASK_FILENAME):
             warn('Another task is running!')
         else:
-            data = {'time': now, 'name': args['<name>']}
-            with open(TASK_FILENAME, 'w') as f:
-                pickle.dump(data, f)
+            save_data({'time': now, 'name': args['<task>']})
+            #data = {'time': now, 'name': args['task']}
+            #with open(TASK_FILENAME, 'w') as f:
+            #    pickle.dump(data, f)
 
     if args['status'] or args['stop']:
         d = get_data()
@@ -94,7 +102,7 @@ if __name__ == '__main__':
                     else:
                         report[date][name] += wtime
 
-        dates = sorted(report.keys())
+        dates = sorted(report.keys(), reverse=True)
         for date in dates:
             entry = report[date]
             tot_time = datetime.timedelta()
