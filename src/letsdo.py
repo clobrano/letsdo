@@ -22,8 +22,8 @@ import sys
 import logging
 
 # Configuration
-DATA_FILENAME = '/home/carlolo/.letsdo-data'
-TASK_FILENAME = '/home/carlolo/.letsdo-task'
+DATA_FILENAME = os.path.expanduser(os.path.join('~', '.letsdo-data'))
+TASK_FILENAME = os.path.expanduser(os.path.join('~', '.letsdo-task'))
 args = docopt.docopt(__doc__)
 
 # Logger
