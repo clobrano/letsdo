@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo start  [--debug] <task> [--rename=name]
+    letsdo start  [--debug] [<task>]
     letsdo rename [--debug] <newname>
     letsdo stop   [--debug]
     letsdo status [--debug]
