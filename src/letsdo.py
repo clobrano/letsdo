@@ -42,61 +42,77 @@ dbg(args)
 
 
 class Task(object):
-    def __init__(self, name, start=datetime.datetime.now(), end=None):
-        self.end = end
+    def __init__(self, name, start=None, end=None):
         self.name = name
-        self.start = start
+        if start:
+            self.start_time = start
+        else:
+            self.start_time = datetime.datetime.now()
 
     @staticmethod
     def get():
-        if os.path.exists(TASK_FILENAME):
+        if Task.__is_running():
             with open(TASK_FILENAME, 'r') as f:
                 return pickle.load(f)
 
-    def start(self):
-        self.save()
-        info('Starting task \'%s\' now' % self.name)
+    @staticmethod
+    def stop():
+        task = Task.get()
+        if task:
+            os.remove(TASK_FILENAME)
 
-    def save(self):
+            work, now = task.__elapsed_time()
+            status = ('Stopped task \'%s\' after %s of work' % (task.name, work)).split('.')[0]
+            info(status)
+
+            date = datetime.date.today()
+            report = '%s,%s,%s,%s,%s\n' % (date, task.name, work, task.start_time, now)
+            with open(DATA_FILENAME, mode='a') as f:
+                f.writelines(report)
+        else:
+            info('No task running')
+
+    @staticmethod
+    def rename(name):
+        task = Task.get()
+        if task:
+            info('Renaming task \'%s\' to \'%s\'' % (task.name, name))
+            task.name = name
+            task.__create()
+        else:
+            warn('No task running')
+
+    @staticmethod
+    def status():
+        task = Task.get()
+        if task:
+            now = datetime.datetime.now()
+            work = now - task.start_time
+            status = ('Working on \'%s\' for %s' % (task.name, work)).split('.')[0]
+            info(status)
+        else:
+            info('No task running')
+
+    @staticmethod
+    def __is_running():
+        exists = os.path.exists(TASK_FILENAME)
+        dbg('is it running? %d' % exists)
+        return exists
+
+    def start(self):
+        if not Task.__is_running():
+            self.__create()
+            info('Starting task \'%s\' now' % self.name)
+        else:
+            warn('Another task is running')
+
+    def __create(self):
         with open(TASK_FILENAME, 'w') as f:
             pickle.dump(self, f)
 
-
-def get_data():
-    if os.path.exists(TASK_FILENAME):
-        with open(TASK_FILENAME, 'r') as f:
-            return pickle.load(f)
-    warn('No task is running')
-
-
-def save_data(data):
-   with open(TASK_FILENAME, 'w') as f:
-        pickle.dump(data, f)
-
-
-def start(name):
-    task = Task.get()
-    if task:
-        warn('Another task is running!')
-    else:
-        Task(name).save()
-
-
-def stop():
-    task = Task.get()
-    if task:
-        os.remove(TASK_FILENAME)
-
+    def __elapsed_time(self):
         now = datetime.datetime.now()
-        work = now - task.start
-        status = ('Stopped task \'%s\' after %s of work' % (task.name, work)).split('.')[0]
-        info(status)
-
-        date = datetime.date.today()
-        report = '%s,%s,%s,%s,%s\n' % (date, task.name, work, task.start, now)
-        with open(DATA_FILENAME, mode='a') as f:
-            f.writelines(report)
-
+        return now - self.start_time, now
 
 def report():
     report = {}
@@ -111,9 +127,10 @@ def report():
                     hours=wtime_date.hour,
                     minutes=wtime_date.minute,
                     seconds=wtime_date.second)
-            start = entry[3].split('.')[0].strip()
-            stop = entry[4].split('.')[0].strip()
-
+            # To be kept for retrocompatibility
+            if len(entry) > 3:
+                start = entry[3].split('.')[0].strip()
+                stop = entry[4].split('.')[0].strip()
 
             if date not in report.keys():
                 report[date] = {name: wtime}
@@ -137,39 +154,25 @@ def report():
         print(column)
 
 
-def status():
-    task = Task.get()
-    if task:
-        now = datetime.datetime.now()
-        work = now - task.start
-        status = ('Working on \'%s\' for %s' % (task.name, work)).split('.')[0]
-        info(status)
-
-def rename(name):
-    task = Task.get()
-    if task:
-        info('Renaming task \'%s\' to \'%s\'' % (task.name, name))
-        task.name = name
-        task.save()
 
 def main():
     if args['start']:
         if args['<task>'] is None:
             args['<task>'] = 'unknown'
-        start(args['<task>'])
+        Task(args['<task>']).start()
 
     if args['rename']:
-        rename(args['<newname>'])
+        Task.rename(args['<newname>'])
 
     if args['to']:
-        stop()
-        start(args['<task>'])
+        Task.stop()
+        Task(args['<task>']).start()
 
     if args['stop']:
-        stop()
+        Task.stop()
 
     if args['status']:
-        status()
+        Task.status()
 
     if args['report']:
         report()
