@@ -177,9 +177,12 @@ def main():
     else:
         if Task.get():
             Task.status()
-        else:
-            if args['<name>'] is None:
+        elif not args['<name>']: # Not sure if asking for status or starting an unnamed task
+            resp = raw_input('No running task. Let\'s create a new unnamed one [y/n]?: ')
+            if resp.lower() == 'y':
                 args['<name>'] = 'unknown'
+            else:
+                sys.exit(0)
             Task(args['<name>']).start()
 
 
