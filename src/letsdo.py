@@ -2,17 +2,19 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo [<name>]
+    letsdo [--force] [<name>]
     letsdo --change <newname>
-    letsdo --report
+    letsdo --report [<filter>]
     letsdo --stop
     letsdo --to    <newtask>
 
 Notes:
     With no arguments, letsdo start a new task or report the status of the current running task
     -s --stop          Stop current running task
-    -c --change     Rename current running task
-    -t --to         Switch task
+    -c --change        Rename current running task
+    -t --to            Switch task
+    -f --force         Start new unnamed task without asking
+    -r --report        Get the full report of task done (with a filter on date if provided)
 '''
 
 import os
@@ -123,12 +125,16 @@ class Task(object):
         now = datetime.datetime.now()
         return now - self.start_time, now
 
-def report():
+def report(filter=None):
     report = {}
     with open(DATA_FILENAME) as f:
         for line in f.readlines():
             entry = line.split(',')
+
             date = entry[0]
+            if filter and filter not in date:
+                continue
+
             name = entry[1]
             wtime_str = entry[2].split('.')[0].strip()
             wtime_date = datetime.datetime.strptime(wtime_str, '%H:%M:%S')
@@ -173,17 +179,18 @@ def main():
         Task.stop()
         Task(args['<newtask>']).start()
     elif args['--report']:
-        report()
+        report(args['<filter>'])
     else:
         if Task.get():
             Task.status()
-        elif not args['<name>']: # Not sure if asking for status or starting an unnamed task
+            sys.exit(0)
+        elif not args['<name>'] and not args['--force']: # Not sure if asking for status or starting an unnamed task
             resp = raw_input('No running task. Let\'s create a new unnamed one [y/n]?: ')
-            if resp.lower() == 'y':
-                args['<name>'] = 'unknown'
-            else:
+            if resp.lower() != 'y':
                 sys.exit(0)
-            Task(args['<name>']).start()
+
+        args['<name>'] = 'unknown'
+        Task(args['<name>']).start()
 
 
 if __name__ == '__main__':
