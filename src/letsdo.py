@@ -3,7 +3,7 @@
 '''
 Usage:
     letsdo [<name>]
-    letsdo --rename <newname>
+    letsdo --change <newname>
     letsdo --report
     letsdo --status
     letsdo --stop
@@ -11,7 +11,7 @@ Usage:
 
 Notes:
     --stop          Stop current running task
-    -r --rename     Rename current running task
+    -c --change     Rename current running task
     -s --status     Get info about the current running task
     -t --to         Switch task
 '''
@@ -73,7 +73,7 @@ class Task(object):
             info('No task running')
 
     @staticmethod
-    def rename(name):
+    def change(name):
         task = Task.get()
         if task:
             info('Renaming task \'%s\' to \'%s\'' % (task.name, name))
@@ -160,8 +160,8 @@ def main():
         Task.stop()
     elif args['--status']:
         Task.status()
-    elif args['--rename']:
-        Task.rename(args['<newname>'])
+    elif args['--change']:
+        Task.change(args['<newname>'])
     elif args['--to']:
         Task.stop()
         Task(args['<newtask>']).start()
