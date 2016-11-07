@@ -5,7 +5,7 @@ Usage:
     letsdo [--force] [<name>]
     letsdo --change <newname>
     letsdo --report [<filter>]
-    letsdo --stop
+    letsdo --stop   [<time>]
     letsdo --to    <newtask>
 
 Notes:
@@ -57,20 +57,30 @@ class Task(object):
                 return pickle.load(f)
 
     @staticmethod
-    def stop():
+    def stop(stop_time_str=None):
         task = Task.get()
         if task:
-            os.remove(TASK_FILENAME)
 
-            work, now = task.__elapsed_time()
+            stop_time = datetime.datetime.now()
+            if stop_time_str:
+                stop_time_date = datetime.datetime.strftime(stop_time, '%Y-%m-%d')
+                stop_time = datetime.datetime.strptime(stop_time_date + ' ' + stop_time_str, '%Y-%m-%d %H:%M')
+
+                if stop_time < task.start_time:
+                    warn('Given stop time (%s) is more recent than start time (%s)' % (stop_time, task.start_time))
+                    return False
+
+            work = stop_time - task.start_time
             status = ('Stopped task \'%s\' after %s of work' % (task.name, work)).split('.')[0]
             info(status)
 
             date = datetime.date.today()
-            report = '%s,%s,%s,%s,%s\n' % (date, task.name, work, task.start_time, now)
+            report = '%s,%s,%s,%s,%s\n' % (date, task.name, work, task.start_time, stop_time)
             with open(DATA_FILENAME, mode='a') as f:
                 f.writelines(report)
-                return True
+
+            os.remove(TASK_FILENAME)
+            return True
         info('No task running')
         return False
 
@@ -121,9 +131,6 @@ class Task(object):
             pickle.dump(self, f)
             return True
 
-    def __elapsed_time(self):
-        now = datetime.datetime.now()
-        return now - self.start_time, now
 
 def report(filter=None):
     report = {}
@@ -144,8 +151,8 @@ def report(filter=None):
                     seconds=wtime_date.second)
             # To be kept for retrocompatibility
             if len(entry) > 3:
-                start = entry[3].split('.')[0].strip()
-                stop = entry[4].split('.')[0].strip()
+                start_time = entry[3].split('.')[0].strip()
+                stop_time = entry[4].split('.')[0].strip()
 
             if date not in report.keys():
                 report[date] = {name: wtime}
@@ -172,7 +179,7 @@ def report(filter=None):
 
 def main():
     if args['--stop']:
-        Task.stop()
+        Task.stop(args['<time>'])
     elif args['--change']:
         Task.change(args['<newname>'])
     elif args['--to']:
