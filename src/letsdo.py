@@ -41,7 +41,7 @@ dbg(args)
 
 
 class Task(object):
-    def __init__(self, name, start=None, end=None):
+    def __init__(self, name='unknown', start=None, end=None):
         self.name = name
         if start:
             self.start_time = start
@@ -68,8 +68,9 @@ class Task(object):
             report = '%s,%s,%s,%s,%s\n' % (date, task.name, work, task.start_time, now)
             with open(DATA_FILENAME, mode='a') as f:
                 f.writelines(report)
-        else:
-            info('No task running')
+                return True
+        info('No task running')
+        return False
 
     @staticmethod
     def change(name):
@@ -77,9 +78,9 @@ class Task(object):
         if task:
             info('Renaming task \'%s\' to \'%s\'' % (task.name, name))
             task.name = name
-            task.__create()
-        else:
-            warn('No task running')
+            return task.__create()
+
+        warn('No task running')
 
     @staticmethod
     def status():
@@ -89,8 +90,11 @@ class Task(object):
             work = now - task.start_time
             status = ('Working on \'%s\' for %s' % (task.name, work)).split('.')[0]
             info(status)
+            return True
         else:
             info('No task running')
+            return False
+
 
     @staticmethod
     def __is_running():
@@ -100,14 +104,20 @@ class Task(object):
 
     def start(self):
         if not Task.__is_running():
-            self.__create()
-            info('Starting task \'%s\' now' % self.name)
-        else:
-            warn('Another task is running')
+            if self.__create():
+                info('Starting task \'%s\' now' % self.name)
+                return Task.get()
+
+            err('Could not create new task')
+            return False
+
+        warn('Another task is running')
+        return True
 
     def __create(self):
         with open(TASK_FILENAME, 'w') as f:
             pickle.dump(self, f)
+            return True
 
     def __elapsed_time(self):
         now = datetime.datetime.now()
