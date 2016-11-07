@@ -157,20 +157,20 @@ def report():
 
 def main():
     if args['--stop']:
-        stop()
+        Task.stop()
     elif args['--status']:
-        status()
+        Task.status()
     elif args['--rename']:
-        rename(args['<newname>'])
+        Task.rename(args['<newname>'])
     elif args['--to']:
-        stop()
-        start(args['<newtask>'])
+        Task.stop()
+        Task(args['<newtask>']).start()
     elif args['--report']:
         report()
     else:
         if args['<name>'] is None:
             args['<name>'] = 'unknown'
-        start(args['<name>'])
+        Task(args['<name>']).start()
 
 
 if __name__ == '__main__':
