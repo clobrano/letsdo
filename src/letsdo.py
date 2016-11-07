@@ -5,14 +5,13 @@ Usage:
     letsdo [<name>]
     letsdo --change <newname>
     letsdo --report
-    letsdo --status
     letsdo --stop
     letsdo --to    <newtask>
 
 Notes:
-    --stop          Stop current running task
+    With no arguments, letsdo start a new task or report the status of the current running task
+    -s --stop          Stop current running task
     -c --change     Rename current running task
-    -s --status     Get info about the current running task
     -t --to         Switch task
 '''
 
@@ -158,8 +157,6 @@ def report():
 def main():
     if args['--stop']:
         Task.stop()
-    elif args['--status']:
-        Task.status()
     elif args['--change']:
         Task.change(args['<newname>'])
     elif args['--to']:
@@ -168,9 +165,12 @@ def main():
     elif args['--report']:
         report()
     else:
-        if args['<name>'] is None:
-            args['<name>'] = 'unknown'
-        Task(args['<name>']).start()
+        if Task.get():
+            Task.status()
+        else:
+            if args['<name>'] is None:
+                args['<name>'] = 'unknown'
+            Task(args['<name>']).start()
 
 
 if __name__ == '__main__':
