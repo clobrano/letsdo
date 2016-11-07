@@ -2,15 +2,18 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo start  [--debug] [<task>]
-    letsdo rename [--debug] <newname>
-    letsdo stop   [--debug]
-    letsdo status [--debug]
-    letsdo report [--debug]
-    letsdo to     [--debug] <task>
+    letsdo [<name>]
+    letsdo --rename <newname>
+    letsdo --report
+    letsdo --status
+    letsdo --stop
+    letsdo --to    <newtask>
 
 Notes:
-    letsdo to     Stop the current task and start a new one.
+    --stop          Stop current running task
+    -r --rename     Rename current running task
+    -s --status     Get info about the current running task
+    -t --to         Switch task
 '''
 
 import os
@@ -27,10 +30,7 @@ TASK_FILENAME = os.path.expanduser(os.path.join('~', '.letsdo-task'))
 args = docopt.docopt(__doc__)
 
 # Logger
-if args['--debug']:
-    level = logging.DEBUG
-else:
-    level = logging.INFO
+level = logging.INFO
 logging.basicConfig(level=level, format='  %(message)s')
 logger = logging.getLogger(__name__)
 info = lambda x: logger.info(x)
@@ -130,26 +130,21 @@ def rename(name):
         save_data(data)
 
 def main():
-    if args['start']:
-        if args['<task>'] is None:
-            args['<task>'] = 'unknown'
-        start(args['<task>'])
-
-    if args['rename']:
-        rename(args['<newname>'])
-
-    if args['to']:
+    if args['--stop']:
         stop()
-        start(args['<task>'])
-
-    if args['stop']:
-        stop()
-
-    if args['status']:
+    elif args['--status']:
         status()
-
-    if args['report']:
+    elif args['--rename']:
+        rename(args['<newname>'])
+    elif args['--to']:
+        stop()
+        start(args['<newtask>'])
+    elif args['--report']:
         report()
+    else:
+        if args['<name>'] is None:
+            args['<name>'] = 'unknown'
+        start(args['<name>'])
 
 
 if __name__ == '__main__':
