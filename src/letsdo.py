@@ -22,8 +22,8 @@ import sys
 import logging
 
 # Configuration
-DATA_FILENAME = '/home/carlolo/.gtd-data'
-TASK_FILENAME = '/home/carlolo/.gtd-task'
+DATA_FILENAME = '/home/carlolo/.letsdo-data'
+TASK_FILENAME = '/home/carlolo/.letsdo-task'
 args = docopt.docopt(__doc__)
 
 # Logger
@@ -40,6 +40,28 @@ dbg = lambda x: logger.debug(x)
 
 dbg(args)
 
+
+class Task(object):
+    def __init__(self, name, start=datetime.datetime.now(), end=None):
+        self.end = end
+        self.name = name
+        self.start = start
+
+    @staticmethod
+    def get():
+        if os.path.exists(TASK_FILENAME):
+            with open(TASK_FILENAME, 'r') as f:
+                return pickle.load(f)
+
+    def start(self):
+        self.save()
+        info('Starting task \'%s\' now' % self.name)
+
+    def save(self):
+        with open(TASK_FILENAME, 'w') as f:
+            pickle.dump(self, f)
+
+
 def get_data():
     if os.path.exists(TASK_FILENAME):
         with open(TASK_FILENAME, 'r') as f:
@@ -53,26 +75,25 @@ def save_data(data):
 
 
 def start(name):
-    if os.path.exists(TASK_FILENAME):
+    task = Task.get()
+    if task:
         warn('Another task is running!')
     else:
-        now = datetime.datetime.now()
-        save_data({'time': now, 'name': name})
-        info('Starting task \'%s\' now' % name)
+        Task(name).save()
 
 
 def stop():
-    task = get_data()
+    task = Task.get()
     if task:
         os.remove(TASK_FILENAME)
 
         now = datetime.datetime.now()
-        work = now - task['time']
-        status = ('Stopped task \'%s\' after %s of work' % (task['name'], work)).split('.')[0]
+        work = now - task.start
+        status = ('Stopped task \'%s\' after %s of work' % (task.name, work)).split('.')[0]
         info(status)
 
         date = datetime.date.today()
-        report = '%s,%s,%s\n' % (date, task['name'], work)
+        report = '%s,%s,%s,%s,%s\n' % (date, task.name, work, task.start, now)
         with open(DATA_FILENAME, mode='a') as f:
             f.writelines(report)
 
@@ -90,6 +111,9 @@ def report():
                     hours=wtime_date.hour,
                     minutes=wtime_date.minute,
                     seconds=wtime_date.second)
+            start = entry[3].split('.')[0].strip()
+            stop = entry[4].split('.')[0].strip()
+
 
             if date not in report.keys():
                 report[date] = {name: wtime}
@@ -106,7 +130,7 @@ def report():
         column = ''
         for name, wtime in entry.items():
             tot_time += wtime
-            column += ('%s| %s\n' % (date, (str(wtime) + ' - ' + name)))
+            column += ('%s| %s - %s\n' % (date, wtime,  name))
         print('===================================')
         print('%s| Total time: %s' % (date, tot_time))
         print('-----------------------------------')
@@ -114,20 +138,19 @@ def report():
 
 
 def status():
-    data = get_data()
-    if data:
+    task = Task.get()
+    if task:
         now = datetime.datetime.now()
-        work = now - data['time']
-        status = ('Working on \'%s\' for %s' % (data['name'], work)).split('.')[0]
+        work = now - task.start
+        status = ('Working on \'%s\' for %s' % (task.name, work)).split('.')[0]
         info(status)
 
-
 def rename(name):
-    data = get_data()
-    if data:
-        info('Renaming task \'%s\' to \'%s\'' % (data['name'], name))
-        data['name'] = name
-        save_data(data)
+    task = Task.get()
+    if task:
+        info('Renaming task \'%s\' to \'%s\'' % (task.name, name))
+        task.name = name
+        task.save()
 
 def main():
     if args['start']:
