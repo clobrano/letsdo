@@ -1,2 +1,2 @@
 docopt
-pytest
+PyYaml
