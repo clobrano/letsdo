@@ -4,7 +4,7 @@
 Usage:
     letsdo [--force] [<name>...]
     letsdo --change <newname>...
-    letsdo --report [<filter>]
+    letsdo --report [--contexts] [<filter>]
     letsdo --stop   [<time>]
     letsdo --to    <newtask>...
 
@@ -57,11 +57,24 @@ class Configuration(object):
 
 class Task(object):
     def __init__(self, name='unknown', start=None, end=None):
+        self.context = None
+        self.end_date = None
+        self.end_time = None
+        self.name = None
+        self.start_time = None
+        self.tags = None
+        self.work_time = None
+
         self.parse_name(name)
         if start:
-            self.start_time = start
+            self.start_time = datetime.datetime.strptime(start, '%Y-%m-%d %H:%M:%S.%f')
         else:
             self.start_time = datetime.datetime.now()
+
+        if end:
+            self.end_time = datetime.datetime.strptime(end, '%Y-%m-%d %H:%M:%S.%f')
+            self.end_date = (self.end_time.strftime('%Y-%m-%d'))
+            self.work_time = self.end_time - self.start_time
 
     @staticmethod
     def get():
@@ -153,8 +166,6 @@ class Task(object):
 
     def parse_name(self, name):
         self.name = name
-        self.context = None
-        self.tags = None
         matches = re.findall('@[\w\-_]+', name)
         if len(matches) == 1:
             self.context = matches[0]
@@ -162,8 +173,44 @@ class Task(object):
         if len(matches) >= 1:
             self.tags = matches
 
+    def __repr__(self):
+        work_str = '%s' % str(self.work_time).split('.')[0]
+        start_str = '%s' % self.start_time.strftime('%H:%M')
+        end_str = '%s' % self.end_time.strftime('%H:%M')
+        return '%s| %s (%s -> %s) - %s' % (self.end_date, work_str, start_str, end_str, self.name)
+
 
 def report(filter=None):
+    tasks = {}
+    with open(DATA_FILENAME) as f:
+        for line in f.readlines():
+            tok = line.split(',')
+            task = Task(
+                    name=tok[1],
+                    start=tok[3],
+                    end=tok[4]
+                    )
+            date = task.end_date
+            if date in tasks.keys():
+                tasks[date].append(task)
+            else:
+                tasks[date] = [task]
+
+
+    dates = sorted(tasks.keys(), reverse=True)
+    for date in dates:
+        tot_time = datetime.timedelta()
+        column = ''
+        for task in tasks[date]:
+            tot_time += task.work_time
+            column += str(task) + '\n'
+        print('===================================')
+        print('%s| Total time: %s' % (date, str(tot_time).split('.')[0]))
+        print('-----------------------------------')
+        print(column)
+
+
+def report_old(filter=None):
     report = {}
     with open(DATA_FILENAME) as f:
         for line in f.readlines():
