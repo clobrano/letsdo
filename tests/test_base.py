@@ -49,7 +49,7 @@ class TestLetsdo(unittest.TestCase):
 
     def test_get_no_context(self):
         task = Task('project without a context')
-        self.assertEquals(task.context, None)
+        self.assertIsNone(task.context)
 
     def test_get_context(self):
         task = Task('project with a @context')
@@ -57,7 +57,7 @@ class TestLetsdo(unittest.TestCase):
 
     def test_get_no_tags(self):
         task = Task('project without tags')
-        self.assertEquals(task.tags, None)
+        self.assertIsNone(task.tags)
 
     def test_get_tags(self):
         task = Task('project with +some +tags')
@@ -75,19 +75,19 @@ class TestLetsdo(unittest.TestCase):
         if os.path.exists(self.conf.task_filename):
             os.remove(self.conf.task_filename)
         task = Task.get()
-        self.assertEquals(task, None)
+        self.assertIsNone(task)
 
     def test_get_running_task(self):
         if not os.path.exists(self.conf.task_filename):
             Task().start()
         task = Task.get()
-        self.assertNotEquals(task, None)
+        self.assertIsNotNone(task)
 
     def test_change_non_running_task(self):
         if os.path.exists(self.conf.task_filename):
             os.remove(self.conf.task_filename)
         ret = Task.change('newname')
-        self.assertEqual(ret, None)
+        self.assertIsNone(ret)
 
     def test_change_running_task(self):
         if not os.path.exists(self.conf.task_filename):
@@ -132,7 +132,7 @@ class TestLetsdo(unittest.TestCase):
         if os.path.exists(self.conf.task_filename):
             os.remove(self.conf.task_filename)
         Task().start()
-        self.assertEquals(Task.status(), True)
+        self.assertTrue(Task.status())
 
 
 if __name__ == '__main__':
