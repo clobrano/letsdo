@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo [--force] [<name>]
-    letsdo --change <newname>
+    letsdo [--force] [<name>...]
+    letsdo --change <newname>...
     letsdo --report [<filter>]
     letsdo --stop   [<time>]
-    letsdo --to    <newtask>
+    letsdo --to    <newtask>...
 
 Notes:
     With no arguments, letsdo start a new task or report the status of the current running task
@@ -204,14 +204,15 @@ def main():
     DATA_FILENAME = conf.data_filename
     TASK_FILENAME = conf.task_filename
 
-
     if args['--stop']:
         Task.stop(args['<time>'])
     elif args['--change']:
-        Task.change(args['<newname>'])
+        new_task_name = ' '.join(args['<newname>'])
+        Task.change(new_task_name)
     elif args['--to']:
         Task.stop()
-        Task(args['<newtask>']).start()
+        new_task_name = ' '.join(args['<newtask>'])
+        Task(new_task_name).start()
     elif args['--report']:
         report(args['<filter>'])
     else:
@@ -222,9 +223,10 @@ def main():
             resp = raw_input('No running task. Let\'s create a new unnamed one [y/n]?: ')
             if resp.lower() != 'y':
                 sys.exit(0)
+            args['<name>'] = ['unknown']
 
-            args['<name>'] = 'unknown'
-        Task(args['<name>']).start()
+        new_task_name = ' '.join(args['<name>'])
+        Task(new_task_name).start()
 
 
 if __name__ == '__main__':
