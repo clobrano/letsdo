@@ -2,10 +2,9 @@
 # -*- coding: utf-8 -*-
 import unittest
 import os
-from letsdo import Task
-from letsdo import DATA_FILENAME
-from letsdo import TASK_FILENAME
-
+from letsdo.src.letsdo import Task
+from letsdo.src.letsdo import TASK_FILENAME
+from letsdo.src.letsdo import DATA_FILENAME
 
 class TestLetsdo(unittest.TestCase):
 
