@@ -43,6 +43,9 @@ class TestLetsdo(unittest.TestCase):
     def test_stop_non_running_task(self):
         if os.path.exists(TASK_FILENAME):
             os.remove(TASK_FILENAME)
+        if not os.path.exists(DATA_FILENAME):
+            with open(DATA_FILENAME, mode='w') as f:
+                f.write('')
         no_tasks = len(open(DATA_FILENAME).readlines())
 
         Task.stop()
@@ -53,6 +56,9 @@ class TestLetsdo(unittest.TestCase):
     def test_stop_running_task(self):
         if not os.path.exists(TASK_FILENAME):
             Task().start()
+        if not os.path.exists(DATA_FILENAME):
+            with open(DATA_FILENAME, mode='w') as f:
+                f.write('')
         no_tasks = len(open(DATA_FILENAME).readlines())
 
         Task.stop()
