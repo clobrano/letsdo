@@ -25,6 +25,7 @@ import docopt
 import sys
 import logging
 import yaml
+import re
 
 DATA_FILENAME = ''
 TASK_FILENAME = ''
@@ -56,7 +57,7 @@ class Configuration(object):
 
 class Task(object):
     def __init__(self, name='unknown', start=None, end=None):
-        self.name = name
+        self.parse_name(name)
         if start:
             self.start_time = start
         else:
@@ -87,7 +88,11 @@ class Task(object):
             info(status)
 
             date = datetime.date.today()
-            report = '%s,%s,%s,%s,%s\n' % (date, task.name, work, task.start_time, stop_time)
+            if task.tags:
+                tags = ' '.join(task.tags)
+            else:
+                tags = None
+            report = '%s,%s,%s,%s,%s,%s,%s\n' % (date, task.name, work, task.start_time, stop_time, task.context, tags)
             DATA_FILENAME = Configuration().data_filename
             with open(DATA_FILENAME, mode='a') as f:
                 f.writelines(report)
@@ -103,7 +108,7 @@ class Task(object):
         task = Task.get()
         if task:
             info('Renaming task \'%s\' to \'%s\'' % (task.name, name))
-            task.name = name
+            task.parse_name(name)
             return task.__create()
 
         warn('No task running')
@@ -120,7 +125,6 @@ class Task(object):
         else:
             info('No task running')
             return False
-
 
     @staticmethod
     def __is_running():
@@ -146,6 +150,17 @@ class Task(object):
         with open(TASK_FILENAME, 'w') as f:
             pickle.dump(self, f)
             return True
+
+    def parse_name(self, name):
+        self.name = name
+        self.context = None
+        self.tags = None
+        matches = re.findall('@[\w\-_]+', name)
+        if len(matches) == 1:
+            self.context = matches[0]
+        matches = re.findall('\+[\w\-_]+', name)
+        if len(matches) >= 1:
+            self.tags = matches
 
 
 def report(filter=None):
