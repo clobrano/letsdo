@@ -24,11 +24,10 @@ import time
 import docopt
 import sys
 import logging
+import yaml
 
-# Configuration
-DATA_FILENAME = os.path.expanduser(os.path.join('~', '.letsdo-data'))
-TASK_FILENAME = os.path.expanduser(os.path.join('~', '.letsdo-task'))
-args = docopt.docopt(__doc__)
+DATA_FILENAME = ''
+TASK_FILENAME = ''
 
 # Logger
 level = logging.INFO
@@ -39,7 +38,20 @@ err = lambda x: logger.error(x)
 warn = lambda x: logger.warn(x)
 dbg = lambda x: logger.debug(x)
 
-dbg(args)
+
+class Configuration(object):
+
+    def __init__(self):
+        conf_file_path = os.path.expanduser(os.path.join('~', '.letsdo'))
+        if os.path.exists(conf_file_path):
+            configuration = yaml.load(open(conf_file_path).read())
+            self.data_filename = os.path.expanduser(os.path.join(configuration['DATAFILE'], '.letsdo-data'))
+            self.task_filename = os.path.expanduser(os.path.join(configuration['TASKFILE'], '.letsdo-task'))
+        else:
+            dbg('Config file not found. Using default')
+            self.data_filename = os.path.expanduser(os.path.join('~', '.letsdo-data'))
+            self.task_filename = os.path.expanduser(os.path.join('~', '.letsdo-task'))
+
 
 
 class Task(object):
@@ -178,6 +190,17 @@ def report(filter=None):
 
 
 def main():
+    # Configuration
+    args = docopt.docopt(__doc__)
+    dbg(args)
+
+    global DATA_FILENAME
+    global TASK_FILENAME
+    conf = Configuration()
+    DATA_FILENAME = conf.data_filename
+    TASK_FILENAME = conf.task_filename
+
+
     if args['--stop']:
         Task.stop(args['<time>'])
     elif args['--change']:
