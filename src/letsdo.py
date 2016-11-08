@@ -64,6 +64,7 @@ class Task(object):
 
     @staticmethod
     def get():
+        TASK_FILENAME = Configuration().task_filename
         if Task.__is_running():
             with open(TASK_FILENAME, 'r') as f:
                 return pickle.load(f)
@@ -72,7 +73,6 @@ class Task(object):
     def stop(stop_time_str=None):
         task = Task.get()
         if task:
-
             stop_time = datetime.datetime.now()
             if stop_time_str:
                 stop_time_date = datetime.datetime.strftime(stop_time, '%Y-%m-%d')
@@ -88,9 +88,11 @@ class Task(object):
 
             date = datetime.date.today()
             report = '%s,%s,%s,%s,%s\n' % (date, task.name, work, task.start_time, stop_time)
+            DATA_FILENAME = Configuration().data_filename
             with open(DATA_FILENAME, mode='a') as f:
                 f.writelines(report)
 
+            TASK_FILENAME = Configuration().task_filename
             os.remove(TASK_FILENAME)
             return True
         info('No task running')
@@ -122,6 +124,7 @@ class Task(object):
 
     @staticmethod
     def __is_running():
+        TASK_FILENAME = Configuration().task_filename
         exists = os.path.exists(TASK_FILENAME)
         dbg('is it running? %d' % exists)
         return exists
@@ -139,6 +142,7 @@ class Task(object):
         return True
 
     def __create(self):
+        TASK_FILENAME = Configuration().task_filename
         with open(TASK_FILENAME, 'w') as f:
             pickle.dump(self, f)
             return True
