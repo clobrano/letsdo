@@ -4,7 +4,8 @@
 Usage:
     letsdo [--force] [<name>...]
     letsdo --change <newname>...
-    letsdo --report [--contexts] [<filter>]
+    letsdo --report-full
+    letsdo --report-task
     letsdo --stop   [<time>]
     letsdo --to    <newtask>...
 
@@ -179,8 +180,10 @@ class Task(object):
         end_str = '%s' % self.end_time.strftime('%H:%M')
         return '%s| %s (%s -> %s) - %s' % (self.end_date, work_str, start_str, end_str, self.name)
 
+    def __eq__(self, other):
+        return self.name == other.name
 
-def report(filter=None):
+def report_full(filter=None):
     tasks = {}
     with open(DATA_FILENAME) as f:
         for line in f.readlines():
@@ -196,18 +199,52 @@ def report(filter=None):
             else:
                 tasks[date] = [task]
 
+        dates = sorted(tasks.keys(), reverse=True)
+        for date in dates:
+            tot_time = datetime.timedelta()
+            column = ''
+            for task in tasks[date]:
+                tot_time += task.work_time
+                column += str(task) + '\n'
+            print('===================================')
+            print('%s| Total time: %s' % (date, str(tot_time).split('.')[0]))
+            print('-----------------------------------')
+            print(column)
 
+def report_task(filter=None):
+    tasks = {}
+    with open(DATA_FILENAME) as f:
+        for line in f.readlines():
+            tok = line.split(',')
+            task = Task(
+                    name=tok[1],
+                    start=tok[3],
+                    end=tok[4]
+                    )
+            date = task.end_date
+            if date in tasks.keys():
+                try:
+                    index = tasks[date].index(task)
+                    same_task = tasks[date][index]
+                    same_task.work_time += task.work_time
+                except ValueError:
+                    tasks[date].append(task)
+            else:
+                tasks[date] = [task]
     dates = sorted(tasks.keys(), reverse=True)
     for date in dates:
         tot_time = datetime.timedelta()
         column = ''
         for task in tasks[date]:
             tot_time += task.work_time
-            column += str(task) + '\n'
+            work_str = '%s' % str(task.work_time).split('.')[0]
+            column += '%s| %s - %s' % (task.end_date, work_str, task.name)
+            column += '\n'
         print('===================================')
         print('%s| Total time: %s' % (date, str(tot_time).split('.')[0]))
         print('-----------------------------------')
         print(column)
+
 
 
 def report_old(filter=None):
@@ -275,8 +312,10 @@ def main():
         Task.stop()
         new_task_name = ' '.join(args['<newtask>'])
         Task(new_task_name).start()
-    elif args['--report']:
-        report(args['<filter>'])
+    elif args['--report-full']:
+        report_full()
+    elif args['--report-task']:
+        report_task()
     else:
         if Task.get():
             Task.status()
