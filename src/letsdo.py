@@ -196,7 +196,7 @@ def main():
             if resp.lower() != 'y':
                 sys.exit(0)
 
-        args['<name>'] = 'unknown'
+            args['<name>'] = 'unknown'
         Task(args['<name>']).start()
 
 
