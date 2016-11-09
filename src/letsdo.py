@@ -171,6 +171,7 @@ class Task(object):
             return True
 
     def parse_name(self, name):
+        name = name.replace(',', ' ')
         self.name = name
         matches = re.findall('@[\w\-_]+', name)
         if len(matches) == 1:
