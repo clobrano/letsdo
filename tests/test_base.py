@@ -8,7 +8,29 @@ from letsdo.src.letsdo import Configuration
 class TestLetsdo(unittest.TestCase):
 
     def setUp(self):
+        test_configuration = \
+'''
+DATAFILE: ~/
+TASKFILE: ~/
+'''
+        self.test_conf_file = os.path.expanduser(os.path.join('~', '.letsdo'))
+
+        with open(self.test_conf_file, 'r') as f:
+            self.backup = f.read()
+
+        with open(self.test_conf_file, 'w') as f:
+            f.write(test_configuration)
+
         self.conf = Configuration()
+
+        if os.path.exists(self.conf.data_filename):
+            os.remove(self.conf.data_filename)
+        if os.path.exists(self.conf.task_filename):
+            os.remove(self.conf.task_filename)
+
+    def tearDown(self):
+        with open(self.test_conf_file, 'w') as f:
+            f.write(self.backup)
         if os.path.exists(self.conf.data_filename):
             os.remove(self.conf.data_filename)
         if os.path.exists(self.conf.task_filename):
