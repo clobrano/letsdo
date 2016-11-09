@@ -14,39 +14,6 @@ class TestLetsdo(unittest.TestCase):
         if os.path.exists(self.conf.task_filename):
             os.remove(self.conf.task_filename)
 
-    def test_save_context(self):
-        task = Task('test save @context')
-        task.start()
-        task.stop()
-        last_saved_task = open(self.conf.data_filename).readlines()[-1].strip()
-        self.assertTrue('test save @context' in last_saved_task)
-        context = last_saved_task.split(',')[5]
-        self.assertEqual('@context', context)
-
-    def test_save_no_context(self):
-        task = Task('test save no context')
-        task.start()
-        task.stop()
-        last_saved_task = open(self.conf.data_filename).readlines()[-1].strip()
-        context = last_saved_task.split(',')[5]
-        self.assertEqual(context, 'None')
-
-    def test_save_tags(self):
-        task = Task('test save +tagA +tagB mixed with +text')
-        task.start()
-        task.stop()
-        last_saved_task = open(self.conf.data_filename).readlines()[-1].strip()
-        tags = last_saved_task.split(',')[6]
-        self.assertEqual('+tagA +tagB +text', tags)
-
-    def test_save_no_tag(self):
-        task = Task('test save no tag')
-        task.start()
-        task.stop()
-        last_saved_task = open(self.conf.data_filename).readlines()[-1].strip()
-        tags = last_saved_task.split(',')[6]
-        self.assertEqual('None', tags)
-
     def test_get_no_context(self):
         task = Task('project without a context')
         self.assertIsNone(task.context)
