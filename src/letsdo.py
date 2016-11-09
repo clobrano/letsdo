@@ -66,16 +66,21 @@ class Task(object):
         self.tags = None
         self.work_time = None
 
-        self.parse_name(name)
+        self.parse_name(name.strip())
         if start:
-            self.start_time = datetime.datetime.strptime(start, '%Y-%m-%d %H:%M:%S.%f')
+            self.start_time = datetime.datetime.strptime(start.strip(), '%Y-%m-%d %H:%M:%S.%f')
         else:
             self.start_time = datetime.datetime.now()
 
         if end:
-            self.end_time = datetime.datetime.strptime(end, '%Y-%m-%d %H:%M:%S.%f')
-            self.end_date = (self.end_time.strftime('%Y-%m-%d'))
-            self.work_time = self.end_time - self.start_time
+            try:
+                self.end_time = datetime.datetime.strptime(end.strip(), '%Y-%m-%d %H:%M:%S.%f')
+                self.end_date = (self.end_time.strftime('%Y-%m-%d'))
+                self.work_time = self.end_time - self.start_time
+            except ValueError as er:
+                print(er)
+                err(end)
+                raise ValueError
 
     @staticmethod
     def get():
@@ -106,7 +111,7 @@ class Task(object):
                 tags = ' '.join(task.tags)
             else:
                 tags = None
-            report = '%s,%s,%s,%s,%s,%s,%s\n' % (date, task.name, work, task.start_time, stop_time, task.context, tags)
+            report = '%s,%s,%s,%s,%s\n' % (date, task.name, work, task.start_time, stop_time)
             DATA_FILENAME = Configuration().data_filename
             with open(DATA_FILENAME, mode='a') as f:
                 f.writelines(report)
