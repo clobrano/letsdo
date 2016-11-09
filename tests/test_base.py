@@ -15,11 +15,15 @@ TASKFILE: ~/
 '''
         self.test_conf_file = os.path.expanduser(os.path.join('~', '.letsdo'))
 
-        with open(self.test_conf_file, 'r') as f:
-            self.backup = f.read()
+        try:
+            with open(self.test_conf_file, 'r') as f:
+                self.backup = f.read()
 
-        with open(self.test_conf_file, 'w') as f:
-            f.write(test_configuration)
+            with open(self.test_conf_file, 'w') as f:
+                f.write(test_configuration)
+        except IOError:
+            # Nothing to backup
+            pass
 
         self.conf = Configuration()
 
