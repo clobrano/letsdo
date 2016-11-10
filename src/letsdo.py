@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo [--force] [<name>...]
-    letsdo --change <newname>...
-    letsdo --keep
+    letsdo [--force]        [<name>...]
+    letsdo --change         <newname>...
+    letsdo --keep           [<time>]
     letsdo --report-full
     letsdo --report-task
-    letsdo --stop   [<time>]
-    letsdo --to    <newtask>...
+    letsdo --stop           [<time>]
+    letsdo --to             <newtask>...
 
 Notes:
     With no arguments, letsdo start a new task or report the status of the current running task
@@ -194,7 +194,7 @@ class Task(object):
         return self.name == other.name
 
 
-def continue_last():
+def continue_last(start_time_str=None):
     datafilename = Configuration().data_filename
     if os.path.exists(datafilename):
         with open(datafilename) as f:
@@ -202,7 +202,12 @@ def continue_last():
             if len(tasks):
                 last = tasks[-1]
                 tok = last.split(',')
-            task = Task(name=tok[1])
+            if start_time_str:
+                now = datetime.datetime.now()
+                start_time_date = datetime.datetime.strftime(now, '%Y-%m-%d')
+                task = Task(name=tok[1], start=start_time_date + ' ' + start_time_str + ':00')
+            else:
+                task = Task(name=tok[1])
             task.start()
 
 
@@ -340,7 +345,7 @@ def main():
     elif args['--report-task']:
         report_task()
     elif args['--keep']:
-        continue_last()
+        continue_last(args['<time>'])
     else:
         if Task.get():
             Task.status()
