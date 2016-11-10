@@ -4,7 +4,7 @@
 Usage:
     letsdo [--force]        [<name>...]
     letsdo --change         <newname>...
-    letsdo --keep           [<time>]
+    letsdo --keep           [--time=<time>] [--id=<id>]
     letsdo --report-full
     letsdo --report-task
     letsdo --stop           [<time>]
@@ -60,7 +60,7 @@ class Configuration(object):
 
 
 class Task(object):
-    def __init__(self, name='unknown', start=None, end=None):
+    def __init__(self, name='unknown', start=None, end=None, id=None):
         self.context = None
         self.end_date = None
         self.end_time = None
@@ -68,6 +68,7 @@ class Task(object):
         self.start_time = None
         self.tags = None
         self.work_time = None
+        self.id = id
 
         self.parse_name(name.strip())
         if start:
@@ -188,20 +189,21 @@ class Task(object):
         work_str = '%s' % str(self.work_time).split('.')[0]
         start_str = '%s' % self.start_time.strftime('%H:%M')
         end_str = '%s' % self.end_time.strftime('%H:%M')
+        if self.id is not None:
+            return '[%d] - %s| %s (%s -> %s) - %s' % (self.id, self.end_date, work_str, start_str, end_str, self.name)
         return '%s| %s (%s -> %s) - %s' % (self.end_date, work_str, start_str, end_str, self.name)
 
     def __eq__(self, other):
         return self.name == other.name
 
 
-def continue_last(start_time_str=None):
+def keep(start_time_str=None, id=-1):
     datafilename = Configuration().data_filename
     if os.path.exists(datafilename):
         with open(datafilename) as f:
             tasks = f.readlines()
             if len(tasks):
-                last = tasks[-1]
-                tok = last.split(',')
+                tok = tasks[id].split(',')
             if start_time_str:
                 now = datetime.datetime.now()
                 start_time_date = datetime.datetime.strftime(now, '%Y-%m-%d')
@@ -214,12 +216,13 @@ def continue_last(start_time_str=None):
 def report_full(filter=None):
     tasks = {}
     with open(DATA_FILENAME) as f:
-        for line in f.readlines():
+        for id, line in enumerate(f.readlines()):
             tok = line.split(',')
             task = Task(
                     name=tok[1],
                     start=tok[3],
-                    end=tok[4]
+                    end=tok[4],
+                    id=id
                     )
             date = task.end_date
             if date in tasks.keys():
@@ -233,11 +236,12 @@ def report_full(filter=None):
             column = ''
             for task in tasks[date]:
                 tot_time += task.work_time
-                column += str(task) + '\n'
+                column += '%s\n' % str(task)
             print('===================================')
             print('%s| Total time: %s' % (date, str(tot_time).split('.')[0]))
             print('-----------------------------------')
             print(column)
+
 
 def report_task(filter=None):
     tasks = {}
@@ -275,51 +279,6 @@ def report_task(filter=None):
 
 
 
-def report_old(filter=None):
-    report = {}
-    with open(DATA_FILENAME) as f:
-        for line in f.readlines():
-            entry = line.split(',')
-
-            date = entry[0]
-            if filter and filter not in date:
-                continue
-
-            name = entry[1]
-            wtime_str = entry[2].split('.')[0].strip()
-            wtime_date = datetime.datetime.strptime(wtime_str, '%H:%M:%S')
-            wtime = datetime.timedelta(
-                    hours=wtime_date.hour,
-                    minutes=wtime_date.minute,
-                    seconds=wtime_date.second)
-            # To be kept for retrocompatibility
-            if len(entry) > 3:
-                start_time = entry[3].split('.')[0].strip()
-                stop_time = entry[4].split('.')[0].strip()
-
-            if date not in report.keys():
-                report[date] = {name: wtime}
-            else:
-                if name not in report[date].keys():
-                    report[date][name] = wtime
-                else:
-                    report[date][name] += wtime
-
-    dates = sorted(report.keys(), reverse=True)
-    for date in dates:
-        entry = report[date]
-        tot_time = datetime.timedelta()
-        column = ''
-        for name, wtime in entry.items():
-            tot_time += wtime
-            column += ('%s| %s - %s\n' % (date, wtime,  name))
-        print('===================================')
-        print('%s| Total time: %s' % (date, tot_time))
-        print('-----------------------------------')
-        print(column)
-
-
-
 def main():
     # Configuration
     args = docopt.docopt(__doc__)
@@ -345,7 +304,7 @@ def main():
     elif args['--report-task']:
         report_task()
     elif args['--keep']:
-        continue_last(args['<time>'])
+        keep(start_time_str=args['--time'], id=eval(args['--id']))
     else:
         if Task.get():
             Task.status()
