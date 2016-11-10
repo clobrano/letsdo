@@ -4,7 +4,7 @@ import unittest
 import os
 from letsdo.src.letsdo import Task
 from letsdo.src.letsdo import Configuration
-from letsdo.src.letsdo import continue_last
+from letsdo.src.letsdo import keep
 
 class TestLetsdo(unittest.TestCase):
 
@@ -43,7 +43,7 @@ taskpath: ~/
         prev_task = Task('do something')
         prev_task.start()
         prev_task.stop()
-        continue_last()
+        keep()
         task = Task.get()
         self.assertEquals(task.name, prev_task.name)
 

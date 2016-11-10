@@ -16,7 +16,6 @@ Notes:
     -c --change   Rename current running task
     -k --keep     Restart last run task
     -f --force    Start new unnamed task without asking
-    -r --report   Get the full report of task done (with a filter on date if provided)
     -s --stop     Stop current running task
     -t --to       Switch to a new task
 '''
@@ -304,7 +303,10 @@ def main():
     elif args['--report-task']:
         report_task()
     elif args['--keep']:
-        keep(start_time_str=args['--time'], id=eval(args['--id']))
+        if args['--id']:
+            keep(start_time_str=args['--time'], id=eval(args['--id']))
+        else:
+            keep(start_time_str=args['--time'])
     else:
         if Task.get():
             Task.status()
