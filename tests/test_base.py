@@ -4,6 +4,7 @@ import unittest
 import os
 from letsdo.src.letsdo import Task
 from letsdo.src.letsdo import Configuration
+from letsdo.src.letsdo import continue_last
 
 class TestLetsdo(unittest.TestCase):
 
@@ -37,6 +38,14 @@ taskpath: ~/
             os.remove(self.conf.data_filename)
         if os.path.exists(self.conf.task_filename):
             os.remove(self.conf.task_filename)
+
+    def test_continue_last(self):
+        prev_task = Task('do something')
+        prev_task.start()
+        prev_task.stop()
+        continue_last()
+        task = Task.get()
+        self.assertEquals(task.name, prev_task.name)
 
     def test_get_no_context(self):
         task = Task('project without a context')

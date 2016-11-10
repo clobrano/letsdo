@@ -195,8 +195,9 @@ class Task(object):
 
 
 def continue_last():
-    if os.path.exists(DATA_FILENAME):
-        with open(DATA_FILENAME) as f:
+    datafilename = Configuration().data_filename
+    if os.path.exists(datafilename):
+        with open(datafilename) as f:
             tasks = f.readlines()
             if len(tasks):
                 last = tasks[-1]
