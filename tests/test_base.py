@@ -10,8 +10,8 @@ class TestLetsdo(unittest.TestCase):
     def setUp(self):
         test_configuration = \
 '''
-DATAFILE: ~/
-TASKFILE: ~/
+datapath: ~/
+taskpath: ~/
 '''
         self.test_conf_file = os.path.expanduser(os.path.join('~', '.letsdo'))
 

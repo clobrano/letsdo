@@ -4,6 +4,7 @@
 Usage:
     letsdo [--force] [<name>...]
     letsdo --change <newname>...
+    letsdo --keep
     letsdo --report-full
     letsdo --report-task
     letsdo --stop   [<time>]
@@ -11,11 +12,13 @@ Usage:
 
 Notes:
     With no arguments, letsdo start a new task or report the status of the current running task
-    -s --stop          Stop current running task
-    -c --change        Rename current running task
-    -t --to            Switch task
-    -f --force         Start new unnamed task without asking
-    -r --report        Get the full report of task done (with a filter on date if provided)
+
+    -c --change   Rename current running task
+    -k --keep     Restart last run task
+    -f --force    Start new unnamed task without asking
+    -r --report   Get the full report of task done (with a filter on date if provided)
+    -s --stop     Stop current running task
+    -t --to       Switch to a new task
 '''
 
 import os
@@ -47,8 +50,8 @@ class Configuration(object):
         conf_file_path = os.path.expanduser(os.path.join('~', '.letsdo'))
         if os.path.exists(conf_file_path):
             configuration = yaml.load(open(conf_file_path).read())
-            self.data_filename = os.path.expanduser(os.path.join(configuration['DATAFILE'], '.letsdo-data'))
-            self.task_filename = os.path.expanduser(os.path.join(configuration['TASKFILE'], '.letsdo-task'))
+            self.data_filename = os.path.expanduser(os.path.join(configuration['datapath'], '.letsdo-data'))
+            self.task_filename = os.path.expanduser(os.path.join(configuration['taskpath'], '.letsdo-task'))
         else:
             dbg('Config file not found. Using default')
             self.data_filename = os.path.expanduser(os.path.join('~', '.letsdo-data'))
@@ -68,19 +71,20 @@ class Task(object):
 
         self.parse_name(name.strip())
         if start:
-            self.start_time = datetime.datetime.strptime(start.strip(), '%Y-%m-%d %H:%M:%S.%f')
+            try:
+                self.start_time = datetime.datetime.strptime(start.strip(), '%Y-%m-%d %H:%M:%S.%f')
+            except ValueError:
+                self.start_time = datetime.datetime.strptime(start.strip(), '%Y-%m-%d %H:%M:%S')
         else:
             self.start_time = datetime.datetime.now()
 
         if end:
             try:
                 self.end_time = datetime.datetime.strptime(end.strip(), '%Y-%m-%d %H:%M:%S.%f')
-                self.end_date = (self.end_time.strftime('%Y-%m-%d'))
-                self.work_time = self.end_time - self.start_time
-            except ValueError as er:
-                print(er)
-                err(end)
-                raise ValueError
+            except ValueError:
+                self.end_time = datetime.datetime.strptime(end.strip(), '%Y-%m-%d %H:%M:%S')
+            self.end_date = (self.end_time.strftime('%Y-%m-%d'))
+            self.work_time = self.end_time - self.start_time
 
     @staticmethod
     def get():
@@ -188,6 +192,18 @@ class Task(object):
 
     def __eq__(self, other):
         return self.name == other.name
+
+
+def continue_last():
+    if os.path.exists(DATA_FILENAME):
+        with open(DATA_FILENAME) as f:
+            tasks = f.readlines()
+            if len(tasks):
+                last = tasks[-1]
+                tok = last.split(',')
+            task = Task(name=tok[1])
+            task.start()
+
 
 def report_full(filter=None):
     tasks = {}
@@ -322,6 +338,8 @@ def main():
         report_full()
     elif args['--report-task']:
         report_task()
+    elif args['--keep']:
+        continue_last()
     else:
         if Task.get():
             Task.status()
