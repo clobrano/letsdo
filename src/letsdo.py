@@ -2,25 +2,27 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo [--force] [--time=<time>]      [<name>...]
+    letsdo [--force] [--time=<time>] [<name>...]
     letsdo --change <newname>...
+    letsdo --to <newtask>...
     letsdo --keep [--id=<id>] [--time=<time>]
+    letsdo --stop [--time=<time>]
     letsdo --report
     letsdo --report-full
     letsdo --report-daily
-    letsdo --stop [--time=<time>]
-    letsdo --to             <newtask>...
+
 
 Notes:
     With no arguments, letsdo start a new task or report the status of the current running task
 
-    -c --change   Rename current running task
-    -k --keep     Restart last run task
-    -f --force    Start new unnamed task without asking
-    -s --stop     Stop current running task
-    --to          Switch to a new task
-    -t <time> --time=<time>     Suggest the start/stop time of the task
+    --to                        Switch to a new task
+    -c --change                 Rename current running task
+    -f --force                  Start new unnamed task without asking
+    -k --keep                   Restart last run task
+    -i <id> --id=<id>           Task id
     -r --report
+    -s --stop                   Stop current running task
+    -t <time> --time=<time>     Suggest the start/stop time of the task
 '''
 
 import os
@@ -74,12 +76,12 @@ class Task(object):
 
         self.parse_name(name.strip())
         if start:
-            self.start_time = datetime.datetime.strptime(start.strip(), '%Y-%m-%d %H:%M')
+            self.start_time = str2datetime(start.strip()) #datetime.datetime.strptime(start.strip(), '%Y-%m-%d %H:%M')
         else:
             self.start_time = datetime.datetime.now()
 
         if end:
-            self.end_time = datetime.datetime.strptime(end.strip(), '%Y-%m-%d %H:%M')
+            self.end_time = str2datetime(end.strip()) #datetime.datetime.strptime(end.strip(), '%Y-%m-%d %H:%M')
             self.end_date = (self.end_time.strftime('%Y-%m-%d'))
             self.work_time = self.end_time - self.start_time
 
@@ -96,8 +98,9 @@ class Task(object):
         if task:
             stop_time = datetime.datetime.now()
             if stop_time_str:
-                stop_time_date = datetime.datetime.strftime(stop_time, '%Y-%m-%d')
-                stop_time = datetime.datetime.strptime(stop_time_date + ' ' + stop_time_str, '%Y-%m-%d %H:%M')
+                stop_time = str2datetime(stop_time_str)
+                #stop_time_date = datetime.datetime.strftime(stop_time, '%Y-%m-%d')
+                #stop_time = datetime.datetime.strptime(stop_time_date + ' ' + stop_time_str, '%Y-%m-%d %H:%M')
 
                 if stop_time < task.start_time:
                     warn('Given stop time (%s) is more recent than start time (%s)' % (stop_time, task.start_time))
@@ -198,6 +201,17 @@ class Task(object):
         return self.name == other.name
 
 
+def str2datetime(string):
+    m = re.findall('\d{4}-\d{2}-\d{2} \d{2}:\d{2}', string)
+    if len(m) != 0:
+        return datetime.datetime.strptime(string, '%Y-%m-%d %H:%M')
+    m = re.findall('\d{2}:\d{2}', string)
+    if len(m) != 0:
+        today_str = datetime.datetime.today().strftime('%Y-%m-%d')
+        return datetime.datetime.strptime(today_str + ' ' + string, '%Y-%m-%d %H:%M')
+    raise ValueError('Date format not recognized: %s' % string)
+
+
 def keep(start_time_str=None, id=-1):
     tasks = []
     datafilename = Configuration().data_filename
@@ -217,7 +231,7 @@ def keep(start_time_str=None, id=-1):
 
         if start_time_str:
             date_str = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
-            start_time = date_str + ' ' + start_time_str + ':0'
+            start_time = date_str + ' ' + start_time_str
         else:
             start_time = None
 
@@ -233,8 +247,7 @@ def report_task():
             task = Task(
                     name=tok[1],
                     start=tok[3],
-                    end=tok[4]
-                    )
+                    end=tok[4])
             try:
                 index = tasks.index(task)
                 same_task = tasks.pop(index)
@@ -258,8 +271,7 @@ def report_full(filter=None):
                     name=tok[1],
                     start=tok[3],
                     end=tok[4],
-                    id=id
-                    )
+                    id=id)
             date = task.end_date
             if date in tasks.keys():
                 tasks[date].append(task)
