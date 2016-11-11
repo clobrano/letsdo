@@ -7,9 +7,7 @@ Usage:
     letsdo --to <newtask>...
     letsdo --keep [--id=<id>] [--time=<time>]
     letsdo --stop [--time=<time>]
-    letsdo --report
-    letsdo --report-full
-    letsdo --report-daily
+    letsdo --report [--full] [--daily]
 
 
 Notes:
@@ -17,12 +15,13 @@ Notes:
 
     --to                        Switch to a new task
     -c --change                 Rename current running task
-    -f --force                  Start new unnamed task without asking
     -k --keep                   Restart last run task
     -i <id> --id=<id>           Task id
     -r --report
     -s --stop                   Stop current running task
     -t <time> --time=<time>     Suggest the start/stop time of the task
+    -f --full
+    -d --daily
 '''
 
 import os
@@ -366,13 +365,12 @@ def main():
         keep(start_time_str=args['--time'], id=id)
 
     elif args['--report']:
-        report_task()
-
-    elif args['--report-daily']:
-        report_daily()
-
-    elif args['--report-full']:
-        report_full()
+        if args['--full']:
+            report_full()
+        elif args['--daily']:
+            report_daily()
+        else:
+            report_task()
 
     else:
         if Task.get():
