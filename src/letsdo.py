@@ -74,18 +74,12 @@ class Task(object):
 
         self.parse_name(name.strip())
         if start:
-            try:
-                self.start_time = datetime.datetime.strptime(start.strip(), '%Y-%m-%d %H:%M:%S.%f')
-            except ValueError:
-                self.start_time = datetime.datetime.strptime(start.strip(), '%Y-%m-%d %H:%M:%S')
+            self.start_time = datetime.datetime.strptime(start.strip(), '%Y-%m-%d %H:%M')
         else:
             self.start_time = datetime.datetime.now()
 
         if end:
-            try:
-                self.end_time = datetime.datetime.strptime(end.strip(), '%Y-%m-%d %H:%M:%S.%f')
-            except ValueError:
-                self.end_time = datetime.datetime.strptime(end.strip(), '%Y-%m-%d %H:%M:%S')
+            self.end_time = datetime.datetime.strptime(end.strip(), '%Y-%m-%d %H:%M')
             self.end_date = (self.end_time.strftime('%Y-%m-%d'))
             self.work_time = self.end_time - self.start_time
 
@@ -118,7 +112,12 @@ class Task(object):
                 tags = ' '.join(task.tags)
             else:
                 tags = None
-            report = '%s,%s,%s,%s,%s\n' % (date, task.name, work, task.start_time, stop_time)
+
+            start_time_str = str(task.start_time).split('.')[0][:-3]
+            stop_time_str = str(stop_time).split('.')[0][:-3]
+            work_time_str = str(work).split('.')[0][:-3]
+
+            report = '%s,%s,%s,%s,%s\n' % (date, task.name, work_time_str, start_time_str, stop_time_str)
             DATA_FILENAME = Configuration().data_filename
             with open(DATA_FILENAME, mode='a') as f:
                 f.writelines(report)
