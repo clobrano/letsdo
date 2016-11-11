@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo [--force]        [<name>...]
-    letsdo --change         <newname>...
-    letsdo --keep           [--time=<time>] [--id=<id>]
+    letsdo [--force] [--time=<time>]      [<name>...]
+    letsdo --change <newname>...
+    letsdo --keep [--id=<id>] [--time=<time>]
+    letsdo --report
     letsdo --report-full
-    letsdo --report-task
-    letsdo --stop           [<time>]
+    letsdo --report-daily
+    letsdo --stop [--time=<time>]
     letsdo --to             <newtask>...
 
 Notes:
@@ -17,7 +18,9 @@ Notes:
     -k --keep     Restart last run task
     -f --force    Start new unnamed task without asking
     -s --stop     Stop current running task
-    -t --to       Switch to a new task
+    --to          Switch to a new task
+    -t <time> --time=<time>     Suggest the start/stop time of the task
+    -r --report
 '''
 
 import os
@@ -197,19 +200,54 @@ class Task(object):
 
 
 def keep(start_time_str=None, id=-1):
+    tasks = []
     datafilename = Configuration().data_filename
-    if os.path.exists(datafilename):
-        with open(datafilename) as f:
-            tasks = f.readlines()
-            if len(tasks):
-                tok = tasks[id].split(',')
-            if start_time_str:
-                now = datetime.datetime.now()
-                start_time_date = datetime.datetime.strftime(now, '%Y-%m-%d')
-                task = Task(name=tok[1], start=start_time_date + ' ' + start_time_str + ':00')
+    with open(datafilename) as f:
+        lines = f.readlines()
+        try:
+            line = lines[id]
+        except ValueError:
+            if id == -1:
+                err('Could not find task last task')
             else:
-                task = Task(name=tok[1])
-            task.start()
+                err('Could not find task with id %d' % id)
+            return
+
+        tok = line.split(',')
+        task_name = tok[1]
+
+        if start_time_str:
+            date_str = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
+            start_time = date_str + ' ' + start_time_str + ':0'
+        else:
+            start_time = None
+
+        Task(task_name, start=start_time).start()
+
+
+def report_task():
+    tasks = []
+    datafilename = Configuration().data_filename
+    with open(datafilename) as f:
+        for line in f.readlines():
+            tok = line.split(',')
+            task = Task(
+                    name=tok[1],
+                    start=tok[3],
+                    end=tok[4]
+                    )
+            try:
+                index = tasks.index(task)
+                same_task = tasks.pop(index)
+                task.work_time += same_task.work_time
+            except ValueError:
+                pass
+
+            tasks.append(task)
+
+    for idx, task in enumerate(tasks):
+        work_str = '%s' % str(task.work_time).split('.')[0]
+        info('[%d] %s| %s - %s' % (idx, task.end_date, work_str, task.name))
 
 
 def report_full(filter=None):
@@ -235,14 +273,21 @@ def report_full(filter=None):
             column = ''
             for task in tasks[date]:
                 tot_time += task.work_time
-                column += '%s\n' % str(task)
+
+                work_str = '%s' % str(task.work_time).split('.')[0]
+                start_str = '%s' % task.start_time.strftime('%H:%M')
+                end_str = '%s' % task.end_time.strftime('%H:%M')
+
+                column += '%s| %s (%s -> %s) - %s' % (task.end_date, work_str, start_str, end_str, task.name)
+                column += '\n'
+
             print('===================================')
             print('%s| Total time: %s' % (date, str(tot_time).split('.')[0]))
             print('-----------------------------------')
             print(column)
 
 
-def report_task(filter=None):
+def report_daily():
     tasks = {}
     with open(DATA_FILENAME) as f:
         for line in f.readlines():
@@ -262,6 +307,7 @@ def report_task(filter=None):
                     tasks[date].append(task)
             else:
                 tasks[date] = [task]
+
     dates = sorted(tasks.keys(), reverse=True)
     for date in dates:
         tot_time = datetime.timedelta()
@@ -290,23 +336,33 @@ def main():
     TASK_FILENAME = conf.task_filename
 
     if args['--stop']:
-        Task.stop(args['<time>'])
+        Task.stop(args['--time'])
+
     elif args['--change']:
         new_task_name = ' '.join(args['<newname>'])
         Task.change(new_task_name)
+
     elif args['--to']:
         Task.stop()
         new_task_name = ' '.join(args['<newtask>'])
         Task(new_task_name).start()
-    elif args['--report-full']:
-        report_full()
-    elif args['--report-task']:
-        report_task()
+
     elif args['--keep']:
         if args['--id']:
-            keep(start_time_str=args['--time'], id=eval(args['--id']))
+            id = eval(args['--id'])
         else:
-            keep(start_time_str=args['--time'])
+            id = -1
+        keep(start_time_str=args['--time'], id=id)
+
+    elif args['--report']:
+        report_task()
+
+    elif args['--report-daily']:
+        report_daily()
+
+    elif args['--report-full']:
+        report_full()
+
     else:
         if Task.get():
             Task.status()
@@ -318,7 +374,7 @@ def main():
             args['<name>'] = ['unknown']
 
         new_task_name = ' '.join(args['<name>'])
-        Task(new_task_name).start()
+        Task(new_task_name, start=args['--time']).start()
 
 
 if __name__ == '__main__':
