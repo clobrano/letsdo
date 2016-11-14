@@ -163,7 +163,7 @@ class Task(object):
     def start(self):
         if not Task.__is_running():
             if self.__create():
-                info('Starting task \'%s\' now' % self.name)
+                info('Starting task \'%s\'' % self.name)
                 return Task.get()
 
             err('Could not create new task')
