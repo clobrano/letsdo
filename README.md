@@ -4,60 +4,101 @@
 
 Letsdo helps you to be more productive and focused, tracking the time you spend on various tasks:
 
-    $ letsdo start letsdo-readme
-      Starting task 'letsdo-readme' now
+    $ letsdo letsdo-readme
+      Starting task 'letsdo-readme'
 
-Letsdo shows you the name of the current running tasks and the time you've already spent on it:
+You can pass whatever string to Letsdo in order to describe your task
 
-    $ letsdo status
-      Working on 'letsdo-readme' for 0:10:58
+    $ letsdo best readme in the istory of github
+      Starting task 'best readme in the istory of github'
 
-If you have made any mistake with the task name or just want to modify it, use 'rename':
+and change its description if you like (or made a mistake)
 
-    $ letsdo rename "letsdo the greatest readme"
-      Renaming task 'letsdo-readme' to 'letsdo the greatest readme'
+    $ letsdo --change best readme in the History of github
+      Renaming task 'best readme in the istory of github' to 'best readme in the History of github'
+
+When a task is running, executing Letsdo will prompt the time spent on it
+
+    $ letsdo
+      Working on 'best readme in the History of github' for 0:01:32
 
 Once the task is completed, just 'stop' it:
 
-    $ letsdo stop
-      Stopped task 'letsdo the greatest readme' after 0:18:27
+    $ letsdo --stop
+      Stopped task 'best readme in the History of github' after 0:01:45
 
-Moreover Letsdo shows you a full report of all your tasks grouped by day, summing up the time spent on each task
+Let's say you do not want to stop, but just move to another task, use --to flag
 
-    $ letsdo report
+    $ letsdo previous task
+      Starting task 'previous task'
+    $ letsdo --to  new task
+      Stopped task 'previous task' after 0:00:08
+      Starting task 'new task'
 
+Now stop, and see some reports
+
+    $ letsdo --stop
+      Stopped task 'new task' after 0:00:25
+
+Total time for each task (tasks with the same name are considered as one)
+    $ letsdo --report
+      [0] 2016-11-14| 0:00:00 - letsdo-readme
+      [1] 2016-11-14| 0:01:00 - best readme in the History of github
+      [2] 2016-11-14| 0:01:00 - previous task
+      [3] 2016-11-14| 0:00:00 - new task
+
+See all the tasks' start and stop time, day by day (time is in 24h format)
+    $ letsdo --report --full
     ===================================
-    2016-11-04| Total time: 2:25:24
+    2016-11-14| Total time: 0:02:00
     -----------------------------------
-    2016-11-04| 0:18:27 - letsdo the greatest readme
-    2016-11-04| 0:50:00 - test-qc-driver-cradlepoint
-    2016-11-04| 0:03:32 - letsdo-move-to-another-task
-    2016-11-04| 0:01:17 - unknown
-    2016-11-04| 0:11:45 - letsdo rename
-    2016-11-04| 0:11:50 - letsdo-save
-    2016-11-04| 0:03:49 - fix-rename-command
-    2016-11-04| 0:06:41 - working-hours
-    2016-11-04| 0:14:08 - letsdo-readme
-    2016-11-04| 0:14:30 - letsdo-tidying-up
-    2016-11-04| 0:05:09 - letsdo-save-new-feature
-    2016-11-04| 0:13:27 - letsdo-setup.py
-    2016-11-04| 0:00:49 - letsdo-test-new-feature
+    2016-11-14| 0:00:00 (16:03 -> 16:03) - letsdo-readme
+    2016-11-14| 0:01:00 (16:04 -> 16:05) - best readme in the History of github
+    2016-11-14| 0:01:00 (16:06 -> 16:07) - previous task
+    2016-11-14| 0:00:00 (16:07 -> 16:07) - new task
 
+See total time per task and per day
+
+    $ letsdo --report --daily
     ===================================
-    2016-11-03| Total time: 1:50:14
+    2016-11-14| Total time: 0:02:00
     -----------------------------------
-    2016-11-03| 0:17:21 - working_hours
-    2016-11-03| 0:56:18 - setup-env
-    2016-11-03| 0:07:08 - unknow
-    2016-11-03| 0:29:13 - pynicom-fix-commands
-    2016-11-03| 0:00:14 - unknown
+    2016-11-14| 0:00:00 - letsdo-readme
+    2016-11-14| 0:01:00 - best readme in the History of github
+    2016-11-14| 0:01:00 - previous task
+    2016-11-14| 0:00:00 - new task
 
-The Report comes from a plain text file under $HOME/.letsdo-report.
-In the coming version the path to this file will be configurable to make it easier to syncronize it among several systems (e.g. with Dropbox).
+Now, back working again on a previous task, too bad the name is too long to type it! No problem, just use --keep flag to
+keep working on the last task
 
-Letsdo does not really need a task name to start, so you can start tracking your work and choose a name for it later.
+    $ letsdo --keep
+      Starting task 'new task'
 
-    $ letsdo start
-      Starting task 'unknown' now
+But, I do not want to work on the last! Then use the --id flag (the task index is the one reported with --report flag)
 
+    $ letsdo --stop
+      Stopped task 'new task' after 0:00:50
+    $ letsdo --keep --id 1
+      Starting task 'best readme in the History of github'
 
+Clearly, all the flags support the short version (-k for --keep, -i for --id, etc.)
+
+The Report comes from a plain text file under <letsdopath>/.letsdo-data
+
+The <letsdopath> comes from Letsdo configuration file, stored in your $HOME directory:
+
+    $ cat ~/.letsdo
+    letsdopath: ~/Dropbox/
+
+Having a configuration file is not necessary, if not present, Letsdo will use the $HOME folder to store its data.
+However, setting a datapath is useful in order to share the tasks with multiple systems (on Dropbox for example)
+
+Finally, Letsdo does not really need a task name to start, so you can start tracking your work and choose a name for it later.
+
+    $ letsdo
+    No running task. Let's create a new unnamed one (y/N)?:
+
+or with the --force flag
+
+    $ letsdo --force
+      Starting task 'unkown'
