@@ -41,6 +41,7 @@ Now stop, and see some reports
       Stopped task 'new task' after 0:00:25
 
 Total time for each task (tasks with the same name are considered as one)
+
     $ letsdo --report
       [0] 2016-11-14| 0:00:00 - letsdo-readme
       [1] 2016-11-14| 0:01:00 - best readme in the History of github
@@ -48,6 +49,7 @@ Total time for each task (tasks with the same name are considered as one)
       [3] 2016-11-14| 0:00:00 - new task
 
 See all the tasks' start and stop time, day by day (time is in 24h format)
+
     $ letsdo --report --full
     ===================================
     2016-11-14| Total time: 0:02:00
@@ -102,7 +104,11 @@ or with the --force flag
 
     $ letsdo --force
       Starting task 'unkown'
-      
-    
+
 and if you've forgotten to start/stop a task at the right moment, just use the --time flag followed by the HOUR:MINUTE
-string of the correct moment
+string of the correct moment.
+
+## @Contexts, +tags and autocompletion
+
+One can specify the task with @contexts (only one per tasks) and +tags (no limits) and Letsdo bash completion is smart
+enough to autocomplete also @contexts and @tags. Use --autocomplete flag for more information
