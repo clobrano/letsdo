@@ -105,8 +105,8 @@ class Task(object):
                     warn('Given stop time (%s) is more recent than start time (%s)' % (stop_time, task.start_time))
                     return False
 
-            work = stop_time - task.start_time
-            status = ('Stopped task \'%s\' after %s of work' % (task.name, work)).split('.')[0]
+            work_time_str = str(stop_time - task.start_time).split('.')[0][:-3]
+            status = ('Stopped task \'%s\' after %s of work' % (task.name, work_time_str))
             info(status)
 
             date = datetime.date.today()
@@ -117,7 +117,6 @@ class Task(object):
 
             start_time_str = str(task.start_time).split('.')[0][:-3]
             stop_time_str = str(stop_time).split('.')[0][:-3]
-            work_time_str = str(work).split('.')[0][:-3]
 
             report = '%s,%s,%s,%s,%s\n' % (date, task.name, work_time_str, start_time_str, stop_time_str)
             DATA_FILENAME = Configuration().data_filename
@@ -145,9 +144,8 @@ class Task(object):
         task = Task.get()
         if task:
             now = datetime.datetime.now()
-            work = now - task.start_time
-            status = ('Working on \'%s\' for %s' % (task.name, work)).split('.')[0]
-            info(status)
+            work = str(now - task.start_time).split('.')[0]
+            info('Working on \'%s\' for %s' % (task.name, work))
             return True
         else:
             info('No task running')
