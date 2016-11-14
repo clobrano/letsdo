@@ -1,0 +1,49 @@
+_letsdo()
+{
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    cmds="--help --force --change --stop --keep --to --report --full --daily --autocomplete --time --id"
+    if [[ ${cur} == -* ]] ; then
+        COMPREPLY=( $(compgen -W "${cmds}" -- ${cur}) )
+        return 0
+    fi
+
+    [ ! -f $HOME/.letsdo ] && return 0
+    eval $(parse_yaml $HOME/.letsdo "letsdo_")
+    eval datafile=$letsdo_datapath.letsdo-data
+
+    if [ -f "$datafile" ]; then
+        cxts=`grep -oE '(@[a-zA-Z0-9\-\_]+)' "$datafile" | uniq`
+        if [[ ${cur} == @* ]] ; then
+            COMPREPLY=( $(compgen -W "${cxts}" -- ${cur}) )
+            return 0
+        fi
+
+        tags=`grep -oE '(\+[a-zA-Z0-9\-\_]+)' "$datafile" | uniq`
+        if [[ ${cur} == +* ]] ; then
+            COMPREPLY=( $(compgen -W "${tags}" -- ${cur}) )
+            return 0
+        fi
+    fi
+}
+
+# Thanks to pkuczynski/parse_yaml.sh
+parse_yaml() {
+   local prefix=$2
+   local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+   sed -ne "s|^\($s\)\($w\)$s:$s\"\(.*\)\"$s\$|\1$fs\2$fs\3|p" \
+        -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
+   awk -F$fs '{
+      indent = length($1)/2;
+      vname[indent] = $2;
+      for (i in vname) {if (i > indent) {delete vname[i]}}
+      if (length($3) > 0) {
+         vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+         printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
+      }
+   }'
+}
+complete -F _letsdo letsdo

@@ -8,7 +8,7 @@ Usage:
     letsdo --keep [--id=<id>] [--time=<time>]
     letsdo --stop [--time=<time>]
     letsdo --report [--full] [--daily]
-
+    letsdo --autocomplete
 
 Notes:
     With no arguments, letsdo start a new task or report the status of the current running task
@@ -200,6 +200,29 @@ class Task(object):
         return self.name == other.name
 
 
+def autocomplete():
+    message = '''
+    Letsdo CLI is able to suggest:
+    - command line flags
+    - contexts already used (words starting by @ in the task name)
+    - tags already used (words starting by + in the task name)
+
+    To enable this feature copy the text after the CUT HERE line into a file and:
+
+        - put the file under /etc/bash_completion.d/ for system-wide autocompletion
+
+    otherwise
+
+        - put the file somewhere in your home directory and source it in your .bashrc
+        - source /full/path/to/letsdo_completion
+
+    --- CUT HERE ------------------------------------------------------------------
+    '''
+    _ROOT = os.path.abspath(os.path.dirname(__file__))
+    completion = os.path.join(_ROOT, 'letsdo_scripts', 'letsdo_completion')
+    info(message)
+    print(open(completion).read())
+
 def str2datetime(string):
     m = re.findall('\d{4}-\d{2}-\d{2} \d{2}:\d{2}', string)
     if len(m) != 0:
@@ -335,7 +358,6 @@ def report_daily():
 
 
 def main():
-    # Configuration
     args = docopt.docopt(__doc__)
     dbg(args)
 
@@ -371,13 +393,14 @@ def main():
             report_daily()
         else:
             report_task()
-
+    elif args['--autocomplete']:
+        autocomplete()
     else:
         if Task.get():
             Task.status()
             sys.exit(0)
         elif not args['<name>'] and not args['--force']: # Not sure if asking for status or starting an unnamed task
-            resp = raw_input('No running task. Let\'s create a new unnamed one [y/n]?: ')
+            resp = raw_input('No running task. Let\'s create a new unnamed one (y/N)?: ')
             if resp.lower() != 'y':
                 sys.exit(0)
             args['<name>'] = ['unknown']
