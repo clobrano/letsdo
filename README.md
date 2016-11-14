@@ -102,3 +102,7 @@ or with the --force flag
 
     $ letsdo --force
       Starting task 'unkown'
+      
+    
+and if you've forgotten to start/stop a task at the right moment, just use the --time flag followed by the HOUR:MINUTE
+string of the correct moment
