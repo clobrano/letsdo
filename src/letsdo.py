@@ -367,46 +367,54 @@ def main():
 
     if args['--stop']:
         Task.stop(args['--time'])
+        return
 
-    elif args['--change']:
+    if args['--change']:
         new_task_name = ' '.join(args['<newname>'])
         Task.change(new_task_name)
+        return
 
-    elif args['--to']:
+    if args['--to']:
         Task.stop()
         new_task_name = ' '.join(args['<newtask>'])
         Task(new_task_name).start()
+        return
 
-    elif args['--keep']:
+    if args['--keep']:
         if args['--id']:
             id = eval(args['--id'])
         else:
             id = -1
         keep(start_time_str=args['--time'], id=id)
+        return
 
-    elif args['--report']:
+    if args['--report']:
         if args['--full']:
             report_full()
         elif args['--daily']:
             report_daily()
         else:
             report_task()
-    elif args['--autocomplete']:
-        autocomplete()
-    else:
-        if Task.get():
-            Task.status()
-            sys.exit(0)
-        elif not args['<name>']:
-            if args['--force']: # Not sure if asking for status or starting an unnamed task
-                args['<name>'] = ['unknown']
-            else:
-                resp = raw_input('No running task. Let\'s create a new unnamed one (y/N)?: ')
-                if resp.lower() != 'y':
-                    sys.exit(0)
+        return
 
-        new_task_name = ' '.join(args['<name>'])
-        Task(new_task_name, start=args['--time']).start()
+    if args['--autocomplete']:
+        autocomplete()
+        return
+
+    if Task.get():
+        Task.status()
+        return
+
+    if not args['<name>']:
+        args['<name>'] = ['unknown']
+
+        if not args['--force']: # Not sure if asking for status or starting an unnamed task
+            resp = raw_input('No running task. Let\'s create a new unnamed one (y/N)?: ')
+            if resp.lower() != 'y':
+                return
+
+    new_task_name = ' '.join(args['<name>'])
+    Task(new_task_name, start=args['--time']).start()
 
 
 if __name__ == '__main__':
