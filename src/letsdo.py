@@ -397,11 +397,13 @@ def main():
         if Task.get():
             Task.status()
             sys.exit(0)
-        elif not args['<name>'] and not args['--force']: # Not sure if asking for status or starting an unnamed task
-            resp = raw_input('No running task. Let\'s create a new unnamed one (y/N)?: ')
-            if resp.lower() != 'y':
-                sys.exit(0)
-            args['<name>'] = ['unknown']
+        elif not args['<name>']:
+            if args['--force']: # Not sure if asking for status or starting an unnamed task
+                args['<name>'] = ['unknown']
+            else:
+                resp = raw_input('No running task. Let\'s create a new unnamed one (y/N)?: ')
+                if resp.lower() != 'y':
+                    sys.exit(0)
 
         new_task_name = ' '.join(args['<name>'])
         Task(new_task_name, start=args['--time']).start()
