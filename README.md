@@ -108,6 +108,7 @@ or with the --force flag
 and if you've forgotten to start/stop a task at the right moment, just use the --time flag followed by the HOUR:MINUTE
 string of the correct moment.
 
+
 ## @Contexts, +tags and autocompletion
 
 One can specify the task with @contexts (only one per tasks) and +tags (no limits) and Letsdo bash completion is smart
