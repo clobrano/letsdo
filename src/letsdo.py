@@ -3,7 +3,8 @@
 '''
 Usage:
     letsdo [--force] [--time=<time>] [<name>...]
-    letsdo --change <newname>...
+    letsdo --change <name>...
+    letsdo --replace <word>... [--with=<newname>]
     letsdo --to <newtask>...
     letsdo --keep [--id=<id>] [--time=<time>]
     letsdo --stop [--time=<time>]
@@ -130,9 +131,12 @@ class Task(object):
         return False
 
     @staticmethod
-    def change(name):
+    def change(name, pattern=None):
         task = Task.get()
         if task:
+            if pattern:
+                old_name = task.name
+                name = old_name.replace(pattern, name)
             info('Renaming task \'%s\' to \'%s\'' % (task.name, name))
             task.parse_name(name)
             return task.__create()
@@ -370,9 +374,13 @@ def main():
         return
 
     if args['--change']:
-        new_task_name = ' '.join(args['<newname>'])
+        new_task_name = ' '.join(args['<name>'])
         Task.change(new_task_name)
         return
+
+    if args['--replace']:
+        pattern = ' '.join(args['<word>'])
+        Task.change(args['--with'], pattern)
 
     if args['--to']:
         Task.stop()
