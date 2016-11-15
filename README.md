@@ -12,20 +12,27 @@ You can pass whatever string to Letsdo in order to describe your task
     $ letsdo best readme in the istory of github
       Starting task 'best readme in the istory of github'
 
-and change its description if you like (or made a mistake)
+and change its description if you like
 
-    $ letsdo --change best readme in the History of github
+    $ letsdo --change best readme in the history of github
       Renaming task 'best readme in the istory of github' to 'best readme in the History of github'
+
+but if you just made a little typo, might be better to use --replace and --with flags:
+
+    $ letsdo --replace github --with GitHub
+
+$ letsdo --change best readme in the history of github
+      Renaming task 'best readme in the History of github' to 'best readme in the History of GitHub'
 
 When a task is running, executing Letsdo will prompt the time spent on it
 
     $ letsdo
-      Working on 'best readme in the History of github' for 0:01:32
+      Working on 'best readme in the History of GitHub' for 0:01:32
 
 Once the task is completed, just 'stop' it:
 
     $ letsdo --stop
-      Stopped task 'best readme in the History of github' after 0:01:45
+      Stopped task 'best readme in the History of GitHub' after 0:01:45
 
 Let's say you do not want to stop, but just move to another task, use --to flag
 
@@ -44,7 +51,7 @@ Total time for each task (tasks with the same name are considered as one)
 
     $ letsdo --report
       [0] 2016-11-14| 0:00:00 - letsdo-readme
-      [1] 2016-11-14| 0:01:00 - best readme in the History of github
+      [1] 2016-11-14| 0:01:00 - best readme in the History of GitHub
       [2] 2016-11-14| 0:01:00 - previous task
       [3] 2016-11-14| 0:00:00 - new task
 
@@ -55,7 +62,7 @@ See all the tasks' start and stop time, day by day (time is in 24h format)
     2016-11-14| Total time: 0:02:00
     -----------------------------------
     2016-11-14| 0:00:00 (16:03 -> 16:03) - letsdo-readme
-    2016-11-14| 0:01:00 (16:04 -> 16:05) - best readme in the History of github
+    2016-11-14| 0:01:00 (16:04 -> 16:05) - best readme in the History of GitHub
     2016-11-14| 0:01:00 (16:06 -> 16:07) - previous task
     2016-11-14| 0:00:00 (16:07 -> 16:07) - new task
 
@@ -66,7 +73,7 @@ See total time per task and per day
     2016-11-14| Total time: 0:02:00
     -----------------------------------
     2016-11-14| 0:00:00 - letsdo-readme
-    2016-11-14| 0:01:00 - best readme in the History of github
+    2016-11-14| 0:01:00 - best readme in the History of GitHub
     2016-11-14| 0:01:00 - previous task
     2016-11-14| 0:00:00 - new task
 
@@ -81,7 +88,7 @@ But, I do not want to work on the last! Then use the --id flag (the task index i
     $ letsdo --stop
       Stopped task 'new task' after 0:00:50
     $ letsdo --keep --id 1
-      Starting task 'best readme in the History of github'
+      Starting task 'best readme in the History of GitHub'
 
 Clearly, all the flags support the short version (-k for --keep, -i for --id, etc.)
 
