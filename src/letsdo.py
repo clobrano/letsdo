@@ -240,18 +240,22 @@ def keep(start_time_str=None, id=-1):
     tasks = []
     datafilename = Configuration().data_filename
     with open(datafilename) as f:
-        lines = f.readlines()
-        try:
-            line = lines[id]
-        except ValueError:
-            if id == -1:
-                err('Could not find task last task')
-            else:
-                err('Could not find task with id %d' % id)
-            return
+        for line in f.readlines():
+            tok = line.split(',')
+            task = Task(
+                    name=tok[1],
+                    start=tok[3],
+                    end=tok[4])
+            try:
+                index = tasks.index(task)
+                same_task = tasks.pop(index)
+                task.work_time += same_task.work_time
+            except ValueError:
+                pass
 
-        tok = line.split(',')
-        task_name = tok[1]
+            tasks.append(task)
+
+        task_name = tasks[id].name
 
         if start_time_str:
             date_str = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
