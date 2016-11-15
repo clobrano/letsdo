@@ -39,6 +39,12 @@ taskpath: ~/
         if os.path.exists(self.conf.task_filename):
             os.remove(self.conf.task_filename)
 
+    def test_replace_with_running_task(self):
+        if not os.path.exists(self.conf.task_filename):
+            Task(name='old name').start()
+        Task.change('new', 'old')
+        self.assertEqual(Task.get().name, 'new name')
+
     def test_continue_last(self):
         prev_task = Task('do something')
         prev_task.start()
