@@ -8,7 +8,7 @@ Usage:
     letsdo --to <newtask>...
     letsdo --keep [--id=<id>] [--time=<time>]
     letsdo --stop [--time=<time>]
-    letsdo --report [--full] [--daily]
+    letsdo --report [--full] [--daily] [<filter>]
     letsdo --autocomplete
 
 Notes:
@@ -266,11 +266,12 @@ def keep(start_time_str=None, id=-1):
         Task(task_name, start=start_time).start()
 
 
-def report_task():
+def report_task(filter=None):
     tasks = []
     datafilename = Configuration().data_filename
     with open(datafilename) as f:
         for line in f.readlines():
+            line = line.strip()
             tok = line.split(',')
             task = Task(
                     name=tok[1],
@@ -285,26 +286,34 @@ def report_task():
 
             tasks.append(task)
 
+    tot_work_time = datetime.timedelta()
     for idx, task in enumerate(tasks):
-        work_str = '%s' % str(task.work_time).split('.')[0]
-        info('[%d] %s| %s - %s' % (idx, task.end_date, work_str, task.name))
+        if not filter or (filter in str(task.start_time) or filter in task.name):
+            tot_work_time += task.work_time
+            work_str = '%s' % str(task.work_time).split('.')[0]
+            info('[%d] %s| %s - %s' % (idx, task.end_date, work_str, task.name))
+    info('----------------------------------------')
+    info('Total work time %s' % tot_work_time)
 
 
 def report_full(filter=None):
     tasks = {}
     with open(DATA_FILENAME) as f:
         for id, line in enumerate(f.readlines()):
+            line = line.strip()
             tok = line.split(',')
-            task = Task(
-                    name=tok[1],
-                    start=tok[3],
-                    end=tok[4],
-                    id=id)
-            date = task.end_date
-            if date in tasks.keys():
-                tasks[date].append(task)
-            else:
-                tasks[date] = [task]
+            if not filter or (filter in tok[4] or filter in tok[1]):
+                dbg('accepting %s' % line)
+                task = Task(
+                        name=tok[1],
+                        start=tok[3],
+                        end=tok[4],
+                        id=id)
+                date = task.end_date
+                if date in tasks.keys():
+                    tasks[date].append(task)
+                else:
+                    tasks[date] = [task]
 
         dates = sorted(tasks.keys(), reverse=True)
         for date in dates:
@@ -326,26 +335,28 @@ def report_full(filter=None):
             print(column)
 
 
-def report_daily():
+def report_daily(filter=None):
     tasks = {}
     with open(DATA_FILENAME) as f:
         for line in f.readlines():
+            line = line.strip()
             tok = line.split(',')
-            task = Task(
-                    name=tok[1],
-                    start=tok[3],
-                    end=tok[4]
-                    )
-            date = task.end_date
-            if date in tasks.keys():
-                try:
-                    index = tasks[date].index(task)
-                    same_task = tasks[date][index]
-                    same_task.work_time += task.work_time
-                except ValueError:
-                    tasks[date].append(task)
-            else:
-                tasks[date] = [task]
+            if not filter or (filter in tok[1] or filter in tok[4]):
+                task = Task(
+                        name=tok[1],
+                        start=tok[3],
+                        end=tok[4]
+                        )
+                date = task.end_date
+                if date in tasks.keys():
+                    try:
+                        index = tasks[date].index(task)
+                        same_task = tasks[date][index]
+                        same_task.work_time += task.work_time
+                    except ValueError:
+                        tasks[date].append(task)
+                else:
+                    tasks[date] = [task]
 
     dates = sorted(tasks.keys(), reverse=True)
     for date in dates:
@@ -401,12 +412,13 @@ def main():
         return
 
     if args['--report']:
+        filt = args['<filter>']
         if args['--full']:
-            report_full()
+            report_full(filt)
         elif args['--daily']:
-            report_daily()
+            report_daily(filt)
         else:
-            report_task()
+            report_task(filt)
         return
 
     if args['--autocomplete']:
