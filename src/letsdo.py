@@ -8,21 +8,24 @@ Usage:
     letsdo --to <newtask>...
     letsdo --keep [--id=<id>] [--time=<time>]
     letsdo --stop [--time=<time>]
-    letsdo --report [--full] [--daily] [<filter>]
+    letsdo --report [--all] [<filter>]
+    letsdo --report --full [--all] [<filter>]
+    letsdo --report --daily [--all] [<filter>]
     letsdo --autocomplete
 
 Notes:
     With no arguments, letsdo start a new task or report the status of the current running task
 
-    --to                        Switch to a new task
-    -c --change                 Rename current running task
-    -k --keep                   Restart last run task
+    -a --all                    Report activities for all stored days
+    --to                        Stop current task and switch to a new one
+    -c --change                 Rename current task
+    -d --daily                  Report today activities by task
+    -f --full                   Report today full activity with start/end time
     -i <id> --id=<id>           Task id
-    -r --report
+    -k --keep                   Restart last run task
+    -r --report                 Report whole time spent on each task
     -s --stop                   Stop current running task
     -t <time> --time=<time>     Suggest the start/stop time of the task
-    -f --full
-    -d --daily
 '''
 
 import os
@@ -291,7 +294,7 @@ def report_task(filter=None):
         if not filter or (filter in str(task.start_time) or filter in task.name):
             tot_work_time += task.work_time
             work_str = '%s' % str(task.work_time).split('.')[0]
-            info('[%d] %s| %s - %s' % (idx, task.end_date, work_str, task.name))
+            info('[%3d] %s| %s - %s' % (idx, task.end_date, work_str, task.name))
     info('----------------------------------------')
     info('Total work time %s' % tot_work_time)
 
@@ -412,13 +415,16 @@ def main():
         return
 
     if args['--report']:
-        filt = args['<filter>']
+        filter = args['<filter>']
+        if not filter and not args['--all']:
+            filter = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
         if args['--full']:
-            report_full(filt)
+            report_full(filter)
         elif args['--daily']:
-            report_daily(filt)
+
+            report_daily(filter)
         else:
-            report_task(filt)
+            report_task(filter)
         return
 
     if args['--autocomplete']:
