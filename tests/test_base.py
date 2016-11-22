@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 import unittest
 import os
+import datetime
 from letsdo.src.letsdo import Task
 from letsdo.src.letsdo import Configuration
 from letsdo.src.letsdo import keep
+from letsdo.src.letsdo import str2datetime
 
 class TestLetsdo(unittest.TestCase):
 
@@ -38,6 +40,20 @@ taskpath: ~/
             os.remove(self.conf.data_filename)
         if os.path.exists(self.conf.task_filename):
             os.remove(self.conf.task_filename)
+
+    def test_str2datetime(self):
+        # Testing format 'yyyy-mm-dd hh:mm'
+        string = '2016-11-10 19:02'
+        expected_datetime = datetime.datetime(2016, 11, 10, 19, 2)
+        value = str2datetime(string)
+        self.assertEqual(value, expected_datetime)
+
+        # Testing format 'hh:mm'
+        string = '19:02'
+        today = datetime.datetime.today()
+        expected_datetime = datetime.datetime(today.year, today.month, today.day, 19, 2)
+        value = str2datetime(string)
+        self.assertEqual(value, expected_datetime)
 
     def test_replace_with_running_task(self):
         if not os.path.exists(self.conf.task_filename):
