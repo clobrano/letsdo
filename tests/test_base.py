@@ -53,6 +53,17 @@ taskpath: ~/
         task = Task.get()
         self.assertEquals(task.name, prev_task.name)
 
+    def test_continue_before_last(self):
+        t1 = Task('task 1')
+        t1.start()
+        t1.stop()
+        t2 = Task('task 2')
+        t2.start()
+        t2.stop()
+        keep(id=-2)
+        t = Task.get()
+        self.assertEqual('task 1', t.name)
+
     def test_get_no_context(self):
         task = Task('project without a context')
         self.assertIsNone(task.context)
