@@ -3,7 +3,7 @@
 import os
 from setuptools import setup, find_packages
 
-__version__ = '0.3.3'
+__version__ = '0.3.4'
 
 # Utility function to read the README file.
 # Used for the long_description.  It's nice, because now 1) we have a top level
