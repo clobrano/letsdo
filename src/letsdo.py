@@ -315,7 +315,9 @@ def keep(start_time_str=None, id=-1):
 
             tasks.append(task)
 
-        tasks.reverse()
+        if id > 0:
+            tasks.reverse()
+
         task_name = tasks[id].name
 
         if start_time_str:
