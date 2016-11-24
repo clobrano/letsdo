@@ -98,40 +98,34 @@ class Task(object):
     @staticmethod
     def stop(stop_time_str=None):
         task = Task.get()
-        if task:
+        if not task:
+            info('No task running')
+            return
+
+        if stop_time_str:
+            stop_time = str2datetime(stop_time_str)
+            if stop_time < task.start_time:
+                warn('Given stop time (%s) is more recent than start time (%s)' % (stop_time, task.start_time))
+                return False
+            date = stop_time.strftime('%Y-%m-%d')
+        else:
             stop_time = datetime.datetime.now()
-            if stop_time_str:
-                stop_time = str2datetime(stop_time_str)
-                #stop_time_date = datetime.datetime.strftime(stop_time, '%Y-%m-%d')
-                #stop_time = datetime.datetime.strptime(stop_time_date + ' ' + stop_time_str, '%Y-%m-%d %H:%M')
-
-                if stop_time < task.start_time:
-                    warn('Given stop time (%s) is more recent than start time (%s)' % (stop_time, task.start_time))
-                    return False
-
-            work_time_str = str(stop_time - task.start_time).split('.')[0][:-3]
-            status = ('Stopped task \'%s\' after %s of work' % (task.name, work_time_str))
-            info(status)
-
             date = datetime.date.today()
-            if task.tags:
-                tags = ' '.join(task.tags)
-            else:
-                tags = None
 
-            start_time_str = str(task.start_time).split('.')[0][:-3]
-            stop_time_str = str(stop_time).split('.')[0][:-3]
+        work_time_str = str(stop_time - task.start_time).split('.')[0][:-3]
+        start_time_str = str(task.start_time).split('.')[0][:-3]
+        stop_time_str = str(stop_time).split('.')[0][:-3]
 
-            report = '%s,%s,%s,%s,%s\n' % (date, task.name, work_time_str, start_time_str, stop_time_str)
-            DATA_FILENAME = Configuration().data_filename
-            with open(DATA_FILENAME, mode='a') as f:
-                f.writelines(report)
+        report = '%s,%s,%s,%s,%s\n' % (date, task.name, work_time_str, start_time_str, stop_time_str)
+        DATA_FILENAME = Configuration().data_filename
+        with open(DATA_FILENAME, mode='a') as f:
+            f.writelines(report)
 
-            TASK_FILENAME = Configuration().task_filename
-            os.remove(TASK_FILENAME)
-            return True
-        info('No task running')
-        return False
+        TASK_FILENAME = Configuration().task_filename
+        os.remove(TASK_FILENAME)
+        status = ('Stopped task \'%s\' after %s of work' % (task.name, work_time_str))
+        info(status)
+        return True
 
     @staticmethod
     def change(name, pattern=None):
@@ -321,6 +315,7 @@ def keep(start_time_str=None, id=-1):
 
             tasks.append(task)
 
+        tasks.reverse()
         task_name = tasks[id].name
 
         if start_time_str:
@@ -349,8 +344,10 @@ def report_task(filter=None):
                 task.work_time += same_task.work_time
             except ValueError:
                 pass
-
             tasks.append(task)
+
+    # keep last tasks with lower IDs
+    tasks.reverse()
 
     tot_work_time = datetime.timedelta()
     for idx, task in enumerate(tasks):
