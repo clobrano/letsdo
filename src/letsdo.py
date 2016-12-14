@@ -8,9 +8,9 @@ Usage:
     letsdo --to <newtask>...
     letsdo --keep [--id=<id>] [--time=<time>]
     letsdo --stop [--time=<time>]
-    letsdo --report [--all] [<filter>]
-    letsdo --report --full [--all] [<filter>]
-    letsdo --report --daily [--all] [<filter>]
+    letsdo --report [--all] [--yesterday] [<filter>]
+    letsdo --report --full [--all] [--yesterday] [<filter>]
+    letsdo --report --daily [--all] [--yesterday] [<filter>]
     letsdo --autocomplete
 
 Notes:
@@ -26,6 +26,7 @@ Notes:
     -r --report                 Report whole time spent on each task
     -s --stop                   Stop current running task
     -t <time> --time=<time>     Suggest the start/stop time of the task
+    -y --yesterday              Fast switch to show reports of the day before
 '''
 
 import os
@@ -76,6 +77,7 @@ class Task(object):
         self.tags = None
         self.work_time = None
         self.id = id
+        self.pause = 0
 
         self.parse_name(name.strip())
         if start:
@@ -480,10 +482,12 @@ def main():
         filter = args['<filter>']
         if not filter and not args['--all']:
             filter = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
+        if args['--yesterday']:
+            yesterday = datetime.datetime.today() - datetime.timedelta(1)
+            filter = str(yesterday).split()[0]
         if args['--full']:
             report_full(filter)
         elif args['--daily']:
-
             report_daily(filter)
         else:
             report_task(filter)
