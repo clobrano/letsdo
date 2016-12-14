@@ -362,6 +362,8 @@ def report_task(filter=None):
     info('----------------------------------------')
     info('Total work time %s' % tot_work_time)
 
+    return tot_work_time
+
 
 def report_full(filter=None):
     tasks = {}
@@ -434,10 +436,10 @@ def report_daily(filter=None):
             work_str = '%s' % str(task.work_time).split('.')[0]
             column += '%s| %s - %s' % (task.end_date, work_str, task.name)
             column += '\n'
-        print('===================================')
-        print('%s| Total time: %s' % (date, str(tot_time).split('.')[0]))
-        print('-----------------------------------')
-        print(column)
+    print('===================================')
+    print('%s| Total time: %s' % (date, str(tot_time).split('.')[0]))
+    print('-----------------------------------')
+    print(column)
 
 
 
