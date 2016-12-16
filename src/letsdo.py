@@ -343,36 +343,49 @@ def get_tasks(condition=None):
     tasks = []
     datafilename = Configuration().data_filename
     with open(datafilename) as f:
-        for id, line in enumerate(f.readlines()):
+        id = 0
+        for line in sorted(f.readlines(), reverse=True):
             fields = line.strip().split(',')
-            tasks.append(Task(id=id,
-                              name=fields[1],
-                              start=fields[3],
-                              end=fields[4]))
+            t = Task(name=fields[1],
+                     start=fields[3],
+                     end=fields[4])
+            try:
+                same_task = tasks.index(t)
+                t.id = tasks[same_task].id
+            except ValueError:
+                id +=1
+                t.id = id
+            tasks.append(t)
+
     return filter(condition, tasks)
 
 
 def group_task_by(tasks, group=None):
     groups = []
     if group is 'task':
-        # Sort tasks before making a set, in order to let "set" select first the oldest
-        # occurence of the same task
-        tasks.sort(key=lambda x: x.end_time, reverse=True)
         uniques = []
         for task in tasks:
             if not task in uniques:
                 uniques.append(task)
 
-        for id, main_task in enumerate(uniques):
+        for main_task in uniques:
             work_time_in_seconds = sum([same_task.work_time.seconds for same_task in tasks if same_task == main_task])
             work_time = datetime.timedelta(seconds=work_time_in_seconds)
             main_task.work_time = work_time
-            main_task.id = id
         return uniques
+
     elif group is 'date':
-        pass
+        map = {}
+        for t in tasks:
+            date = t.end_date
+            if date in map.keys():
+                map[date].append(t)
+            else:
+                map[date] = [t]
+        return map
     else:
-        pass
+        return tasks
+
 
 def report_task(tasks, filter=None):
     tot_work_time = datetime.timedelta()
@@ -388,6 +401,7 @@ def report_task(tasks, filter=None):
                 lasttime=task.end_date))
     info('----------------------------------------')
     info('Total work time %s' % tot_work_time)
+    info('')
 
 
 def report_full(filter=None):
@@ -441,51 +455,13 @@ def report_full(filter=None):
 
         return tot_time, pause
 
-def report_daily(filter=None):
-    tasks = {}
-    datafilename = Configuration().data_filename
-    with open(datafilename) as f:
-        for line in f.readlines():
-            line = line.strip()
-            tok = line.split(',')
-            if not filter or (filter in tok[1] or filter in tok[4]):
-                task = Task(
-                        name=tok[1],
-                        start=tok[3],
-                        end=tok[4]
-                        )
-                date = task.end_date
-                if date in tasks.keys():
-                    try:
-                        index = tasks[date].index(task)
-                        same_task = tasks[date][index]
-                        same_task.work_time += task.work_time
-                    except ValueError:
-                        tasks[date].append(task)
-                else:
-                    tasks[date] = [task]
-
-    dates = sorted(tasks.keys(), reverse=True)
-    for date in dates:
-        column = ''
-        tot_time = datetime.timedelta()
-        for task in tasks[date]:
-            tot_time += task.work_time
-            work_str = '%s' % str(task.work_time).split('.')[0]
-            column += '%s| %s - %s' % (task.end_date, work_str, task.name)
-            column += '\n'
-
-    print('===================================')
-    print('%s| Daily Total time: %s' % (date, tot_time))
-    print('-----------------------------------')
-    print(column)
-
-    return tot_time
-
 
 def main():
     args = docopt.docopt(__doc__)
     dbg(args)
+
+
+    #sys.exit(1)
 
     if args['--stop']:
         Task.stop(args['--time'])
@@ -524,12 +500,15 @@ def main():
         if args['--full']:
             report_full(filter)
         elif args['--daily']:
-            report_daily(filter)
+            map = group_task_by(get_tasks(lambda x: not filter or filter in str(x.end_date)),
+                                'date')
+            for key in sorted(map.keys()):
+                t = group_task_by(map[key], 'task')
+                report_task(t)
         else:
-            #report_task(filter)
-            tasks = group_task_by(get_tasks(), 'task')
-            report_task(tasks, filter)
-
+            tasks = group_task_by(get_tasks(lambda x: not filter or (filter in str(x.end_date) or filter in x.name)),
+                                  'task')
+            report_task(tasks)
         return
 
     if args['--autocomplete']:
