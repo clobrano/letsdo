@@ -358,13 +358,17 @@ def group_task_by(tasks, group=None):
         # Sort tasks before making a set, in order to let "set" select first the oldest
         # occurence of the same task
         tasks.sort(key=lambda x: x.end_time, reverse=True)
-        task_uniques = sorted(list(set(tasks)), key=lambda x: x.end_time, reverse=True)
-        for id, main_task in enumerate(task_uniques):
+        uniques = []
+        for task in tasks:
+            if not task in uniques:
+                uniques.append(task)
+
+        for id, main_task in enumerate(uniques):
             work_time_in_seconds = sum([same_task.work_time.seconds for same_task in tasks if same_task == main_task])
             work_time = datetime.timedelta(seconds=work_time_in_seconds)
             main_task.work_time = work_time
             main_task.id = id
-        return task_uniques
+        return uniques
     elif group is 'date':
         pass
     else:
@@ -524,7 +528,7 @@ def main():
         else:
             #report_task(filter)
             tasks = group_task_by(get_tasks(), 'task')
-            report(tasks, filter)
+            report_task(tasks, filter)
 
         return
 
