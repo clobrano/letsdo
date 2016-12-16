@@ -60,6 +60,8 @@ class Configuration(object):
             configuration = yaml.load(open(conf_file_path).read())
             self.data_filename = os.path.expanduser(os.path.join(configuration['datapath'], '.letsdo-data'))
             self.task_filename = os.path.expanduser(os.path.join(configuration['taskpath'], '.letsdo-task'))
+            dbg('Configuration: data filename {file}'.format(file = self.data_filename))
+            dbg('Configuration: task filename {file}'.format(file = self.task_filename))
         else:
             dbg('Config file not found. Using default')
             self.data_filename = os.path.expanduser(os.path.join('~', '.letsdo-data'))
@@ -75,7 +77,7 @@ class Task(object):
         self.name = None
         self.start_time = None
         self.tags = None
-        self.work_time = None
+        self.work_time = datetime.timedelta()
         self.id = id
         self.pause = 0
 
@@ -199,6 +201,12 @@ class Task(object):
 
     def __eq__(self, other):
         return self.name == other.name
+
+    def __ne__(self, other):
+        return not (self.name == other.name)
+
+    def __hash__(self):
+        return hash((self.name))
 
 
 def autocomplete():
@@ -331,43 +339,57 @@ def keep(start_time_str=None, id=-1):
         Task(task_name, start=start_time).start()
 
 
-def report_task(filter=None):
+def get_tasks(condition=None):
     tasks = []
     datafilename = Configuration().data_filename
     with open(datafilename) as f:
-        for line in f.readlines():
-            line = line.strip()
-            tok = line.split(',')
-            task = Task(
-                    name=tok[1],
-                    start=tok[3],
-                    end=tok[4])
-            try:
-                index = tasks.index(task)
-                same_task = tasks.pop(index)
-                task.work_time += same_task.work_time
-            except ValueError:
-                pass
-            tasks.append(task)
+        for id, line in enumerate(f.readlines()):
+            fields = line.strip().split(',')
+            tasks.append(Task(id=id,
+                              name=fields[1],
+                              start=fields[3],
+                              end=fields[4]))
+    return filter(condition, tasks)
 
-    # keep last tasks with lower IDs
-    tasks.reverse()
 
+def group_task_by(tasks, group=None):
+    groups = []
+    if group is 'task':
+        # Sort tasks before making a set, in order to let "set" select first the oldest
+        # occurence of the same task
+        tasks.sort(key=lambda x: x.end_time, reverse=True)
+        task_uniques = sorted(list(set(tasks)), key=lambda x: x.end_time, reverse=True)
+        for id, main_task in enumerate(task_uniques):
+            work_time_in_seconds = sum([same_task.work_time.seconds for same_task in tasks if same_task == main_task])
+            work_time = datetime.timedelta(seconds=work_time_in_seconds)
+            main_task.work_time = work_time
+            main_task.id = id
+        return task_uniques
+    elif group is 'date':
+        pass
+    else:
+        pass
+
+def report_task(tasks, filter=None):
     tot_work_time = datetime.timedelta()
-    for idx, task in enumerate(tasks):
+    info('========================================')
+    info('#ID    Worked (Last  Time)| task name')
+    info('----------------------------------------')
+    for task in tasks:
         if not filter or (filter in str(task.start_time) or filter in task.name):
             tot_work_time += task.work_time
-            work_str = '%s' % str(task.work_time).split('.')[0]
-            info('[%3d] %s| %s - %s' % (idx, task.end_date, work_str, task.name))
+            info('#{id:03d} {worked:>8s} ({lasttime})| {name}'.format(id=task.id,
+                worked=task.work_time,
+                name=task.name,
+                lasttime=task.end_date))
     info('----------------------------------------')
     info('Total work time %s' % tot_work_time)
-
-    return tot_work_time
 
 
 def report_full(filter=None):
     tasks = {}
-    with open(DATA_FILENAME) as f:
+    datafilename = Configuration().data_filename
+    with open(datafilename) as f:
         for id, line in enumerate(f.readlines()):
             line = line.strip()
             tok = line.split(',')
@@ -386,11 +408,21 @@ def report_full(filter=None):
 
         dates = sorted(tasks.keys(), reverse=True)
         for date in dates:
-            tot_time = datetime.timedelta()
             column = ''
+            tot_time = datetime.timedelta()
+            pause_start = None
+            pause_stop = None
+            pause = datetime.timedelta()
             for task in tasks[date]:
-                tot_time += task.work_time
+                # Computing pause time
+                if pause_start is not None:
+                    pause_stop = task.start_time
+                    pause += pause_stop - pause_start
+                pause_start = task.end_time
+                pause_stop = task.start_time
 
+                # Computing work time
+                tot_time += task.work_time
                 work_str = '%s' % str(task.work_time).split('.')[0]
                 start_str = '%s' % task.start_time.strftime('%H:%M')
                 end_str = '%s' % task.end_time.strftime('%H:%M')
@@ -398,15 +430,17 @@ def report_full(filter=None):
                 column += '%s| %s (%s -> %s) - %s' % (task.end_date, work_str, start_str, end_str, task.name)
                 column += '\n'
 
-            print('===================================')
-            print('%s| Total time: %s' % (date, str(tot_time).split('.')[0]))
-            print('-----------------------------------')
+            print('===========================================')
+            print('%s| Work: %s | Break: %s') % (date, tot_time, pause)
+            print('-------------------------------------------')
             print(column)
 
+        return tot_time, pause
 
 def report_daily(filter=None):
     tasks = {}
-    with open(DATA_FILENAME) as f:
+    datafilename = Configuration().data_filename
+    with open(datafilename) as f:
         for line in f.readlines():
             line = line.strip()
             tok = line.split(',')
@@ -429,29 +463,25 @@ def report_daily(filter=None):
 
     dates = sorted(tasks.keys(), reverse=True)
     for date in dates:
-        tot_time = datetime.timedelta()
         column = ''
+        tot_time = datetime.timedelta()
         for task in tasks[date]:
             tot_time += task.work_time
             work_str = '%s' % str(task.work_time).split('.')[0]
             column += '%s| %s - %s' % (task.end_date, work_str, task.name)
             column += '\n'
+
     print('===================================')
-    print('%s| Total time: %s' % (date, str(tot_time).split('.')[0]))
+    print('%s| Daily Total time: %s' % (date, tot_time))
     print('-----------------------------------')
     print(column)
 
+    return tot_time
 
 
 def main():
     args = docopt.docopt(__doc__)
     dbg(args)
-
-    global DATA_FILENAME
-    global TASK_FILENAME
-    conf = Configuration()
-    DATA_FILENAME = conf.data_filename
-    TASK_FILENAME = conf.task_filename
 
     if args['--stop']:
         Task.stop(args['--time'])
@@ -492,7 +522,10 @@ def main():
         elif args['--daily']:
             report_daily(filter)
         else:
-            report_task(filter)
+            #report_task(filter)
+            tasks = group_task_by(get_tasks(), 'task')
+            report(tasks, filter)
+
         return
 
     if args['--autocomplete']:
