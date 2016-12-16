@@ -3,10 +3,13 @@
 import unittest
 import os
 import datetime
+from time import sleep
 from letsdo.src.letsdo import Task
 from letsdo.src.letsdo import Configuration
 from letsdo.src.letsdo import keep
 from letsdo.src.letsdo import str2datetime
+from letsdo.src.letsdo import group_task_by
+from letsdo.src.letsdo import get_tasks
 
 class TestLetsdo(unittest.TestCase):
 
@@ -40,6 +43,23 @@ taskpath: ~/
             os.remove(self.conf.data_filename)
         if os.path.exists(self.conf.task_filename):
             os.remove(self.conf.task_filename)
+
+    def test_group_task_by(self):
+        expected = set()
+        t = Task('group 1').start()
+        t.stop()
+        expected.add(t)
+
+        t = Task('group 2').start()
+        t.stop()
+        expected.add(t)
+
+        t = Task('group 1').start()
+        t.stop()
+        expected.add(t)
+
+        real = set(group_task_by(get_tasks(), 'task'))
+        self.assertEquals(real.difference(expected), set())
 
     def test_str2datetime(self):
         string = '2016-11-10 19:02'
