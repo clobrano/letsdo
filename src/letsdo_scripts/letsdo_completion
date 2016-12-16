@@ -11,9 +11,9 @@ _letsdo()
         return 0
     fi
 
-    [ ! -f $HOME/.letsdo ] && return 0
+    [ ! -f $HOME/.letsdo ] && echo "Could not find letsdo" && return 0
     eval $(parse_yaml $HOME/.letsdo "letsdo_")
-    eval datafile=$letsdo_datapath.letsdo-data
+    eval datafile=$letsdo_datapath/.letsdo-data
 
     if [ -f "$datafile" ]; then
         cxts=`grep -oE '(@[a-zA-Z0-9\-\_]+)' "$datafile" | uniq`
