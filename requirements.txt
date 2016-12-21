@@ -1,2 +1,2 @@
 docopt
-pytest
+pytest==3.0.2
