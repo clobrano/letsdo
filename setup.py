@@ -3,7 +3,7 @@
 import os
 from setuptools import setup, find_packages
 
-__version__ = '0.2.2'
+__version__ = '0.3.4'
 
 # Utility function to read the README file.
 # Used for the long_description.  It's nice, because now 1) we have a top level
@@ -19,10 +19,10 @@ setup(name='letsdo',
       description='Time tracker for Command Line',
       entry_points={'console_scripts': ['letsdo=letsdo:main']},
       include_package_data=True,
-      install_requires=['docopt', ],
+      install_requires=['docopt', 'PyYaml'],
       keywords=['productivity', 'time tracker'],
       license="MIT",
-      long_description = read('README.md'),
+      long_description = read('README.rst'),
       package_dir={'': 'src'},
       packages=find_packages('src'),
       py_modules=['letsdo'],

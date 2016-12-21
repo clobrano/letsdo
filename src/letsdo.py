@@ -2,19 +2,31 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo [--force] [<name>]
-    letsdo --change <newname>
-    letsdo --report [<filter>]
-    letsdo --stop   [<time>]
-    letsdo --to    <newtask>
+    letsdo [--force] [--time=<time>] [<name>...]
+    letsdo --change <name>...
+    letsdo --replace <word>... [--with=<newname>]
+    letsdo --to <newtask>...
+    letsdo --keep [--id=<id>] [--time=<time>]
+    letsdo --stop [--time=<time>]
+    letsdo --report [--all] [--yesterday] [<filter>]
+    letsdo --report --full [--all] [--yesterday] [<filter>]
+    letsdo --report --daily [--all] [--yesterday] [<filter>]
+    letsdo --autocomplete
 
 Notes:
     With no arguments, letsdo start a new task or report the status of the current running task
-    -s --stop          Stop current running task
-    -c --change        Rename current running task
-    -t --to            Switch task
-    -f --force         Start new unnamed task without asking
-    -r --report        Get the full report of task done (with a filter on date if provided)
+
+    -a --all                    Report activities for all stored days
+    --to                        Stop current task and switch to a new one
+    -c --change                 Rename current task
+    -d --daily                  Report today activities by task
+    -f --full                   Report today full activity with start/end time
+    -i <id> --id=<id>           Task id
+    -k --keep                   Restart last run task
+    -r --report                 Report whole time spent on each task
+    -s --stop                   Stop current running task
+    -t <time> --time=<time>     Suggest the start/stop time of the task
+    -y --yesterday              Fast switch to show reports of the day before
 '''
 
 import os
@@ -24,11 +36,11 @@ import time
 import docopt
 import sys
 import logging
+import yaml
+import re
 
-# Configuration
-DATA_FILENAME = os.path.expanduser(os.path.join('~', '.letsdo-data'))
-TASK_FILENAME = os.path.expanduser(os.path.join('~', '.letsdo-task'))
-args = docopt.docopt(__doc__)
+DATA_FILENAME = ''
+TASK_FILENAME = ''
 
 # Logger
 level = logging.INFO
@@ -39,19 +51,50 @@ err = lambda x: logger.error(x)
 warn = lambda x: logger.warn(x)
 dbg = lambda x: logger.debug(x)
 
-dbg(args)
+
+class Configuration(object):
+
+    def __init__(self):
+        conf_file_path = os.path.expanduser(os.path.join('~', '.letsdo'))
+        if os.path.exists(conf_file_path):
+            configuration = yaml.load(open(conf_file_path).read())
+            self.data_filename = os.path.expanduser(os.path.join(configuration['datapath'], '.letsdo-data'))
+            self.task_filename = os.path.expanduser(os.path.join(configuration['taskpath'], '.letsdo-task'))
+            dbg('Configuration: data filename {file}'.format(file = self.data_filename))
+            dbg('Configuration: task filename {file}'.format(file = self.task_filename))
+        else:
+            dbg('Config file not found. Using default')
+            self.data_filename = os.path.expanduser(os.path.join('~', '.letsdo-data'))
+            self.task_filename = os.path.expanduser(os.path.join('~', '.letsdo-task'))
+
 
 
 class Task(object):
-    def __init__(self, name='unknown', start=None, end=None):
-        self.name = name
+    def __init__(self, name='unknown', start=None, end=None, id=None):
+        self.context = None
+        self.end_date = None
+        self.end_time = None
+        self.name = None
+        self.start_time = None
+        self.tags = None
+        self.work_time = datetime.timedelta()
+        self.id = id
+        self.pause = 0
+
+        self.parse_name(name.strip())
         if start:
-            self.start_time = start
+            self.start_time = str2datetime(start.strip()) #datetime.datetime.strptime(start.strip(), '%Y-%m-%d %H:%M')
         else:
             self.start_time = datetime.datetime.now()
 
+        if end:
+            self.end_time = str2datetime(end.strip()) #datetime.datetime.strptime(end.strip(), '%Y-%m-%d %H:%M')
+            self.end_date = (self.end_time.strftime('%Y-%m-%d'))
+            self.work_time = self.end_time - self.start_time
+
     @staticmethod
     def get():
+        TASK_FILENAME = Configuration().task_filename
         if Task.__is_running():
             with open(TASK_FILENAME, 'r') as f:
                 return pickle.load(f)
@@ -59,37 +102,44 @@ class Task(object):
     @staticmethod
     def stop(stop_time_str=None):
         task = Task.get()
-        if task:
+        if not task:
+            info('No task running')
+            return
 
+        if stop_time_str:
+            stop_time = str2datetime(stop_time_str)
+            if stop_time < task.start_time:
+                warn('Given stop time (%s) is more recent than start time (%s)' % (stop_time, task.start_time))
+                return False
+            date = stop_time.strftime('%Y-%m-%d')
+        else:
             stop_time = datetime.datetime.now()
-            if stop_time_str:
-                stop_time_date = datetime.datetime.strftime(stop_time, '%Y-%m-%d')
-                stop_time = datetime.datetime.strptime(stop_time_date + ' ' + stop_time_str, '%Y-%m-%d %H:%M')
-
-                if stop_time < task.start_time:
-                    warn('Given stop time (%s) is more recent than start time (%s)' % (stop_time, task.start_time))
-                    return False
-
-            work = stop_time - task.start_time
-            status = ('Stopped task \'%s\' after %s of work' % (task.name, work)).split('.')[0]
-            info(status)
-
             date = datetime.date.today()
-            report = '%s,%s,%s,%s,%s\n' % (date, task.name, work, task.start_time, stop_time)
-            with open(DATA_FILENAME, mode='a') as f:
-                f.writelines(report)
 
-            os.remove(TASK_FILENAME)
-            return True
-        info('No task running')
-        return False
+        work_time_str = str(stop_time - task.start_time).split('.')[0][:-3]
+        start_time_str = str(task.start_time).split('.')[0][:-3]
+        stop_time_str = str(stop_time).split('.')[0][:-3]
+
+        report = '%s,%s,%s,%s,%s\n' % (date, task.name, work_time_str, start_time_str, stop_time_str)
+        DATA_FILENAME = Configuration().data_filename
+        with open(DATA_FILENAME, mode='a') as f:
+            f.writelines(report)
+
+        TASK_FILENAME = Configuration().task_filename
+        os.remove(TASK_FILENAME)
+        status = ('Stopped task \'%s\' after %s of work' % (task.name, work_time_str))
+        info(status)
+        return True
 
     @staticmethod
-    def change(name):
+    def change(name, pattern=None):
         task = Task.get()
         if task:
+            if pattern:
+                old_name = task.name
+                name = old_name.replace(pattern, name)
             info('Renaming task \'%s\' to \'%s\'' % (task.name, name))
-            task.name = name
+            task.parse_name(name)
             return task.__create()
 
         warn('No task running')
@@ -99,17 +149,16 @@ class Task(object):
         task = Task.get()
         if task:
             now = datetime.datetime.now()
-            work = now - task.start_time
-            status = ('Working on \'%s\' for %s' % (task.name, work)).split('.')[0]
-            info(status)
+            work = str(now - task.start_time).split('.')[0]
+            info('Working on \'%s\' for %s' % (task.name, work))
             return True
         else:
             info('No task running')
             return False
 
-
     @staticmethod
     def __is_running():
+        TASK_FILENAME = Configuration().task_filename
         exists = os.path.exists(TASK_FILENAME)
         dbg('is it running? %d' % exists)
         return exists
@@ -117,7 +166,7 @@ class Task(object):
     def start(self):
         if not Task.__is_running():
             if self.__create():
-                info('Starting task \'%s\' now' % self.name)
+                info('Starting task \'%s\'' % self.name)
                 return Task.get()
 
             err('Could not create new task')
@@ -127,77 +176,362 @@ class Task(object):
         return True
 
     def __create(self):
+        TASK_FILENAME = Configuration().task_filename
         with open(TASK_FILENAME, 'w') as f:
             pickle.dump(self, f)
             return True
 
+    def parse_name(self, name):
+        name = name.replace(',', ' ')
+        self.name = name
+        matches = re.findall('@[\w\-_]+', name)
+        if len(matches) == 1:
+            self.context = matches[0]
+        matches = re.findall('\+[\w\-_]+', name)
+        if len(matches) >= 1:
+            self.tags = matches
 
-def report(filter=None):
-    report = {}
-    with open(DATA_FILENAME) as f:
+    def __repr__(self):
+        work_str = '%s' % str(self.work_time).split('.')[0]
+        start_str = '%s' % self.start_time.strftime('%H:%M')
+        end_str = '%s' % self.end_time.strftime('%H:%M')
+        if self.id is not None:
+            return '[%d] - %s| %s (%s -> %s) - %s' % (self.id, self.end_date, work_str, start_str, end_str, self.name)
+        return '%s| %s (%s -> %s) - %s' % (self.end_date, work_str, start_str, end_str, self.name)
+
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def __ne__(self, other):
+        return not (self.name == other.name)
+
+    def __hash__(self):
+        return hash((self.name))
+
+
+def autocomplete():
+    message = '''
+    Letsdo CLI is able to suggest:
+    - command line flags
+    - contexts already used (words starting by @ in the task name)
+    - tags already used (words starting by + in the task name)
+
+    To enable this feature copy the text after the CUT HERE line into a file and:
+
+        - put the file under /etc/bash_completion.d/ for system-wide autocompletion
+
+    otherwise
+
+        - put the file somewhere in your home directory and source it in your .bashrc
+        - source /full/path/to/letsdo_completion
+
+    --- CUT HERE ------------------------------------------------------------------
+    '''
+    _ROOT = os.path.abspath(os.path.dirname(__file__))
+    completion = os.path.join(_ROOT, 'letsdo_scripts', 'letsdo_completion')
+    info(message)
+    print(open(completion).read())
+
+def str2datetime(string):
+    m = re.findall('\d{4}-\d{2}-\d{2} \d{2}:\d{2}', string)
+    if len(m) != 0:
+        string = m[0]
+        return datetime.datetime.strptime(string, '%Y-%m-%d %H:%M')
+
+    m = re.findall('\d{4}-\d{2}-\d{2} \d{2}.\d{2}', string)
+    if len(m) != 0:
+        string = m[0]
+        return datetime.datetime.strptime(string, '%Y-%m-%d %H.%M')
+
+    m = re.findall('\d{4}/\d{2}/\d{2} \d{2}:\d{2}', string)
+    if len(m) != 0:
+        string = m[0]
+        return datetime.datetime.strptime(string, '%Y/%m/%d %H:%M')
+
+    m = re.findall('\d{4}/\d{2}/\d{2} \d{2}.\d{2}', string)
+    if len(m) != 0:
+        string = m[0]
+        return datetime.datetime.strptime(string, '%Y/%m/%d %H.%M')
+
+    m = re.findall('\d{4}-\d{2}-\d{2}', string)
+    if len(m) != 0:
+        string = m[0]
+        now_str = datetime.datetime.now().strftime('%H:%M')
+        return datetime.datetime.strptime(string + ' ' + now_str, '%Y-%m-%d %H:%M')
+
+    m = re.findall('\d{4}/\d{2}/\d{2}', string)
+    if len(m) != 0:
+        string = m[0]
+        now_str = datetime.datetime.now().strftime('%H:%M')
+        return datetime.datetime.strptime(string + ' ' + now_str, '%Y/%m/%d %H:%M')
+
+    m = re.findall('\d{2}-\d{2} \d{2}:\d{2}', string)
+    if len(m) != 0:
+        string = m[0]
+        year_str = datetime.datetime.today().strftime('%Y')
+        return datetime.datetime.strptime(year_str + '-' + string, '%Y-%m-%d %H:%M')
+
+    m = re.findall('\d{2}-\d{2}', string)
+    if len(m) != 0:
+        string = m[0]
+        year_str = datetime.datetime.today().strftime('%Y')
+        now_str = datetime.datetime.now().strftime('%H:%M')
+        return datetime.datetime.strptime(year_str + '-' + string + ' ' + now_str, '%Y-%m-%d %H:%M')
+
+    m = re.findall('\d{2}:\d{2}', string)
+    if len(m) != 0:
+        string = m[0]
+        today_str = datetime.datetime.today().strftime('%Y-%m-%d')
+        return datetime.datetime.strptime(today_str + ' ' + string, '%Y-%m-%d %H:%M')
+
+    m = re.findall('\d:\d{2}', string)
+    if len(m) != 0:
+        string = m[0]
+        today_str = datetime.datetime.today().strftime('%Y-%m-%d')
+        return datetime.datetime.strptime(today_str + ' ' + string, '%Y-%m-%d %H:%M')
+
+    m = re.findall('\d{2}.\d{2}', string)
+    if len(m) != 0:
+        string = m[0]
+        today_str = datetime.datetime.today().strftime('%Y-%m-%d')
+        return datetime.datetime.strptime(today_str + ' ' + string, '%Y-%m-%d %H.%M')
+
+    m = re.findall('\d.\d{2}', string)
+    if len(m) != 0:
+        string = m[0]
+        today_str = datetime.datetime.today().strftime('%Y-%m-%d')
+        return datetime.datetime.strptime(today_str + ' ' + string, '%Y-%m-%d %H.%M')
+
+
+    raise ValueError('Date format not recognized: %s' % string)
+
+
+def keep(start_time_str=None, id=-1):
+    tasks = []
+    datafilename = Configuration().data_filename
+    with open(datafilename) as f:
         for line in f.readlines():
-            entry = line.split(',')
+            tok = line.split(',')
+            task = Task(
+                    name=tok[1],
+                    start=tok[3],
+                    end=tok[4])
+            try:
+                index = tasks.index(task)
+                same_task = tasks.pop(index)
+                task.work_time += same_task.work_time
+            except ValueError:
+                pass
 
-            date = entry[0]
-            if filter and filter not in date:
-                continue
+            tasks.append(task)
 
-            name = entry[1]
-            wtime_str = entry[2].split('.')[0].strip()
-            wtime_date = datetime.datetime.strptime(wtime_str, '%H:%M:%S')
-            wtime = datetime.timedelta(
-                    hours=wtime_date.hour,
-                    minutes=wtime_date.minute,
-                    seconds=wtime_date.second)
-            # To be kept for retrocompatibility
-            if len(entry) > 3:
-                start_time = entry[3].split('.')[0].strip()
-                stop_time = entry[4].split('.')[0].strip()
+        if id >= 0:
+            tasks.reverse()
 
-            if date not in report.keys():
-                report[date] = {name: wtime}
+        task_name = tasks[id].name
+
+        if start_time_str:
+            date_str = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
+            start_time = date_str + ' ' + start_time_str
+        else:
+            start_time = None
+
+        Task(task_name, start=start_time).start()
+
+
+def get_tasks(condition=None):
+    tasks = []
+    datafilename = Configuration().data_filename
+    id = -1
+    with open(datafilename) as f:
+        for line in reversed(f.readlines()):
+            dbg(line)
+            fields = line.strip().split(',')
+            t = Task(name=fields[1],
+                     start=fields[3],
+                     end=fields[4])
+            try:
+                same_task = tasks.index(t)
+                t.id = tasks[same_task].id
+                dbg('{task_name} has old id {id}'.format(task_name=t.name, id=t.id))
+            except ValueError:
+                id +=1
+                t.id = id
+                dbg('{task_name} has new id {id}'.format(task_name=t.name, id=t.id))
+            tasks.append(t)
+
+    return filter(condition, tasks)
+
+
+def group_task_by(tasks, group=None):
+    groups = []
+    if group is 'task':
+        uniques = []
+        for task in tasks:
+            if not task in uniques:
+                uniques.append(task)
+
+        for main_task in uniques:
+            work_time_in_seconds = sum([same_task.work_time.seconds for same_task in tasks if same_task == main_task])
+            work_time = datetime.timedelta(seconds=work_time_in_seconds)
+            main_task.work_time = work_time
+        return uniques
+
+    elif group is 'date':
+        map = {}
+        for t in tasks:
+            date = t.end_date
+            if date in map.keys():
+                map[date].append(t)
             else:
-                if name not in report[date].keys():
-                    report[date][name] = wtime
+                map[date] = [t]
+        return map
+    else:
+        return tasks
+
+
+def report_task(tasks, filter=None):
+    tot_work_time = datetime.timedelta()
+    info('========================================')
+    info('#ID    Worked (Last  Time)| task name')
+    info('----------------------------------------')
+    for task in tasks:
+        if not filter or (filter in str(task.start_time) or filter in task.name):
+            tot_work_time += task.work_time
+            info('#{id:03d} {worked:>8s} ({lasttime})| {name}'.format(id=task.id,
+                worked=task.work_time,
+                name=task.name,
+                lasttime=task.end_date))
+    info('----------------------------------------')
+    info('Total work time %s' % tot_work_time)
+    info('')
+
+
+def report_full(filter=None):
+    tasks = {}
+    datafilename = Configuration().data_filename
+    with open(datafilename) as f:
+        for id, line in enumerate(f.readlines()):
+            line = line.strip()
+            tok = line.split(',')
+            if not filter or (filter in tok[4] or filter in tok[1]):
+                dbg('accepting %s' % line)
+                task = Task(
+                        name=tok[1],
+                        start=tok[3],
+                        end=tok[4],
+                        id=id)
+                date = task.end_date
+                if date in tasks.keys():
+                    tasks[date].append(task)
                 else:
-                    report[date][name] += wtime
+                    tasks[date] = [task]
 
-    dates = sorted(report.keys(), reverse=True)
-    for date in dates:
-        entry = report[date]
-        tot_time = datetime.timedelta()
-        column = ''
-        for name, wtime in entry.items():
-            tot_time += wtime
-            column += ('%s| %s - %s\n' % (date, wtime,  name))
-        print('===================================')
-        print('%s| Total time: %s' % (date, tot_time))
-        print('-----------------------------------')
-        print(column)
+        dates = sorted(tasks.keys(), reverse=True)
+        for date in dates:
+            column = ''
+            tot_time = datetime.timedelta()
+            pause_start = None
+            pause_stop = None
+            pause = datetime.timedelta()
+            for task in tasks[date]:
+                # Computing pause time
+                if pause_start is not None:
+                    pause_stop = task.start_time
+                    pause += pause_stop - pause_start
+                pause_start = task.end_time
+                pause_stop = task.start_time
 
+                # Computing work time
+                tot_time += task.work_time
+                work_str = '%s' % str(task.work_time).split('.')[0]
+                start_str = '%s' % task.start_time.strftime('%H:%M')
+                end_str = '%s' % task.end_time.strftime('%H:%M')
+
+                column += '%s| %s (%s -> %s) - %s' % (task.end_date, work_str, start_str, end_str, task.name)
+                column += '\n'
+
+            print('===========================================')
+            print('%s| Work: %s | Break: %s') % (date, tot_time, pause)
+            print('-------------------------------------------')
+            print(column)
+
+        return tot_time, pause
 
 
 def main():
-    if args['--stop']:
-        Task.stop(args['<time>'])
-    elif args['--change']:
-        Task.change(args['<newname>'])
-    elif args['--to']:
-        Task.stop()
-        Task(args['<newtask>']).start()
-    elif args['--report']:
-        report(args['<filter>'])
-    else:
-        if Task.get():
-            Task.status()
-            sys.exit(0)
-        elif not args['<name>'] and not args['--force']: # Not sure if asking for status or starting an unnamed task
-            resp = raw_input('No running task. Let\'s create a new unnamed one [y/n]?: ')
-            if resp.lower() != 'y':
-                sys.exit(0)
+    args = docopt.docopt(__doc__)
+    dbg(args)
 
-        args['<name>'] = 'unknown'
-        Task(args['<name>']).start()
+
+    #sys.exit(1)
+
+    if args['--stop']:
+        Task.stop(args['--time'])
+        return
+
+    if args['--change']:
+        new_task_name = ' '.join(args['<name>'])
+        Task.change(new_task_name)
+        return
+
+    if args['--replace']:
+        pattern = ' '.join(args['<word>'])
+        Task.change(args['--with'], pattern)
+
+    if args['--to']:
+        Task.stop()
+        new_task_name = ' '.join(args['<newtask>'])
+        Task(new_task_name).start()
+        return
+
+    if args['--keep']:
+        if args['--id']:
+            id = eval(args['--id'])
+        else:
+            id = -1
+        keep(start_time_str=args['--time'], id=id)
+        return
+
+    if args['--report']:
+        filter = args['<filter>']
+        if not filter and not args['--all']:
+            filter = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
+        if args['--yesterday']:
+            yesterday = datetime.datetime.today() - datetime.timedelta(1)
+            filter = str(yesterday).split()[0]
+        if args['--full']:
+            report_full(filter)
+        elif args['--daily']:
+            map = group_task_by(get_tasks(lambda x: not filter or filter in str(x.end_date)),
+                                'date')
+            for key in sorted(map.keys()):
+                t = group_task_by(map[key], 'task')
+                report_task(t)
+        else:
+            tasks = group_task_by(get_tasks(lambda x: not filter or (filter in str(x.end_date) or filter in x.name)),
+                                  'task')
+            report_task(tasks)
+        return
+
+    if args['--autocomplete']:
+        autocomplete()
+        return
+
+    if Task.get():
+        Task.status()
+        return
+
+    if not args['<name>']:
+        args['<name>'] = ['unknown']
+
+        if not args['--force']: # Not sure if asking for status or starting an unnamed task
+            resp = raw_input('No running task. Let\'s create a new unnamed one (y/N)?: ')
+            if resp.lower() != 'y':
+                return
+
+    new_task_name = ' '.join(args['<name>'])
+    Task(new_task_name, start=args['--time']).start()
 
 
 if __name__ == '__main__':
