@@ -147,6 +147,18 @@ taskpath: ~/
         t = Task.get()
         self.assertEqual('task 1', t.name)
 
+    def test_continue_task_by_index(self):
+        for i in range(3):
+            t = Task('task {id}'.format(id=i))
+            t.start()
+            sleep(1)
+            t.stop()
+            sleep(1)
+
+        keep(id=2)
+        t = Task.get()
+        self.assertEqual('task 0', t.name)
+
     def test_get_no_context(self):
         task = Task('project without a context')
         self.assertIsNone(task.context)

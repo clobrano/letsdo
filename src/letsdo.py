@@ -342,9 +342,10 @@ def keep(start_time_str=None, id=-1):
 def get_tasks(condition=None):
     tasks = []
     datafilename = Configuration().data_filename
+    id = -1
     with open(datafilename) as f:
-        id = 0
-        for line in sorted(f.readlines(), reverse=True):
+        for line in reversed(f.readlines()):
+            dbg(line)
             fields = line.strip().split(',')
             t = Task(name=fields[1],
                      start=fields[3],
@@ -352,9 +353,11 @@ def get_tasks(condition=None):
             try:
                 same_task = tasks.index(t)
                 t.id = tasks[same_task].id
+                dbg('{task_name} has old id {id}'.format(task_name=t.name, id=t.id))
             except ValueError:
                 id +=1
                 t.id = id
+                dbg('{task_name} has new id {id}'.format(task_name=t.name, id=t.id))
             tasks.append(t)
 
     return filter(condition, tasks)
