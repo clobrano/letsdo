@@ -2,16 +2,16 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo [--force] [--time=<time>] [<name>...]
-    letsdo --change <name>...
-    letsdo --replace <word>... [--with=<newname>]
-    letsdo --to <newtask>...
-    letsdo --keep [--id=<id>] [--time=<time>]
-    letsdo --stop [--time=<time>]
-    letsdo --report [--all] [--yesterday] [<filter>]
-    letsdo --report --full [--all] [--yesterday] [<filter>]
-    letsdo --report --daily [--all] [--yesterday] [<filter>]
-    letsdo --autocomplete
+    letsdo [--debug] [--force] [--time=<time>] [<name>...]
+    letsdo [--debug] --change <name>...
+    letsdo [--debug] --replace <word>... [--with=<newname>]
+    letsdo [--debug] --to <newtask>...
+    letsdo [--debug] --keep [--id=<id>] [--time=<time>]
+    letsdo [--debug] --stop [--time=<time>]
+    letsdo [--debug] --report [--all] [--yesterday] [<filter>]
+    letsdo [--debug] --report --full [--all] [--yesterday] [<filter>]
+    letsdo [--debug] --report --daily [--all] [--yesterday] [<filter>]
+    letsdo [--debug] --autocomplete
 
 Notes:
     With no arguments, letsdo start a new task or report the status of the current running task
@@ -20,6 +20,7 @@ Notes:
     --to                        Stop current task and switch to a new one
     -c --change                 Rename current task
     -d --daily                  Report today activities by task
+    --debug                     Enable debug logs
     -f --full                   Report today full activity with start/end time
     -i <id> --id=<id>           Task id
     -k --keep                   Restart last run task
@@ -42,10 +43,6 @@ import re
 DATA_FILENAME = ''
 TASK_FILENAME = ''
 
-# Logger
-level = logging.INFO
-logging.basicConfig(level=level, format='  %(message)s')
-logger = logging.getLogger(__name__)
 info = lambda x: logger.info(x)
 err = lambda x: logger.error(x)
 warn = lambda x: logger.warn(x)
@@ -475,10 +472,15 @@ def report_full(filter=None):
 
 def main():
     args = docopt.docopt(__doc__)
+
+    if args['--debug']:
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
+    logging.basicConfig(level=level, format='  %(message)s')
+    global logger
+    logger = logging.getLogger(__name__)
     dbg(args)
-
-
-    #sys.exit(1)
 
     if args['--stop']:
         Task.stop(args['--time'])
