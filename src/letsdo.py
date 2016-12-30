@@ -240,6 +240,9 @@ def autocomplete():
     info(message)
     print(open(completion).read())
 
+def format_h_m(string):
+    return ':'.join(string.split(':')[0:2])
+
 def str2datetime(string):
     m = re.findall('\d{4}-\d{2}-\d{2} \d{2}:\d{2}', string)
     if len(m) != 0:
@@ -403,18 +406,19 @@ def group_task_by(tasks, group=None):
 
 def report_task(tasks, filter=None):
     tot_work_time = datetime.timedelta()
-    info('========================================')
-    info('#ID    Worked (Last  Time)| task name')
+    info('#ID  |      Worked         | task name')
     info('----------------------------------------')
     for task in tasks:
-        if not filter or (filter in str(task.start_time) or filter in task.name):
-            tot_work_time += task.work_time
-            info('#{id:03d} {worked:>8s} ({lasttime})| {name}'.format(id=task.id,
-                worked=task.work_time,
-                name=task.name,
-                lasttime=task.end_date))
+        tot_work_time += task.work_time
+        info('#{id:03d} | {lasttime} {worked:>8s} | {name}'.format(id=task.id,
+            worked=format_h_m(str(task.work_time)),
+            name=task.name,
+            lasttime=task.end_date))
     info('----------------------------------------')
-    info('Total work time %s' % tot_work_time)
+    if filter:
+        info('{filter}: Total work time {time}'.format(filter=filter, time=format_h_m(str(tot_work_time))))
+    else:
+        info('Total work time {time}'.format(filter=filter, time=format_h_m(str(tot_work_time))))
     info('')
 
 
@@ -438,6 +442,10 @@ def report_full(filter=None):
                 else:
                     tasks[date] = [task]
 
+        if len(tasks) == 0:
+            info('No tasks found with filter \'{filter}\''.format(filter=filter))
+            return
+
         dates = sorted(tasks.keys(), reverse=True)
         for date in dates:
             column = ''
@@ -454,18 +462,18 @@ def report_full(filter=None):
                 pause_stop = task.start_time
 
                 # Computing work time
-                tot_time += task.work_time
-                work_str = '%s' % str(task.work_time).split('.')[0]
+                tw = task.work_time
+                work_str = '%s' % ':'.join(str(task.work_time).split(':')[0:2])
                 start_str = '%s' % task.start_time.strftime('%H:%M')
                 end_str = '%s' % task.end_time.strftime('%H:%M')
 
-                column += '%s| %s (%s -> %s) - %s' % (task.end_date, work_str, start_str, end_str, task.name)
+                column += '%s | %s -> %s = %s | %s' % (task.end_date, start_str, end_str, work_str, task.name)
                 column += '\n'
 
-            print('===========================================')
-            print('%s| Work: %s | Break: %s') % (date, tot_time, pause)
-            print('-------------------------------------------')
+            print('-' * 60)
             print(column)
+            print('Work: {wtime},  Break: {btime}'.format(wtime=tot_time, btime=pause))
+            print('')
 
         return tot_time, pause
 
@@ -523,11 +531,10 @@ def main():
                                 'date')
             for key in sorted(map.keys()):
                 t = group_task_by(map[key], 'task')
-                report_task(t)
+                report_task(t, filter)
         else:
-            tasks = group_task_by(get_tasks(lambda x: not filter or (filter in str(x.end_date) or filter in x.name)),
-                                  'task')
-            report_task(tasks)
+            tasks = group_task_by(get_tasks(lambda x: not filter or (filter in str(x.end_date) or filter in x.name)), 'task')
+            report_task(tasks, filter)
         return
 
     if args['--autocomplete']:
