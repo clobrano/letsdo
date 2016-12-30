@@ -58,8 +58,18 @@ class Configuration(object):
         conf_file_path = os.path.expanduser(os.path.join('~', '.letsdo'))
         if os.path.exists(conf_file_path):
             configuration = yaml.load(open(conf_file_path).read())
-            self.data_filename = os.path.expanduser(os.path.join(configuration['datapath'], '.letsdo-data'))
-            self.task_filename = os.path.expanduser(os.path.join(configuration['taskpath'], '.letsdo-task'))
+            try:
+                self.data_filename = os.path.expanduser(os.path.join(configuration['datapath'], '.letsdo-data'))
+            except KeyError as e:
+                err('Config file error: Could not find \'{msg}\' field'.format(msg=e.message))
+                self.data_filename = os.path.expanduser(os.path.join('~', '.letsdo-data'))
+
+            try:
+                self.task_filename = os.path.expanduser(os.path.join(configuration['taskpath'], '.letsdo-task'))
+            except KeyError as e:
+                err('Config file error: Could not find \'{msg}\' field'.format(msg=e.message))
+                self.task_filename = os.path.expanduser(os.path.join('~', '.letsdo-data'))
+
             dbg('Configuration: data filename {file}'.format(file = self.data_filename))
             dbg('Configuration: task filename {file}'.format(file = self.task_filename))
         else:
@@ -98,6 +108,7 @@ class Task(object):
         if Task.__is_running():
             with open(TASK_FILENAME, 'r') as f:
                 return pickle.load(f)
+        return None
 
     @staticmethod
     def stop(stop_time_str=None):
@@ -343,24 +354,27 @@ def get_tasks(condition=None):
     tasks = []
     datafilename = Configuration().data_filename
     id = -1
-    with open(datafilename) as f:
-        for line in reversed(f.readlines()):
-            dbg(line)
-            fields = line.strip().split(',')
-            t = Task(name=fields[1],
-                     start=fields[3],
-                     end=fields[4])
-            try:
-                same_task = tasks.index(t)
-                t.id = tasks[same_task].id
-                dbg('{task_name} has old id {id}'.format(task_name=t.name, id=t.id))
-            except ValueError:
-                id +=1
-                t.id = id
-                dbg('{task_name} has new id {id}'.format(task_name=t.name, id=t.id))
-            tasks.append(t)
+    try:
+        with open(datafilename) as f:
+            for line in reversed(f.readlines()):
+                dbg(line)
+                fields = line.strip().split(',')
+                t = Task(name=fields[1],
+                         start=fields[3],
+                         end=fields[4])
+                try:
+                    same_task = tasks.index(t)
+                    t.id = tasks[same_task].id
+                    dbg('{task_name} has old id {id}'.format(task_name=t.name, id=t.id))
+                except ValueError:
+                    id +=1
+                    t.id = id
+                    dbg('{task_name} has new id {id}'.format(task_name=t.name, id=t.id))
+                tasks.append(t)
 
-    return filter(condition, tasks)
+        return filter(condition, tasks)
+    except IOError:
+        return []
 
 
 def group_task_by(tasks, group=None):
