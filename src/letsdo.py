@@ -473,12 +473,13 @@ def report_full(filter=None):
         return tot_time, pause
 
 
+class Flags(dict):
+
+    def __init__(self, adict):
+        self.__dict__.update(adict)
+
 def main():
     args = docopt.docopt(__doc__)
-    dbg(args)
-
-
-    #sys.exit(1)
 
     if args['--stop']:
         Task.stop(args['--time'])
