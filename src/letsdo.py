@@ -472,11 +472,27 @@ def report_full(filter=None):
 
         return tot_time, pause
 
+def do_report(args):
+    filter = args['<filter>']
+    if not filter and not args['--all']:
+        filter = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
+    if args['--yesterday']:
+        yesterday = datetime.datetime.today() - datetime.timedelta(1)
+        filter = str(yesterday).split()[0]
+    if args['--full']:
+        report_full(filter)
+    elif args['--daily']:
+        map = group_task_by(get_tasks(lambda x: not filter or filter in str(x.end_date)),
+                            'date')
+        for key in sorted(map.keys()):
+            t = group_task_by(map[key], 'task')
+            report_task(t)
+    else:
+        tasks = group_task_by(get_tasks(lambda x: not filter or (filter in str(x.end_date) or filter in x.name)),
+                              'task')
+        report_task(tasks)
+    return
 
-class Flags(dict):
-
-    def __init__(self, adict):
-        self.__dict__.update(adict)
 
 def main():
     args = docopt.docopt(__doc__)
@@ -509,25 +525,7 @@ def main():
         return
 
     if args['--report']:
-        filter = args['<filter>']
-        if not filter and not args['--all']:
-            filter = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
-        if args['--yesterday']:
-            yesterday = datetime.datetime.today() - datetime.timedelta(1)
-            filter = str(yesterday).split()[0]
-        if args['--full']:
-            report_full(filter)
-        elif args['--daily']:
-            map = group_task_by(get_tasks(lambda x: not filter or filter in str(x.end_date)),
-                                'date')
-            for key in sorted(map.keys()):
-                t = group_task_by(map[key], 'task')
-                report_task(t)
-        else:
-            tasks = group_task_by(get_tasks(lambda x: not filter or (filter in str(x.end_date) or filter in x.name)),
-                                  'task')
-            report_task(tasks)
-        return
+        return do_report(args)
 
     if args['--autocomplete']:
         autocomplete()
@@ -540,10 +538,8 @@ def main():
     if not args['<name>']:
         args['<name>'] = ['unknown']
 
-        if not args['--force']: # Not sure if asking for status or starting an unnamed task
-            resp = raw_input('No running task. Let\'s create a new unnamed one (y/N)?: ')
-            if resp.lower() != 'y':
-                return
+        if not args['--force']:
+            return do_report(args)
 
     new_task_name = ' '.join(args['<name>'])
     Task(new_task_name, start=args['--time']).start()
