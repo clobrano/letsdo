@@ -78,6 +78,7 @@ def autocomplete():
     info(message)
     print(open(completion).read())
 
+
 def str2datetime(string):
     m = re.findall('\d{4}-\d{2}-\d{2} \d{2}:\d{2}', string)
     if len(m) != 0:
@@ -185,7 +186,6 @@ def keep(start_time_str=None, id=-1):
         Task(task_name, start=start_time).start()
 
 
-
 def group_task_by(tasks, group=None):
     groups = []
     if group is 'task':
@@ -280,6 +280,7 @@ def report_full(filter=None):
             print(column)
 
         return tot_time, pause
+
 
 def do_report(args):
     filter = args['<filter>']
