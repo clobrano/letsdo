@@ -8,8 +8,8 @@ from letsdo.src.letsdo import Task
 from letsdo.src.letsdo import Configuration
 from letsdo.src.letsdo import keep
 from letsdo.src.letsdo import str2datetime
-from letsdo.src.letsdo import group_task_by
-from letsdo.src.letsdo import get_tasks
+from letsdo.src.reports import group_task_by
+from letsdo.src.reports import get_tasks
 
 class TestLetsdo(unittest.TestCase):
 

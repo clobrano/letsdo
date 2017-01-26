@@ -3,6 +3,7 @@
 import datetime
 import logging
 from configuration import Configuration
+from tasks import Task
 
 # Logger
 level = logging.INFO
@@ -12,6 +13,27 @@ info = lambda x: logger.info(x)
 err = lambda x: logger.error(x)
 warn = lambda x: logger.warn(x)
 dbg = lambda x: logger.debug(x)
+
+def do_report(args):
+    filter = args['<filter>']
+    if not filter and not args['--all']:
+        filter = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
+    if args['--yesterday']:
+        yesterday = datetime.datetime.today() - datetime.timedelta(1)
+        filter = str(yesterday).split()[0]
+    if args['--full']:
+        report_full(filter)
+    elif args['--daily']:
+        map = group_task_by(get_tasks(lambda x: not filter or filter in str(x.end_date)),
+                            'date')
+        for key in sorted(map.keys()):
+            t = group_task_by(map[key], 'task')
+            report_task(t)
+    else:
+        tasks = group_task_by(get_tasks(lambda x: not filter or (filter in str(x.end_date) or filter in x.name)),
+                              'task')
+        report_task(tasks)
+    return
 
 
 def get_tasks(condition=None):
@@ -36,7 +58,6 @@ def get_tasks(condition=None):
             tasks.append(t)
 
     return filter(condition, tasks)
-
 
 
 def group_task_by(tasks, group=None):

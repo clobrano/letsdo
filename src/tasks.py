@@ -1,5 +1,9 @@
+import os
+import datetime
 import logging
+import pickle
 from persistance import Configuration
+from reports import get_tasks
 
 level = logging.INFO
 logging.basicConfig(level=level, format='  %(message)s')
@@ -32,6 +36,10 @@ class Task(object):
             self.end_time = str2datetime(end.strip()) #datetime.datetime.strptime(end.strip(), '%Y-%m-%d %H:%M')
             self.end_date = (self.end_time.strftime('%Y-%m-%d'))
             self.work_time = self.end_time - self.start_time
+    
+    @staticmethod
+    def from_json(task_json):
+        pass
 
     @staticmethod
     def get():

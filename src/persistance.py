@@ -3,6 +3,7 @@
 import os
 import yaml
 import logging
+import json
 
 # Logger
 level = logging.INFO
@@ -31,4 +32,23 @@ class Configuration(object):
 
 
 
+def save_json_task(json_task):
+    '''Save running task'''
+    task_file = Configuration().task_filename
+    with open(task_file, 'w') as f:
+        json.dump(json_task, f)
+    return True
 
+
+def load_json_task():
+    '''Load running task'''
+    task_file = Configuration().task_filename
+    if os.path.exists(task_file):
+        with open(task_file, 'r') as f:
+            return json.load(f)
+    return True
+
+
+def load_all_tasks():
+    '''Load all stored tasks'''
+    pass
