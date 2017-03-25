@@ -21,7 +21,7 @@ but if you just made a little typo, might be better to use --replace and --with 
 
     $ letsdo --replace github --with GitHub
 
-$ letsdo --change best readme in the history of github
+    $ letsdo --change best readme in the history of github
       Renaming task 'best readme in the History of github' to 'best readme in the History of GitHub'
 
 When a task is running, executing Letsdo will prompt the time spent on it
@@ -99,21 +99,19 @@ The <letsdopath> comes from Letsdo configuration file, stored in your $HOME dire
     $ cat ~/.letsdo
     letsdopath: ~/Dropbox/
 
-Having a configuration file is not necessary, if not present, Letsdo will use the $HOME folder to store its data.
-However, setting a datapath is useful in order to share the tasks with multiple systems (on Dropbox for example)
+To have a configuration file is not necessary since Letsdo uses the $HOME as default folder to store its data.
+However, setting a datapath is useful in order to share tasks on multiple devices (with Dropbox for example)
 
-Finally, Letsdo does not really need a task name to start, so you can start tracking your work and choose a name for it later.
+Finally, if you forgot to start/stop a task at the right moment, just use the --time flag followed by the HOUR:MINUTE
+string of the correct moment if in the same day or "DATE HOUR:MINUTE".
 
-    $ letsdo
-    No running task. Let's create a new unnamed one (y/N)?:
+e.g.
 
-or with the --force flag
+    $ letsdo -s -t "2016-10-12 12:00"
 
-    $ letsdo --force
-      Starting task 'unkown'
-
-and if you've forgotten to start/stop a task at the right moment, just use the --time flag followed by the HOUR:MINUTE
-string of the correct moment.
+This command stops the running tasks storing the "stop time" at the given date. Letsdo will guess
+some data if not provided, as example `letsdo -s -t "02-04 12:00` will stop the running task
+assuming the date being the 4th of Febbruary of the **current** year.
 
 
 ## @Contexts, +tags and autocompletion
