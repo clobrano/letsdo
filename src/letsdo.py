@@ -43,6 +43,10 @@ import re
 DATA_FILENAME = ''
 TASK_FILENAME = ''
 
+# Logger
+level = logging.INFO
+logging.basicConfig(level=level, format='  %(message)s')
+logger = logging.getLogger(__name__)
 info = lambda x: logger.info(x)
 err = lambda x: logger.error(x)
 warn = lambda x: logger.warn(x)
