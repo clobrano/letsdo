@@ -2,16 +2,16 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo [--debug] [--force] [--time=<time>] [<name>...]
-    letsdo [--debug] --change <name>...
-    letsdo [--debug] --replace <word>... [--with=<newname>]
-    letsdo [--debug] --to <newtask>...
-    letsdo [--debug] --keep [--id=<id>] [--time=<time>]
-    letsdo [--debug] --stop [--time=<time>]
-    letsdo [--debug] --report [--all] [--yesterday] [<filter>]
-    letsdo [--debug] --report --full [--all] [--yesterday] [<filter>]
-    letsdo [--debug] --report --daily [--all] [--yesterday] [<filter>]
-    letsdo [--debug] --autocomplete
+    letsdo [--force] [--time=<time>] [<name>...]
+    letsdo --change <name>...
+    letsdo --replace <word>... [--with=<newname>]
+    letsdo --to <newtask>...
+    letsdo --keep [--id=<id>] [--time=<time>]
+    letsdo --stop [--time=<time>]
+    letsdo --report [--all] [--yesterday] [<filter>]
+    letsdo --report --full [--all] [--yesterday] [<filter>]
+    letsdo --report --daily [--all] [--yesterday] [<filter>]
+    letsdo --autocomplete
 
 Notes:
     With no arguments, letsdo start a new task or report the status of the current running task
@@ -477,18 +477,30 @@ def report_full(filter=None):
 
         return tot_time, pause
 
+def do_report(args):
+    filter = args['<filter>']
+    if not filter and not args['--all']:
+        filter = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
+    if args['--yesterday']:
+        yesterday = datetime.datetime.today() - datetime.timedelta(1)
+        filter = str(yesterday).split()[0]
+    if args['--full']:
+        report_full(filter)
+    elif args['--daily']:
+        map = group_task_by(get_tasks(lambda x: not filter or filter in str(x.end_date)),
+                            'date')
+        for key in sorted(map.keys()):
+            t = group_task_by(map[key], 'task')
+            report_task(t)
+    else:
+        tasks = group_task_by(get_tasks(lambda x: not filter or (filter in str(x.end_date) or filter in x.name)),
+                              'task')
+        report_task(tasks)
+    return
+
 
 def main():
     args = docopt.docopt(__doc__)
-
-    if args['--debug']:
-        level = logging.DEBUG
-    else:
-        level = logging.INFO
-    logging.basicConfig(level=level, format='  %(message)s')
-    global logger
-    logger = logging.getLogger(__name__)
-    dbg(args)
 
     if args['--stop']:
         Task.stop(args['--time'])
@@ -518,24 +530,7 @@ def main():
         return
 
     if args['--report']:
-        filter = args['<filter>']
-        if not filter and not args['--all']:
-            filter = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
-        if args['--yesterday']:
-            yesterday = datetime.datetime.today() - datetime.timedelta(1)
-            filter = str(yesterday).split()[0]
-        if args['--full']:
-            report_full(filter)
-        elif args['--daily']:
-            map = group_task_by(get_tasks(lambda x: not filter or filter in str(x.end_date)),
-                                'date')
-            for key in sorted(map.keys()):
-                t = group_task_by(map[key], 'task')
-                report_task(t, filter)
-        else:
-            tasks = group_task_by(get_tasks(lambda x: not filter or (filter in str(x.end_date) or filter in x.name)), 'task')
-            report_task(tasks, filter)
-        return
+        return do_report(args)
 
     if args['--autocomplete']:
         autocomplete()
@@ -548,10 +543,8 @@ def main():
     if not args['<name>']:
         args['<name>'] = ['unknown']
 
-        if not args['--force']: # Not sure if asking for status or starting an unnamed task
-            resp = raw_input('No running task. Let\'s create a new unnamed one (y/N)?: ')
-            if resp.lower() != 'y':
-                return
+        if not args['--force']:
+            return do_report(args)
 
     new_task_name = ' '.join(args['<name>'])
     Task(new_task_name, start=args['--time']).start()
