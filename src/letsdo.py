@@ -4,7 +4,7 @@
 Usage:
     letsdo [--time=<time>] [--keep=<id>|<name>...]
     letsdo --change <name>...
-    letsdo --replace <word>... [--with=<newname>]
+    letsdo --replace=<target>... --with=<string>...
     letsdo --to <newtask>...
     letsdo --stop [--time=<time>]
     letsdo --report [--all] [--yesterday] [<filter>]
@@ -523,8 +523,10 @@ def main():
             Task.stop(args['--time'])
 
         elif args['--replace']:
-            pattern = ' '.join(args['<word>'])
-            Task.change(args['--with'], pattern)
+            target = ' '.join(args['--replace'])
+            replacement = ' '.join(args['--with'])
+            dbg ("replacing '{0}' with '{1}'".format(target, replacement))
+            Task.change(replacement, target)
 
         elif args['--to']:
             Task.stop()
