@@ -286,6 +286,12 @@ def str2datetime(string):
         year_str = datetime.datetime.today().strftime('%Y')
         return datetime.datetime.strptime(year_str + '-' + string, '%Y-%m-%d %H:%M')
 
+    m = re.findall('\d{2}-\d{2} \d{2}.\d{2}', string)
+    if len(m) != 0:
+        string = m[0]
+        year_str = datetime.datetime.today().strftime('%Y')
+        return datetime.datetime.strptime(year_str + '-' + string, '%Y-%m-%d %H:%M')
+
     m = re.findall('\d{2}-\d{2}', string)
     if len(m) != 0:
         string = m[0]
