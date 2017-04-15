@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo [--force] [--time=<time>] [<name>...]
+    letsdo [--time=<time>] [<name>...]
     letsdo --change <name>...
     letsdo --replace <word>... [--with=<newname>]
     letsdo --to <newtask>...
@@ -553,11 +553,7 @@ def main():
     if not args['<name>']:
         args['<name>'] = ['unknown']
 
-        if not args['--force']:
-            return do_report(args)
-
-    new_task_name = ' '.join(args['<name>'])
-    Task(new_task_name, start=args['--time']).start()
+        return do_report(args)
 
 
 if __name__ == '__main__':
