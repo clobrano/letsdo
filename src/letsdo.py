@@ -2,28 +2,24 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo [--time=<time>] [<name>...]
+    letsdo [--time=<time>] [--keep=<id>|<name>...]
     letsdo --change <name>...
     letsdo --replace <word>... [--with=<newname>]
     letsdo --to <newtask>...
-    letsdo --keep [--id=<id>] [--time=<time>]
     letsdo --stop [--time=<time>]
     letsdo --report [--all] [--yesterday] [<filter>]
     letsdo --report --full [--all] [--yesterday] [<filter>]
     letsdo --report --daily [--all] [--yesterday] [<filter>]
     letsdo --autocomplete
 
-Notes:
-    With no arguments, letsdo start a new task or report the status of the current running task
-
+options:
     -a --all                    Report activities for all stored days
     --to                        Stop current task and switch to a new one
     -c --change                 Rename current task
     -d --daily                  Report today activities by task
     --debug                     Enable debug logs
     -f --full                   Report today full activity with start/end time
-    -i <id> --id=<id>           Task id
-    -k --keep                   Restart last run task
+    -k <id> --keep=<id>         Restart last run task (default: 0)
     -r --report                 Report whole time spent on each task
     -s --stop                   Stop current running task
     -t <time> --time=<time>     Suggest the start/stop time of the task
@@ -104,7 +100,7 @@ class Task(object):
             self.work_time = self.end_time - self.start_time
 
     @staticmethod
-    def get():
+    def get_running():
         TASK_FILENAME = Configuration().task_filename
         if Task.__is_running():
             with open(TASK_FILENAME, 'r') as f:
@@ -113,7 +109,7 @@ class Task(object):
 
     @staticmethod
     def stop(stop_time_str=None):
-        task = Task.get()
+        task = Task.get_running()
         if not task:
             info('No task running')
             return
@@ -145,7 +141,7 @@ class Task(object):
 
     @staticmethod
     def change(name, pattern=None):
-        task = Task.get()
+        task = Task.get_running()
         if task:
             if pattern:
                 old_name = task.name
@@ -158,7 +154,7 @@ class Task(object):
 
     @staticmethod
     def status():
-        task = Task.get()
+        task = Task.get_running()
         if task:
             now = datetime.datetime.now()
             work = str(now - task.start_time).split('.')[0]
@@ -179,7 +175,7 @@ class Task(object):
         if not Task.__is_running():
             if self.__create():
                 info('Starting task \'%s\'' % self.name)
-                return Task.get()
+                return Task.get_running()
 
             err('Could not create new task')
             return False
@@ -512,48 +508,46 @@ def do_report(args):
 def main():
     args = docopt.docopt(__doc__)
 
-    if args['--stop']:
-        Task.stop(args['--time'])
-        return
-
-    if args['--change']:
-        new_task_name = ' '.join(args['<name>'])
-        Task.change(new_task_name)
-        return
-
-    if args['--replace']:
-        pattern = ' '.join(args['<word>'])
-        Task.change(args['--with'], pattern)
-
-    if args['--to']:
-        Task.stop()
-        new_task_name = ' '.join(args['<newtask>'])
-        Task(new_task_name).start()
-        return
-
-    if args['--keep']:
-        if args['--id']:
-            id = eval(args['--id'])
+    if args['<name>']:
+        if args['--change']:
+            new_task_name = ' '.join(args['<name>'])
+            Task.change(new_task_name)
+            return
+        elif not Task.get_running():
+            new_task_name = ' '.join(args['<name>'])
+            Task(new_task_name).start()
         else:
-            id = -1
-        keep(start_time_str=args['--time'], id=id)
-        return
+            pass
+    else:
+        if args['--stop']:
+            Task.stop(args['--time'])
 
-    if args['--report']:
-        return do_report(args)
+        elif args['--replace']:
+            pattern = ' '.join(args['<word>'])
+            Task.change(args['--with'], pattern)
 
-    if args['--autocomplete']:
-        autocomplete()
-        return
+        elif args['--to']:
+            Task.stop()
+            new_task_name = ' '.join(args['<newtask>'])
+            Task(new_task_name).start()
 
-    if Task.get():
-        Task.status()
-        return
+        elif args['--keep']:
+            id = eval(args['--keep'])
+            keep(start_time_str=args['--time'], id=id)
 
-    if not args['<name>']:
-        args['<name>'] = ['unknown']
+        elif args['--report']:
+            do_report(args)
 
-        return do_report(args)
+        elif args['--autocomplete']:
+            autocomplete()
+
+        elif Task.get_running():
+            Task.status()
+
+        elif not args['<name>']:
+            args['<name>'] = ['unknown']
+
+            return do_report(args)
 
 
 if __name__ == '__main__':

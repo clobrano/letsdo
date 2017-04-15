@@ -126,14 +126,14 @@ taskpath: ~/
         if not os.path.exists(self.conf.task_filename):
             Task(name='old name').start()
         Task.change('new', 'old')
-        self.assertEqual(Task.get().name, 'new name')
+        self.assertEqual(Task.get_running().name, 'new name')
 
     def test_continue_last(self):
         prev_task = Task('do something')
         prev_task.start()
         prev_task.stop()
         keep()
-        task = Task.get()
+        task = Task.get_running()
         self.assertEquals(task.name, prev_task.name)
 
     def test_continue_before_last(self):
@@ -144,7 +144,7 @@ taskpath: ~/
         t2.start()
         t2.stop()
         keep(id=-2)
-        t = Task.get()
+        t = Task.get_running()
         self.assertEqual('task 1', t.name)
 
     def test_continue_task_by_index(self):
@@ -156,7 +156,7 @@ taskpath: ~/
             sleep(1)
 
         keep(id=2)
-        t = Task.get()
+        t = Task.get_running()
         self.assertEqual('task 0', t.name)
 
     def test_get_no_context(self):
@@ -186,13 +186,13 @@ taskpath: ~/
     def test_get_non_running_task(self):
         if os.path.exists(self.conf.task_filename):
             os.remove(self.conf.task_filename)
-        task = Task.get()
+        task = Task.get_running()
         self.assertIsNone(task)
 
     def test_get_running_task(self):
         if not os.path.exists(self.conf.task_filename):
             Task().start()
-        task = Task.get()
+        task = Task.get_running()
         self.assertIsNotNone(task)
 
     def test_change_non_running_task(self):
@@ -205,7 +205,7 @@ taskpath: ~/
         if not os.path.exists(self.conf.task_filename):
             Task().start()
         Task.change('newname')
-        self.assertEqual(Task.get().name, 'newname')
+        self.assertEqual(Task.get_running().name, 'newname')
 
     def test_stop_non_running_task(self):
         if os.path.exists(self.conf.task_filename):
