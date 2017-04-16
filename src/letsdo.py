@@ -5,7 +5,7 @@ Usage:
     letsdo [--time=<time>] [--keep=<id>|<name>...]
     letsdo --change <name>...
     letsdo --replace=<target>... --with=<string>...
-    letsdo --to <newtask>...
+    letsdo --to [<newtask>...|--id=<id>]
     letsdo --stop [--time=<time>]
     letsdo --report [--all] [--yesterday] [<filter>]
     letsdo --report --full [--all] [--yesterday] [<filter>]
@@ -13,11 +13,12 @@ Usage:
     letsdo --autocomplete
 
 options:
-    -a --all                    Report activities for all stored days
+    --debug                     Enable debug logs
     --to                        Stop current task and switch to a new one
+    --id<id>                    Task id (used with --to)
+    -a --all                    Report activities for all stored days
     -c --change                 Rename current task
     -d --daily                  Report today activities by task
-    --debug                     Enable debug logs
     -f --full                   Report today full activity with start/end time
     -k <id> --keep=<id>         Restart last run task (default: 0)
     -r --report                 Report whole time spent on each task
@@ -529,8 +530,18 @@ def main():
             Task.change(replacement, target)
 
         elif args['--to']:
+            if args['--id']:
+                id = eval(args['--id'])
+                tasks = get_tasks(lambda x: x.id == id)
+                if len(tasks) == 0:
+                    err ("Could not find tasks with id '%d'" & id)
+                else:
+                    task = tasks[0]
+                    new_task_name = task.name
+            else:
+                new_task_name = ' '.join(args['<newtask>'])
+
             Task.stop()
-            new_task_name = ' '.join(args['<newtask>'])
             Task(new_task_name).start()
 
         elif args['--keep']:
