@@ -240,6 +240,19 @@ def autocomplete():
     completion = os.path.join(_ROOT, 'letsdo_scripts', 'letsdo_completion')
     info(message)
     print(open(completion).read())
+    print('--- CUT HERE ------------------------------------------------------------------')
+    message = '''
+    Do you want me to configure this automatically, copying the above script in your
+    $HOME directory? [Y/n]
+    '''
+    info(message)
+
+    resp = raw_input()
+    if resp.lower() == 'y':
+        fullpath = os.path.join(os.path.expanduser('~',), '.letsdo_completion')
+        with open(fullpath, 'w') as f:
+            f.writelines(open(completion).read())
+
 
 def format_h_m(string):
     return ':'.join(string.split(':')[0:2])
