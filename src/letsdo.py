@@ -3,6 +3,7 @@
 '''
 Usage:
     letsdo [--time=<time>] [--keep=<id>|<name>...]
+    letsdo --list
     letsdo --change <name>...
     letsdo --replace=<target>... --with=<string>...
     letsdo --to [<newtask>...|--id=<id>]
@@ -202,10 +203,19 @@ class Task(object):
 
     def __repr__(self):
         work_str = '%s' % str(self.work_time).split('.')[0]
-        start_str = '%s' % self.start_time.strftime('%H:%M')
-        end_str = '%s' % self.end_time.strftime('%H:%M')
+        if self.start_time:
+            start_str = '%s' % self.start_time.strftime('%H:%M')
+        else:
+            start_str = 'None'
+
+        if self.end_time:
+            end_str = '%s' % self.end_time.strftime('%H:%M')
+        else:
+            end_str = 'None'
+
         if self.id is not None:
             return '[%d] - %s| %s (%s -> %s) - %s' % (self.id, self.end_date, work_str, start_str, end_str, self.name)
+
         return '%s| %s (%s -> %s) - %s' % (self.end_date, work_str, start_str, end_str, self.name)
 
     def __eq__(self, other):
@@ -500,6 +510,7 @@ def report_full(filter=None):
 def do_report(args):
     filter = args['<filter>']
     if not filter and not args['--all']:
+        # By default show tasks done today only
         filter = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
     if args['--yesterday']:
         yesterday = datetime.datetime.today() - datetime.timedelta(1)
@@ -518,6 +529,14 @@ def do_report(args):
         report_task(tasks)
     return
 
+def do_list():
+    todo_file_fullpath = './test_todo.txt'
+    with open(todo_file_fullpath, 'r') as f:
+        tasks = [Task(name=line, id=id+1) for id, line in enumerate(f.readlines())]
+    
+    for task in tasks:
+        print(task)
+
 
 def main():
     args = docopt.docopt(__doc__)
@@ -533,7 +552,10 @@ def main():
         else:
             pass
     else:
-        if args['--stop']:
+        if args['--list']:
+            do_list()
+
+        elif args['--stop']:
             Task.stop(args['--time'])
 
         elif args['--replace']:
