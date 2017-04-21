@@ -8,12 +8,14 @@ Usage:
     letsdo --replace=<target>... --with=<string>...
     letsdo --to [<newtask>...|--id=<id>]
     letsdo --stop [--time=<time>]
-    letsdo --report [--all] [--yesterday] [<filter>]
-    letsdo --report --full [--all] [--yesterday] [<filter>]
-    letsdo --report --daily [--all] [--yesterday] [<filter>]
+    letsdo --report [--by-name|--detailed]
+    letsdo --report --yesterday [--by-name|--detailed]
+    letsdo --report --all [--by-name|--detailed] [<pattern>]
+    letsdo --report --daily [--all] [--yesterday] [<pattern>]
     letsdo --autocomplete
 
 options:
+    -l, --list                  Show Todo list
     --debug                     Enable debug logs
     --to                        Stop current task and switch to a new one
     --id<id>                    Task id (used with --to)
@@ -40,6 +42,7 @@ import re
 
 DATA_FILENAME = ''
 TASK_FILENAME = ''
+todo_file_fullpath = './test_todo.txt'
 
 # Logger
 level = logging.INFO
@@ -380,10 +383,18 @@ def keep(start_time_str=None, id=-1):
         Task(task_name, start=start_time).start()
 
 
+def get_todos():
+    with open(todo_file_fullpath, 'r') as f:
+        tasks = [Task(name=line, id=lineno+1) for lineno, line in enumerate(f.readlines())]
+    return tasks
+
 def get_tasks(condition=None):
-    tasks = []
     datafilename = Configuration().data_filename
-    id = -1
+    # Some todos might have been logged yet and some other don't.
+    # Pass this list to avoid duplication, but I do not like 
+    # this solution
+    tasks = get_todos()
+    id = len(tasks)
     try:
         with open(datafilename) as f:
             for line in reversed(f.readlines()):
@@ -397,7 +408,7 @@ def get_tasks(condition=None):
                     t.id = tasks[same_task].id
                     dbg('{task_name} has old id {id}'.format(task_name=t.name, id=t.id))
                 except ValueError:
-                    id +=1
+                    id += 1
                     t.id = id
                     dbg('{task_name} has new id {id}'.format(task_name=t.name, id=t.id))
                 tasks.append(t)
@@ -409,7 +420,7 @@ def get_tasks(condition=None):
 
 def group_task_by(tasks, group=None):
     groups = []
-    if group is 'task':
+    if group is 'name':
         uniques = []
         for task in tasks:
             if not task in uniques:
@@ -436,11 +447,10 @@ def group_task_by(tasks, group=None):
 
 def report_task(tasks, filter=None):
     tot_work_time = datetime.timedelta()
-    info('#ID  |      Worked         | task name')
     info('----------------------------------------')
     for task in tasks:
         tot_work_time += task.work_time
-        info('#{id:03d} | {lasttime} {worked:>8s} | {name}'.format(id=task.id,
+        info('#{id:03d} | {worked:5s} {lasttime} | {name}'.format(id=task.id,
             worked=format_h_m(str(task.work_time)),
             name=task.name,
             lasttime=task.end_date))
@@ -507,35 +517,44 @@ def report_full(filter=None):
 
         return tot_time, pause
 
-def do_report(args):
-    filter = args['<filter>']
-    if not filter and not args['--all']:
-        # By default show tasks done today only
-        filter = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
-    if args['--yesterday']:
-        yesterday = datetime.datetime.today() - datetime.timedelta(1)
-        filter = str(yesterday).split()[0]
-    if args['--full']:
-        report_full(filter)
-    elif args['--daily']:
-        map = group_task_by(get_tasks(lambda x: not filter or filter in str(x.end_date)),
-                            'date')
-        for key in sorted(map.keys()):
-            t = group_task_by(map[key], 'task')
-            report_task(t)
-    else:
-        tasks = group_task_by(get_tasks(lambda x: not filter or (filter in str(x.end_date) or filter in x.name)),
-                              'task')
-        report_task(tasks)
-    return
 
-def do_list():
-    todo_file_fullpath = './test_todo.txt'
-    with open(todo_file_fullpath, 'r') as f:
-        tasks = [Task(name=line, id=id+1) for id, line in enumerate(f.readlines())]
-    
-    for task in tasks:
-        print(task)
+def do_report(args):
+    pattern = args['<pattern>']
+    if not args['--all']:
+        if not args['--yesterday']:
+            # By default show --today's tasks
+            today_date = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
+            by_logged_today = lambda x: today_date in str(x.end_date)
+            tasks = get_tasks(by_logged_today)
+        else:
+            yesterday = datetime.datetime.today() - datetime.timedelta(1)
+            yesterday_date = str(yesterday).split()[0]   # keep only the part with YYYY-MM-DD
+            by_logged_yesterday = lambda x: yesterday_date in str(x.end_date)
+            tasks = get_tasks(by_logged_yesterday)
+
+    else:
+        by_name_or_end_date = lambda x: not pattern or (pattern in str(x.end_date) or pattern in x.name)
+        tasks = get_tasks(by_name_or_end_date)
+
+    # By default show Task grouped by name
+    if not args['--detailed']:
+        tasks = group_task_by(tasks, 'name')
+        report_task(tasks)
+    else:
+        pass
+
+    #if args['--full']:
+    #    report_full(filter)
+    #elif args['--daily']:
+    #    by_end_date = lambda x: not filter or filter in str(x.end_date)
+    #    map = group_task_by(get_tasks(by_end_date), 'date')
+
+    #    for key in sorted(map.keys()):
+    #        t = group_task_by(map[key], 'task')
+    #        report_task(t)
+    #else:
+    #    tasks = group_task_by(get_tasks(by_name_or_end_date), 'task')
+    #    report_task(tasks)
 
 
 def main():
@@ -553,7 +572,13 @@ def main():
             pass
     else:
         if args['--list']:
-            do_list()
+            todos = get_todos()
+            names = [t.name for t in todos]
+            
+            in_todo_list = lambda x: x.name in names
+            tasks = get_tasks(in_todo_list)
+            tasks = group_task_by(tasks, 'name')
+            report_task(tasks)
 
         elif args['--stop']:
             Task.stop(args['--time'])
