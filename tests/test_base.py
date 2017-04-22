@@ -58,7 +58,7 @@ taskpath: ~/
         t.stop()
         expected.add(t)
 
-        real = set(group_task_by(get_tasks(), 'task'))
+        real = set(group_task_by(get_tasks(), 'name'))
         self.assertEquals(real.difference(expected), set())
 
     def test_str2datetime(self):

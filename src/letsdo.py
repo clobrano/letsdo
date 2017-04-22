@@ -384,8 +384,11 @@ def keep(start_time_str=None, id=-1):
 
 
 def get_todos():
-    with open(todo_file_fullpath, 'r') as f:
-        tasks = [Task(name=line, id=lineno+1) for lineno, line in enumerate(f.readlines())]
+    try:
+        with open(todo_file_fullpath, 'r') as f:
+            tasks = [Task(name=line, id=lineno+1) for lineno, line in enumerate(f.readlines())]
+    except IOError:
+        tasks = []
     return tasks
 
 def get_tasks(condition=None):
