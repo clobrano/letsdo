@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo [--time=<time>] [--keep=<id>|<name>...]
+    letsdo [--time=<time>] [--work-on=<id>|<name>...]
     letsdo --list
     letsdo --change <name>...
     letsdo --replace=<target>... --with=<string>...
@@ -15,18 +15,18 @@ Usage:
     letsdo --autocomplete
 
 options:
-    -l, --list                  Show Todo list
     --debug                     Enable debug logs
-    --to                        Stop current task and switch to a new one
     --id<id>                    Task id (used with --to)
+    --to                        Stop current task and switch to a new one
     -a --all                    Report activities for all stored days
     -c --change                 Rename current task
     -d --daily                  Report today activities by task
     -f --full                   Report today full activity with start/end time
-    -k <id> --keep=<id>         Restart last run task (default: 0)
+    -l, --list                  Show Todo list
     -r --report                 Report whole time spent on each task
     -s --stop                   Stop current running task
     -t <time> --time=<time>     Suggest the start/stop time of the task
+    -w <id>, --work-on=<id>     Start working on a Task giving it's ID
     -y --yesterday              Fast switch to show reports of the day before
 '''
 
@@ -350,37 +350,20 @@ def str2datetime(string):
     raise ValueError('Date format not recognized: %s' % string)
 
 
-def keep(start_time_str=None, id=-1):
-    tasks = []
-    datafilename = Configuration().data_filename
-    with open(datafilename) as f:
-        for line in f.readlines():
-            tok = line.split(',')
-            task = Task(
-                    name=tok[1],
-                    start=tok[3],
-                    end=tok[4])
-            try:
-                index = tasks.index(task)
-                same_task = tasks.pop(index)
-                task.work_time += same_task.work_time
-            except ValueError:
-                pass
-
-            tasks.append(task)
-
-        if id >= 0:
-            tasks.reverse()
-
-        task_name = tasks[id].name
-
+def work_on(task_id=0, start_time_str=None):
+    tasks = get_tasks(condition=lambda x: x.id == task_id)
+    tasks = group_task_by(tasks, group='name')
+    if not tasks:
+        err ("Could not find any task with ID '{id}'".format(id=task_id))
+    else:
+        assert (len(tasks) == 1)
+        task = tasks[0]
+        start_time = None
         if start_time_str:
             date_str = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
             start_time = date_str + ' ' + start_time_str
-        else:
-            start_time = None
 
-        Task(task_name, start=start_time).start()
+        Task(task.name, start=start_time).start()
 
 
 def get_todos():
@@ -394,7 +377,7 @@ def get_todos():
 def get_tasks(condition=None):
     datafilename = Configuration().data_filename
     # Some todos might have been logged yet and some other don't.
-    # Pass this list to avoid duplication, but I do not like 
+    # Pass this list to avoid duplication, but I do not like
     # this solution
     tasks = get_todos()
     id = len(tasks)
@@ -406,6 +389,8 @@ def get_tasks(condition=None):
                 t = Task(name=fields[1],
                          start=fields[3],
                          end=fields[4])
+                # If a task with the same name exists,
+                # keep the same ID as well
                 try:
                     same_task = tasks.index(t)
                     t.id = tasks[same_task].id
@@ -577,7 +562,7 @@ def main():
         if args['--list']:
             todos = get_todos()
             names = [t.name for t in todos]
-            
+
             in_todo_list = lambda x: x.name in names
             tasks = get_tasks(in_todo_list)
             tasks = group_task_by(tasks, 'name')
@@ -607,9 +592,10 @@ def main():
             Task.stop()
             Task(new_task_name).start()
 
-        elif args['--keep']:
-            id = eval(args['--keep'])
-            keep(start_time_str=args['--time'], id=id)
+        elif args['--work-on']:
+            id = eval(args['--work-on'])
+            work_on(task_id=id, start_time_str=args['--time'])
+            sys.exit(0)
 
         elif args['--report']:
             do_report(args)

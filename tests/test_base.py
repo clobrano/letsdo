@@ -6,7 +6,7 @@ import datetime
 from time import sleep
 from letsdo.src.letsdo import Task
 from letsdo.src.letsdo import Configuration
-from letsdo.src.letsdo import keep
+from letsdo.src.letsdo import work_on
 from letsdo.src.letsdo import str2datetime
 from letsdo.src.letsdo import group_task_by
 from letsdo.src.letsdo import get_tasks
@@ -128,25 +128,6 @@ taskpath: ~/
         Task.change('new', 'old')
         self.assertEqual(Task.get_running().name, 'new name')
 
-    def test_continue_last(self):
-        prev_task = Task('do something')
-        prev_task.start()
-        prev_task.stop()
-        keep()
-        task = Task.get_running()
-        self.assertEquals(task.name, prev_task.name)
-
-    def test_continue_before_last(self):
-        t1 = Task('task 1')
-        t1.start()
-        t1.stop()
-        t2 = Task('task 2')
-        t2.start()
-        t2.stop()
-        keep(id=-2)
-        t = Task.get_running()
-        self.assertEqual('task 1', t.name)
-
     def test_continue_task_by_index(self):
         for i in range(3):
             t = Task('task {id}'.format(id=i))
@@ -155,7 +136,7 @@ taskpath: ~/
             t.stop()
             sleep(1)
 
-        keep(id=2)
+        work_on(task_id=2)
         t = Task.get_running()
         self.assertEqual('task 0', t.name)
 
