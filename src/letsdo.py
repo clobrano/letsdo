@@ -40,9 +40,6 @@ import logging
 import yaml
 import re
 
-DATA_DIR= ''
-TODO_FULLNAME = './test_todo.txt'
-
 # Logger
 level = logging.INFO
 logging.basicConfig(level=level, format='  %(message)s')
@@ -66,6 +63,7 @@ class Configuration(object):
                 err('Config file error: Could not find \'{msg}\' field'.format(msg=e.message))
                 info('letsdo data will be saved into HOME directory')
                 self.data_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-data'))
+            dbg('Configuration: data filename {file}'.format(file = self.data_fullpath))
 
             try:
                 self.task_fullpath = os.path.join(self.data_dir, '.letsdo-task')
@@ -73,14 +71,23 @@ class Configuration(object):
                 err('Config file error: Could not find \'{msg}\' field'.format(msg=e.message))
                 info('letsdo data will be saved into HOME directory')
                 self.task_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-data'))
+            dbg('Configuration: task filename {file}'.format(file = self.task_fullpath))
 
             try:
                 self.todo_fullpath = os.path.expanduser(configuration['TODO_FULLPATH'])
             except KeyError as e:
                 dbg('Config file: Could not find \'{msg}\' field'.format(msg=e.message))
 
-            dbg('Configuration: data filename {file}'.format(file = self.data_fullpath))
-            dbg('Configuration: task filename {file}'.format(file = self.task_fullpath))
+            try:
+                self.todo_start_tag = os.path.expanduser(configuration['TODO_START_TAG'])
+            except KeyError as e:
+                dbg('Config file: Could not find \'{msg}\' field'.format(msg=e.message))
+
+            try:
+                self.todo_stop_tag = os.path.expanduser(configuration['TODO_STOP_TAG'])
+            except KeyError as e:
+                dbg('Config file: Could not find \'{msg}\' field'.format(msg=e.message))
+
         else:
             dbg('Config file not found. Using default')
             self.data_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-data'))
@@ -147,8 +154,9 @@ class Task(object):
 
         TASK_FILENAME = Configuration().task_fullpath
         os.remove(TASK_FILENAME)
-        status = ('Stopped task \'%s\' after %s of work' % (task.name, work_time_str))
-        info(status)
+        hours, minutes = work_time_str.split(':')
+        info('Stopped \'{name}\' for {h}h {m}m'.format(
+                    name=task.name, h=hours, m=minutes))
         return True
 
     @staticmethod
@@ -169,8 +177,10 @@ class Task(object):
         task = Task.get_running()
         if task:
             now = datetime.datetime.now()
-            work = str(now - task.start_time).split('.')[0]
-            info('Working on \'%s\' for %s' % (task.name, work))
+            time = str(now - task.start_time).split('.')[0]
+            hours, minutes, seconds = time.split(':')
+            info('Working on \'{name}\' for {h}h {m}m {s}s'.format(
+                    name=task.name, h=hours, m=minutes, s=seconds))
             return True
         else:
             info('No task running')
@@ -375,20 +385,60 @@ def work_on(task_id=0, start_time_str=None):
         Task(task.name, start=start_time).start()
 
 
+def sanitize(text):
+    # remove initial list symbol (if any)
+    if re.match('[\-\*]', text):
+        text = re.sub('^[\-\*]', '', text)
+
+    # remove markdown links
+    md_link = re.compile('\[(.*)\]\(.*\)')
+    has_link = md_link.search(text)
+    if has_link:
+        link_name = md_link.findall(text)
+        assert(len(link_name) == 1)
+        text = re.sub('\[(.*)\]\(.*\)', link_name[0], text)
+
+    return text
+
+
+
 def get_todos():
+    tasks = []
     try:
         with open(Configuration().todo_fullpath, 'r') as f:
-            tasks = [Task(name=line, id=lineno+1) for lineno, line in enumerate(f.readlines())]
+            todo_start_tag = Configuration().todo_start_tag
+            todo_stop_tag = Configuration().todo_stop_tag
+
+            if todo_start_tag and todo_stop_tag:
+                read = False
+                id = 0
+                for line in f.readlines():
+                    if todo_start_tag in line.lower():
+                        read = True
+                        continue
+                    if todo_stop_tag in line.lower():
+                        read = False
+                        break
+
+                    line = sanitize(line)
+                    if read:
+                        id += 1
+                        tasks.append(Task(name=line, id=id))
+            else:
+                tasks = [Task(name=sanitize(line), id=lineno+1) for lineno, line in enumerate(f.readlines())]
     except (AttributeError, IOError):
-        tasks = []
+        pass
     return tasks
 
-def get_tasks(condition=None):
+def get_tasks(condition=None, todos=None):
     datafilename = Configuration().data_fullpath
     # Some todos might have been logged yet and some other don't.
     # Pass this list to avoid duplication, but I do not like
     # this solution
-    tasks = get_todos()
+    if todos:
+        tasks = todos
+    else:
+        tasks = get_todos()
     id = len(tasks)
     try:
         with open(datafilename) as f:
@@ -447,7 +497,7 @@ def report_task(tasks, filter=None):
     info('----------------------------------------')
     for task in tasks:
         tot_work_time += task.work_time
-        info('[#{id:03d}| {worked:8s}--- {name}]'.format(id=task.id,
+        info('#{id:03d} ~ {worked:8s}--- {name}'.format(id=task.id,
             worked=format_h_m(str(task.work_time)),
             name=task.name))
     info('----------------------------------------')
@@ -572,7 +622,7 @@ def main():
             names = [t.name for t in todos]
 
             in_todo_list = lambda x: x.name in names
-            tasks = get_tasks(in_todo_list)
+            tasks = get_tasks(in_todo_list, todos)
             tasks = group_task_by(tasks, 'name')
             report_task(tasks)
 
