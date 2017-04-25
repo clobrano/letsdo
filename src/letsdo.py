@@ -269,7 +269,8 @@ def autocomplete():
 
     resp = raw_input()
     if resp.lower() == 'y':
-        with open(Configuration().todo_fullpath, 'w') as f:
+        completionfile = os.path.join(os.path.expanduser('~',), '.letsdo_completion')
+        with open(completionfile, 'w') as f:
             f.writelines(open(completion).read())
 
 
