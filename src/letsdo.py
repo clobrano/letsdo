@@ -40,9 +40,8 @@ import logging
 import yaml
 import re
 
-DATA_FILENAME = ''
-TASK_FILENAME = ''
-todo_file_fullpath = './test_todo.txt'
+DATA_DIR= ''
+TODO_FULLNAME = './test_todo.txt'
 
 # Logger
 level = logging.INFO
@@ -61,23 +60,31 @@ class Configuration(object):
         if os.path.exists(conf_file_path):
             configuration = yaml.load(open(conf_file_path).read())
             try:
-                self.data_filename = os.path.expanduser(os.path.join(configuration['datapath'], '.letsdo-data'))
+                self.data_dir = os.path.expanduser(configuration['DATADIR'])
+                self.data_fullpath = os.path.join(self.data_dir, '.letsdo-data')
             except KeyError as e:
                 err('Config file error: Could not find \'{msg}\' field'.format(msg=e.message))
-                self.data_filename = os.path.expanduser(os.path.join('~', '.letsdo-data'))
+                info('letsdo data will be saved into HOME directory')
+                self.data_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-data'))
 
             try:
-                self.task_filename = os.path.expanduser(os.path.join(configuration['taskpath'], '.letsdo-task'))
+                self.task_fullpath = os.path.join(self.data_dir, '.letsdo-task')
             except KeyError as e:
                 err('Config file error: Could not find \'{msg}\' field'.format(msg=e.message))
-                self.task_filename = os.path.expanduser(os.path.join('~', '.letsdo-data'))
+                info('letsdo data will be saved into HOME directory')
+                self.task_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-data'))
 
-            dbg('Configuration: data filename {file}'.format(file = self.data_filename))
-            dbg('Configuration: task filename {file}'.format(file = self.task_filename))
+            try:
+                self.todo_fullpath = os.path.expanduser(configuration['TODO_FULLPATH'])
+            except KeyError as e:
+                dbg('Config file: Could not find \'{msg}\' field'.format(msg=e.message))
+
+            dbg('Configuration: data filename {file}'.format(file = self.data_fullpath))
+            dbg('Configuration: task filename {file}'.format(file = self.task_fullpath))
         else:
             dbg('Config file not found. Using default')
-            self.data_filename = os.path.expanduser(os.path.join('~', '.letsdo-data'))
-            self.task_filename = os.path.expanduser(os.path.join('~', '.letsdo-task'))
+            self.data_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-data'))
+            self.task_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-task'))
 
 
 
@@ -106,7 +113,7 @@ class Task(object):
 
     @staticmethod
     def get_running():
-        TASK_FILENAME = Configuration().task_filename
+        TASK_FILENAME = Configuration().task_fullpath
         if Task.__is_running():
             with open(TASK_FILENAME, 'r') as f:
                 return pickle.load(f)
@@ -134,11 +141,11 @@ class Task(object):
         stop_time_str = str(stop_time).split('.')[0][:-3]
 
         report = '%s,%s,%s,%s,%s\n' % (date, task.name, work_time_str, start_time_str, stop_time_str)
-        DATA_FILENAME = Configuration().data_filename
+        DATA_FILENAME = Configuration().data_fullpath
         with open(DATA_FILENAME, mode='a') as f:
             f.writelines(report)
 
-        TASK_FILENAME = Configuration().task_filename
+        TASK_FILENAME = Configuration().task_fullpath
         os.remove(TASK_FILENAME)
         status = ('Stopped task \'%s\' after %s of work' % (task.name, work_time_str))
         info(status)
@@ -171,7 +178,7 @@ class Task(object):
 
     @staticmethod
     def __is_running():
-        TASK_FILENAME = Configuration().task_filename
+        TASK_FILENAME = Configuration().task_fullpath
         exists = os.path.exists(TASK_FILENAME)
         dbg('is it running? %d' % exists)
         return exists
@@ -189,7 +196,7 @@ class Task(object):
         return True
 
     def __create(self):
-        TASK_FILENAME = Configuration().task_filename
+        TASK_FILENAME = Configuration().task_fullpath
         with open(TASK_FILENAME, 'w') as f:
             pickle.dump(self, f)
             return True
@@ -262,13 +269,14 @@ def autocomplete():
 
     resp = raw_input()
     if resp.lower() == 'y':
-        fullpath = os.path.join(os.path.expanduser('~',), '.letsdo_completion')
-        with open(fullpath, 'w') as f:
+        with open(Configuration().todo_fullpath, 'w') as f:
             f.writelines(open(completion).read())
 
 
 def format_h_m(string):
-    return ':'.join(string.split(':')[0:2])
+    h, m = string.split(':')[0:2]
+    return '{0}h {1}m'.format(h, m)
+    #return ':'.join(string.split(':')[0:2])
 
 def str2datetime(string):
     m = re.findall('\d{4}-\d{2}-\d{2} \d{2}:\d{2}', string)
@@ -368,14 +376,14 @@ def work_on(task_id=0, start_time_str=None):
 
 def get_todos():
     try:
-        with open(todo_file_fullpath, 'r') as f:
+        with open(Configuration().todo_fullpath, 'r') as f:
             tasks = [Task(name=line, id=lineno+1) for lineno, line in enumerate(f.readlines())]
-    except IOError:
+    except (AttributeError, IOError):
         tasks = []
     return tasks
 
 def get_tasks(condition=None):
-    datafilename = Configuration().data_filename
+    datafilename = Configuration().data_fullpath
     # Some todos might have been logged yet and some other don't.
     # Pass this list to avoid duplication, but I do not like
     # this solution
@@ -438,10 +446,9 @@ def report_task(tasks, filter=None):
     info('----------------------------------------')
     for task in tasks:
         tot_work_time += task.work_time
-        info('#{id:03d} | {worked:5s} {lasttime} | {name}'.format(id=task.id,
+        info('[#{id:03d}| {worked:8s}--- {name}]'.format(id=task.id,
             worked=format_h_m(str(task.work_time)),
-            name=task.name,
-            lasttime=task.end_date))
+            name=task.name))
     info('----------------------------------------')
     if filter:
         info('{filter}: Total work time {time}'.format(filter=filter, time=format_h_m(str(tot_work_time))))
@@ -452,7 +459,7 @@ def report_task(tasks, filter=None):
 
 def report_full(filter=None):
     tasks = {}
-    datafilename = Configuration().data_filename
+    datafilename = Configuration().data_fullpath
     with open(datafilename) as f:
         for id, line in enumerate(f.readlines()):
             line = line.strip()

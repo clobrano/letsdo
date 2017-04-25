@@ -16,8 +16,7 @@ class TestLetsdo(unittest.TestCase):
     def setUp(self):
         test_configuration = \
 '''
-datapath: ~/
-taskpath: ~/
+DATADIR: ~/
 '''
         self.test_conf_file = os.path.expanduser(os.path.join('~', '.letsdo'))
 
@@ -30,19 +29,19 @@ taskpath: ~/
 
         self.conf = Configuration()
 
-        if os.path.exists(self.conf.data_filename):
-            os.remove(self.conf.data_filename)
-        if os.path.exists(self.conf.task_filename):
-            os.remove(self.conf.task_filename)
+        if os.path.exists(self.conf.data_fullpath):
+            os.remove(self.conf.data_fullpath)
+        if os.path.exists(self.conf.task_fullpath):
+            os.remove(self.conf.task_fullpath)
 
     def tearDown(self):
         if os.path.exists(self.test_conf_file):
             with open(self.test_conf_file, 'w') as f:
                 f.write(self.backup)
-        if os.path.exists(self.conf.data_filename):
-            os.remove(self.conf.data_filename)
-        if os.path.exists(self.conf.task_filename):
-            os.remove(self.conf.task_filename)
+        if os.path.exists(self.conf.data_fullpath):
+            os.remove(self.conf.data_fullpath)
+        if os.path.exists(self.conf.task_fullpath):
+            os.remove(self.conf.task_fullpath)
 
     def test_group_task_by(self):
         expected = set()
@@ -123,7 +122,7 @@ taskpath: ~/
 
 
     def test_replace_with_running_task(self):
-        if not os.path.exists(self.conf.task_filename):
+        if not os.path.exists(self.conf.task_fullpath):
             Task(name='old name').start()
         Task.change('new', 'old')
         self.assertEqual(Task.get_running().name, 'new name')
@@ -138,7 +137,7 @@ taskpath: ~/
 
         work_on(task_id=2)
         t = Task.get_running()
-        self.assertEqual('task 0', t.name)
+        self.assertEqual('task 1', t.name)
 
     def test_get_no_context(self):
         task = Task('project without a context')
@@ -165,65 +164,65 @@ taskpath: ~/
         self.assertEquals(task.name, 'named')
 
     def test_get_non_running_task(self):
-        if os.path.exists(self.conf.task_filename):
-            os.remove(self.conf.task_filename)
+        if os.path.exists(self.conf.task_fullpath):
+            os.remove(self.conf.task_fullpath)
         task = Task.get_running()
         self.assertIsNone(task)
 
     def test_get_running_task(self):
-        if not os.path.exists(self.conf.task_filename):
+        if not os.path.exists(self.conf.task_fullpath):
             Task().start()
         task = Task.get_running()
         self.assertIsNotNone(task)
 
     def test_change_non_running_task(self):
-        if os.path.exists(self.conf.task_filename):
-            os.remove(self.conf.task_filename)
+        if os.path.exists(self.conf.task_fullpath):
+            os.remove(self.conf.task_fullpath)
         ret = Task.change('newname')
         self.assertIsNone(ret)
 
     def test_change_running_task(self):
-        if not os.path.exists(self.conf.task_filename):
+        if not os.path.exists(self.conf.task_fullpath):
             Task().start()
         Task.change('newname')
         self.assertEqual(Task.get_running().name, 'newname')
 
     def test_stop_non_running_task(self):
-        if os.path.exists(self.conf.task_filename):
-            os.remove(self.conf.task_filename)
-        if not os.path.exists(self.conf.data_filename):
-            with open(self.conf.data_filename, mode='w') as f:
+        if os.path.exists(self.conf.task_fullpath):
+            os.remove(self.conf.task_fullpath)
+        if not os.path.exists(self.conf.data_fullpath):
+            with open(self.conf.data_fullpath, mode='w') as f:
                 f.write('')
-        no_tasks = len(open(self.conf.data_filename).readlines())
+        no_tasks = len(open(self.conf.data_fullpath).readlines())
 
         Task.stop()
-        new_no_tasks = len(open(self.conf.data_filename).readlines())
+        new_no_tasks = len(open(self.conf.data_fullpath).readlines())
 
         self.assertEquals(no_tasks, new_no_tasks)
 
     def test_stop_running_task(self):
-        if not os.path.exists(self.conf.task_filename):
+        if not os.path.exists(self.conf.task_fullpath):
             Task().start()
-        if not os.path.exists(self.conf.data_filename):
-            with open(self.conf.data_filename, mode='w') as f:
+        if not os.path.exists(self.conf.data_fullpath):
+            with open(self.conf.data_fullpath, mode='w') as f:
                 f.write('')
-        no_tasks = len(open(self.conf.data_filename).readlines())
+        no_tasks = len(open(self.conf.data_fullpath).readlines())
 
         Task.stop()
-        new_no_tasks = len(open(self.conf.data_filename).readlines())
+        new_no_tasks = len(open(self.conf.data_fullpath).readlines())
 
-        self.assertFalse(os.path.exists(self.conf.task_filename))
+        self.assertFalse(os.path.exists(self.conf.task_fullpath))
         self.assertEquals(no_tasks + 1, new_no_tasks)
 
     def test_start_task(self):
-        if os.path.exists(self.conf.task_filename):
-            os.remove(self.conf.task_filename)
+        if os.path.exists(self.conf.task_fullpath):
+            os.remove(self.conf.task_fullpath)
         Task().start()
-        self.assertTrue(os.path.exists(self.conf.task_filename))
+        self.assertTrue(os.path.exists(self.conf.task_fullpath))
 
     def test_status_task(self):
-        if os.path.exists(self.conf.task_filename):
-            os.remove(self.conf.task_filename)
+        if os.path.exists(self.conf.task_fullpath):
+            os.remove(self.conf.task_fullpath)
         Task().start()
         self.assertTrue(Task.status())
 
