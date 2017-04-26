@@ -385,10 +385,18 @@ def work_on(task_id=0, start_time_str=None):
         Task(task.name, start=start_time).start()
 
 
-def sanitize(text):
+def sanitize(text, filters=[]):
     # remove initial list symbol (if any)
     if re.match('[\-\*]', text):
         text = re.sub('^[\-\*]', '', text)
+
+    # remove initial date (yyyy-mm-dd)
+    if re.match('^\s*\d+-\d+-\d+\s+', text):
+        text = re.sub('^\s*\d+-\d+-\d+\s+', '', text)
+
+    # remove initial date (yy\date-of-year)
+    if re.match('^\s*\d+/\d+\s+', text):
+        text = re.sub('^\s*\d+/\d+\s+', '', text)
 
     # remove markdown links
     md_link = re.compile('\[(.*)\]\(.*\)')
@@ -427,7 +435,7 @@ def get_todos():
             else:
                 tasks = [Task(name=sanitize(line), id=lineno+1) for lineno, line in enumerate(f.readlines())]
     except (AttributeError, IOError):
-        pass
+        dbg ("Could not find todo file '{filepath}'".format(filepath=Configuration().todo_fullpath))
     return tasks
 
 def get_tasks(condition=None, todos=None):
