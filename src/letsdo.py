@@ -82,11 +82,13 @@ class Configuration(object):
                 self.todo_start_tag = os.path.expanduser(configuration['TODO_START_TAG'])
             except KeyError as e:
                 dbg('Config file: Could not find \'{msg}\' field'.format(msg=e.message))
+                self.todo_start_tag = None
 
             try:
                 self.todo_stop_tag = os.path.expanduser(configuration['TODO_STOP_TAG'])
             except KeyError as e:
                 dbg('Config file: Could not find \'{msg}\' field'.format(msg=e.message))
+                self.todo_stop_tag = None
 
         else:
             dbg('Config file not found. Using default')
@@ -409,7 +411,6 @@ def sanitize(text, filters=[]):
     return text
 
 
-
 def get_todos():
     tasks = []
     try:
@@ -417,19 +418,19 @@ def get_todos():
             todo_start_tag = Configuration().todo_start_tag
             todo_stop_tag = Configuration().todo_stop_tag
 
-            if todo_start_tag and todo_stop_tag:
+            if todo_start_tag:
                 read = False
                 id = 0
                 for line in f.readlines():
                     if todo_start_tag in line.lower():
                         read = True
                         continue
-                    if todo_stop_tag in line.lower():
+                    if (todo_stop_tag and todo_stop_tag in line.lower()) or not line.strip():
                         read = False
                         break
 
-                    line = sanitize(line)
                     if read:
+                        line = sanitize(line)
                         id += 1
                         tasks.append(Task(name=line, id=id))
             else:
@@ -437,6 +438,7 @@ def get_todos():
     except (AttributeError, IOError):
         dbg ("Could not find todo file '{filepath}'".format(filepath=Configuration().todo_fullpath))
     return tasks
+
 
 def get_tasks(condition=None, todos=None):
     datafilename = Configuration().data_fullpath
