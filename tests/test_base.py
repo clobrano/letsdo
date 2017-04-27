@@ -17,6 +17,7 @@ class TestLetsdo(unittest.TestCase):
         test_configuration = \
 '''
 DATADIR: ~/
+TODO_FULLPATH: ~/footodo.txt
 '''
         self.test_conf_file = os.path.expanduser(os.path.join('~', '.letsdo'))
 
