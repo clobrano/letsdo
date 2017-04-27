@@ -425,7 +425,7 @@ def get_todos():
                     if todo_start_tag in line.lower():
                         read = True
                         continue
-                    if (todo_stop_tag and todo_stop_tag in line.lower()) or not line.strip():
+                    if read and ((todo_stop_tag and todo_stop_tag in line.lower()) or not line.strip()):
                         read = False
                         break
 
