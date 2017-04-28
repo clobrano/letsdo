@@ -43,8 +43,9 @@ try:
     from raffaello import Raffaello, Commission
     is_color_supported = True
     request = '''
-\+[\w\-_]+=>color202_bold
+\+[\w\-_]+=>color197_bold
 \@[\w\-_]+=>cyan_bold
+\#[\w\-_]+=>color202_bold
 \d{1,2}h\s\d{1,2}m=>color046
 '''
     raf = Raffaello(Commission(request).commission)
@@ -55,7 +56,7 @@ except ImportError:
 
 # Logger
 level = logging.INFO
-logging.basicConfig(level=level, format='  %(message)s')
+logging.basicConfig(level=level, format='%(message)s')
 logger = logging.getLogger(__name__)
 if is_color_supported:
     info = lambda x: logger.info(raf.paint(x))
@@ -520,13 +521,16 @@ def group_task_by(tasks, group=None):
 
 def report_task(tasks, filter=None):
     tot_work_time = datetime.timedelta()
-    info('----------------------------------------')
+
+    info('TaskID [  time  ] Task description')
+    info('----------------------------------')
+
     for task in tasks:
         tot_work_time += task.work_time
-        info('{id:03d}° - {worked:7s}... {name}'.format(id=task.id,
-            worked=format_h_m(str(task.work_time)),
-            name=task.name))
-    info('----------------------------------------')
+        info(' {id:3d})  [ {worked:7s}] {name}'.format(id=task.id,
+             worked=format_h_m(str(task.work_time)),
+             name=task.name))
+    info('')
     if filter:
         info('{filter}: Total work time {time}'.format(filter=filter, time=format_h_m(str(tot_work_time))))
     else:
