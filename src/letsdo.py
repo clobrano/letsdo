@@ -39,12 +39,28 @@ import sys
 import logging
 import yaml
 import re
+try:
+    from raffaello import Raffaello, Commission
+    is_color_supported = True
+    request = '''
+\+[\w\-_]+=>color202_bold
+\@[\w\-_]+=>cyan_bold
+\d{1,2}h\s\d{1,2}m=>color046
+'''
+    raf = Raffaello(Commission(request).commission)
+except ImportError:
+    sys.exit(0)
+    is_color_supported = False
+
 
 # Logger
 level = logging.INFO
 logging.basicConfig(level=level, format='  %(message)s')
 logger = logging.getLogger(__name__)
-info = lambda x: logger.info(x)
+if is_color_supported:
+    info = lambda x: logger.info(raf.paint(x))
+else:
+    info = lambda x: logger.info(x)
 err = lambda x: logger.error(x)
 warn = lambda x: logger.warn(x)
 dbg = lambda x: logger.debug(x)
@@ -507,7 +523,7 @@ def report_task(tasks, filter=None):
     info('----------------------------------------')
     for task in tasks:
         tot_work_time += task.work_time
-        info('#{id:03d} ~ {worked:8s}--- {name}'.format(id=task.id,
+        info('{id:03d}° - {worked:7s}... {name}'.format(id=task.id,
             worked=format_h_m(str(task.work_time)),
             name=task.name))
     info('----------------------------------------')
