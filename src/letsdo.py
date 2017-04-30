@@ -50,7 +50,6 @@ try:
 '''
     raf = Raffaello(Commission(request).commission)
 except ImportError:
-    sys.exit(0)
     is_color_supported = False
 
 
@@ -72,46 +71,37 @@ class Configuration(object):
     def __init__(self):
         conf_file_path = os.path.expanduser(os.path.join('~', '.letsdo'))
         if os.path.exists(conf_file_path):
-            configuration = yaml.load(open(conf_file_path).read())
-            try:
-                self.data_dir = os.path.expanduser(configuration['DATADIR'])
+            self.configuration = yaml.load(open(conf_file_path).read())
+
+            self.data_dir = self.__get_value('DATADIR')
+            if self.data_dir:
                 self.data_fullpath = os.path.join(self.data_dir, '.letsdo-data')
-            except KeyError as e:
-                err('Config file error: Could not find \'{msg}\' field'.format(msg=e.message))
+                self.task_fullpath = os.path.join(self.data_dir, '.letsdo-task')
+            else:
                 info('letsdo data will be saved into HOME directory')
                 self.data_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-data'))
-            dbg('Configuration: data filename {file}'.format(file = self.data_fullpath))
+                self.task_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-task'))
 
-            try:
-                self.task_fullpath = os.path.join(self.data_dir, '.letsdo-task')
-            except KeyError as e:
-                err('Config file error: Could not find \'{msg}\' field'.format(msg=e.message))
-                info('letsdo data will be saved into HOME directory')
-                self.task_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-data'))
-            dbg('Configuration: task filename {file}'.format(file = self.task_fullpath))
+            if self.__get_value('TODO_FULLPATH'):
+                self.todo_fullpath = os.path.expanduser(self.__get_value('TODO_FULLPATH'))
+            else:
+                self.todo_fullpath = None
 
-            try:
-                self.todo_fullpath = os.path.expanduser(configuration['TODO_FULLPATH'])
-            except KeyError as e:
-                dbg('Config file: Could not find \'{msg}\' field'.format(msg=e.message))
-
-            try:
-                self.todo_start_tag = os.path.expanduser(configuration['TODO_START_TAG'])
-            except KeyError as e:
-                dbg('Config file: Could not find \'{msg}\' field'.format(msg=e.message))
-                self.todo_start_tag = None
-
-            try:
-                self.todo_stop_tag = os.path.expanduser(configuration['TODO_STOP_TAG'])
-            except KeyError as e:
-                dbg('Config file: Could not find \'{msg}\' field'.format(msg=e.message))
-                self.todo_stop_tag = None
+            self.todo_start_tag = self.__get_value('TODO_START_TAG')
+            self.todo_stop_tag = self.__get_value('TODO_STOP_TAG')
 
         else:
             dbg('Config file not found. Using default')
             self.data_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-data'))
             self.task_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-task'))
 
+    def __get_value(self, key):
+        try:
+            value = os.path.expanduser(self.configuration[key])
+        except KeyError as e:
+            dbg('configuration: Could not find \'{key}\' field: {msg}'.format(key=key, msg=e.message))
+            return None
+        return value
 
 
 class Task(object):
@@ -452,7 +442,7 @@ def get_todos():
                         tasks.append(Task(name=line, id=id))
             else:
                 tasks = [Task(name=sanitize(line), id=lineno+1) for lineno, line in enumerate(f.readlines())]
-    except (AttributeError, IOError):
+    except (TypeError, AttributeError, IOError):
         dbg ("Could not find todo file '{filepath}'".format(filepath=Configuration().todo_fullpath))
     return tasks
 
