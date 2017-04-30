@@ -44,9 +44,9 @@ try:
     is_color_supported = True
     request = '''
 \+[\w\-_]+=>color197_bold
-\@[\w\-_]+=>cyan_bold
+\@[\w\-_]+=>color046
 \#[\w\-_]+=>color202_bold
-\d{1,2}h\s\d{1,2}m=>color046
+\d{1,2}h\s\d{1,2}m=>cyan_bold
 '''
     raf = Raffaello(Commission(request).commission)
 except ImportError:
