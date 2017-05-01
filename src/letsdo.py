@@ -443,7 +443,7 @@ def get_todos():
             else:
                 tasks = [Task(name=sanitize(line), id=lineno+1) for lineno, line in enumerate(f.readlines())]
     except (TypeError, AttributeError, IOError):
-        dbg ("Could not find todo file '{filepath}'".format(filepath=Configuration().todo_fullpath))
+            dbg ("Could not get todo list. Todo file not set or incorrect.")
     return tasks
 
 
