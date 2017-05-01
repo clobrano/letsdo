@@ -15,16 +15,17 @@ class TestLetsdo(unittest.TestCase):
 
     def setUp(self):
         test_configuration = \
-'''
-DATADIR: ~/
+'''DATADIR: ~/
 TODO_FULLPATH: ~/footodo.txt
 '''
         self.test_conf_file = os.path.expanduser(os.path.join('~', '.letsdo'))
+        self.user_conf_bak = os.path.expanduser(os.path.join('~', '.letsdo.bak'))
 
         if os.path.exists(self.test_conf_file):
-            with open(self.test_conf_file, 'r') as f:
-                self.backup = f.read()
+            # Backup user configuration file
+            os.rename(self.test_conf_file, self.user_conf_bak)
 
+            # Create test configuration file
             with open(self.test_conf_file, 'w') as f:
                 f.write(test_configuration)
 
@@ -36,9 +37,8 @@ TODO_FULLPATH: ~/footodo.txt
             os.remove(self.conf.task_fullpath)
 
     def tearDown(self):
-        if os.path.exists(self.test_conf_file):
-            with open(self.test_conf_file, 'w') as f:
-                f.write(self.backup)
+        if os.path.exists(self.user_conf_bak):
+            os.rename(self.user_conf_bak, self.test_conf_file)
         if os.path.exists(self.conf.data_fullpath):
             os.remove(self.conf.data_fullpath)
         if os.path.exists(self.conf.task_fullpath):
