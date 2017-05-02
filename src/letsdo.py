@@ -48,6 +48,7 @@ try:
 \@[\w\-_]+=>color046
 \#[\w\-_]+=>color202_bold
 \d*h\s\d{1,2}m=>cyan_bold
+\d{2,4}-\d{2}-\d{2}=>cyan_bold
 '''
     raf = Raffaello(Commission(request).commission)
 except ImportError:
@@ -567,10 +568,14 @@ def report_task(tasks, filter=None):
 
     for task in tasks:
         tot_work_time += task.work_time
-        info(' {id:3d})  [ {worked:7s} - {lasttime} ] {name}'.format(
+        if task.end_date:
+            last_time = ' - ' + task.end_date
+        else:
+            last_time = ''
+        info(' {id:3d})  [ {worked:7s}{last_time} ] {name}'.format(
              id=task.id,
              worked=strfdelta(task.work_time, fmt='{H:2}h {M:02}m'),
-             lasttime=task.end_date,
+             last_time=last_time,
              name=task.name))
     info('')
     if filter:
