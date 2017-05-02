@@ -567,8 +567,10 @@ def report_task(tasks, filter=None):
 
     for task in tasks:
         tot_work_time += task.work_time
-        info(' {id:3d})  [ {worked:7s} ] {name}'.format(id=task.id,
+        info(' {id:3d})  [ {worked:7s} - {lasttime} ] {name}'.format(
+             id=task.id,
              worked=strfdelta(task.work_time, fmt='{H:2}h {M:02}m'),
+             lasttime=task.end_date,
              name=task.name))
     info('')
     if filter:
