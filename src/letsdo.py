@@ -11,7 +11,7 @@ Usage:
     letsdo --report [--by-name|--detailed]
     letsdo --report --yesterday [--by-name|--detailed]
     letsdo --report --all [--by-name|--detailed] [<pattern>]
-    letsdo --report --daily [--all] [--yesterday] [<pattern>]
+    letsdo --report --day-by-day [--all] [--yesterday] [<pattern>]
     letsdo --autocomplete
 
 options:
@@ -20,7 +20,7 @@ options:
     --to                        Stop current task and switch to a new one
     -a --all                    Report activities for all stored days
     -c --change                 Rename current task
-    -d --daily                  Report today activities by task
+    -d --day-by-day             Report tasks by daily basis
     -f --full                   Report today full activity with start/end time
     -l, --list                  Show Todo list
     -r --report                 Report whole time spent on each task
@@ -49,6 +49,7 @@ try:
 \#[\w\-_]+=>color202_bold
 \d*h\s\d{1,2}m=>cyan_bold
 \d{2,4}-\d{2}-\d{2}=>cyan_bold
+^TaskID.*=>color255_bold
 '''
     raf = Raffaello(Commission(request).commission)
 except ImportError:
@@ -563,8 +564,7 @@ def group_task_by(tasks, group=None):
 def report_task(tasks, filter=None):
     tot_work_time = datetime.timedelta()
 
-    info('TaskID [  time  ] Task description')
-    info('----------------------------------')
+    info('TaskID [   time  -    date    ] Task description')
 
     for task in tasks:
         tot_work_time += task.work_time
@@ -577,7 +577,7 @@ def report_task(tasks, filter=None):
              worked=strfdelta(task.work_time, fmt='{H:2}h {M:02}m'),
              last_time=last_time,
              name=task.name))
-    info('')
+    info('----------------------------------')
     if filter:
         info('{filter}: Total work time {time}'.format(filter=filter, time=strfdelta(tot_work_time)))
     else:
@@ -646,6 +646,14 @@ def do_report(args):
     if args['--all']:
         by_name_or_end_date = lambda x: not pattern or (pattern in str(x.end_date) or pattern in x.name)
         tasks = get_tasks(by_name_or_end_date)
+    elif args['--day-by-day']:
+        by_end_date = lambda x: not pattern or pattern in str(x.end_date)
+        map = group_task_by(get_tasks(by_end_date), 'date')
+
+        for key in sorted(map.keys()):
+            t = group_task_by(map[key], 'task')
+            report_task(t)
+        return
     elif args['--yesterday']:
         yesterday = datetime.datetime.today() - datetime.timedelta(1)
         yesterday_date = str(yesterday).split()[0]   # keep only the part with YYYY-MM-DD
