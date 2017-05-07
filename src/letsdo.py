@@ -300,7 +300,7 @@ def strfdelta(tdelta, fmt='{H:2}h {M:02}m', inputtype='timedelta'):
     formatted string, just like the stftime() method does for datetime.datetime
     objects.
 
-    The fmt argument allows custom formatting to be specified.  Fields can 
+    The fmt argument allows custom formatting to be specified.  Fields can
     include seconds, minutes, hours, days, and weeks.  Each field is optional.
 
     Some examples:
@@ -309,12 +309,12 @@ def strfdelta(tdelta, fmt='{H:2}h {M:02}m', inputtype='timedelta'):
         '{D:2}d {H:2}:{M:02}:{S:02}'      --> ' 5d  8:04:02'
         '{H}h {S}s'                       --> '72h 800s'
 
-    The inputtype argument allows tdelta to be a regular number instead of the  
-    default, which is a datetime.timedelta object.  Valid inputtype strings: 
-        's', 'seconds', 
-        'm', 'minutes', 
-        'h', 'hours', 
-        'd', 'days', 
+    The inputtype argument allows tdelta to be a regular number instead of the
+    default, which is a datetime.timedelta object.  Valid inputtype strings:
+        's', 'seconds',
+        'm', 'minutes',
+        'h', 'hours',
+        'd', 'days',
         'w', 'weeks'
     """
 
@@ -643,21 +643,18 @@ def report_full(filter=None):
 
 def do_report(args):
     pattern = args['<pattern>']
-    if not args['--all']:
-        if not args['--yesterday']:
-            # By default show --today's tasks
-            today_date = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
-            by_logged_today = lambda x: today_date in str(x.end_date)
-            tasks = get_tasks(by_logged_today)
-        else:
-            yesterday = datetime.datetime.today() - datetime.timedelta(1)
-            yesterday_date = str(yesterday).split()[0]   # keep only the part with YYYY-MM-DD
-            by_logged_yesterday = lambda x: yesterday_date in str(x.end_date)
-            tasks = get_tasks(by_logged_yesterday)
-
-    else:
+    if args['--all']:
         by_name_or_end_date = lambda x: not pattern or (pattern in str(x.end_date) or pattern in x.name)
         tasks = get_tasks(by_name_or_end_date)
+    elif args['--yesterday']:
+        yesterday = datetime.datetime.today() - datetime.timedelta(1)
+        yesterday_date = str(yesterday).split()[0]   # keep only the part with YYYY-MM-DD
+        by_logged_yesterday = lambda x: yesterday_date in str(x.end_date)
+        tasks = get_tasks(by_logged_yesterday)
+    else: # today's tasks
+        today_date = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
+        by_logged_today = lambda x: today_date in str(x.end_date)
+        tasks = get_tasks(by_logged_today)
 
     # By default show Task grouped by name
     if not args['--detailed']:
