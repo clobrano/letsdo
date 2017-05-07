@@ -33,7 +33,6 @@ options:
 import os
 import pickle
 import datetime
-import time
 import docopt
 import sys
 import logging
@@ -535,7 +534,6 @@ def get_tasks(condition=None, todos=None):
 
 
 def group_task_by(tasks, group=None):
-    groups = []
     if group is 'name':
         uniques = []
         for task in tasks:
@@ -670,19 +668,6 @@ def do_report(args):
         report_task(tasks)
     else:
         pass
-
-    #if args['--full']:
-    #    report_full(filter)
-    #elif args['--daily']:
-    #    by_end_date = lambda x: not filter or filter in str(x.end_date)
-    #    map = group_task_by(get_tasks(by_end_date), 'date')
-
-    #    for key in sorted(map.keys()):
-    #        t = group_task_by(map[key], 'task')
-    #        report_task(t)
-    #else:
-    #    tasks = group_task_by(get_tasks(by_name_or_end_date), 'task')
-    #    report_task(tasks)
 
 
 def main():
