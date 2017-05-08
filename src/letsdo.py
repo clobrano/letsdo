@@ -48,12 +48,12 @@ try:
 \#[\w\-_]+=>color202_bold
 \d*h\s\d{1,2}m=>cyan_bold
 \d{2,4}-\d{2}-\d{2}=>cyan_bold
+^TaskID.*=>color255_underlined
 ^TaskID.*=>color255_bold
 '''
     raf = Raffaello(Commission(request).commission)
 except ImportError:
     is_color_supported = False
-
 
 # Logger
 level = logging.INFO
@@ -69,7 +69,6 @@ dbg = lambda x: logger.debug(x)
 
 
 class Configuration(object):
-
     def __init__(self):
         conf_file_path = os.path.expanduser(os.path.join('~', '.letsdo'))
         if os.path.exists(conf_file_path):
@@ -77,15 +76,20 @@ class Configuration(object):
 
             self.data_dir = self.__get_value('DATADIR')
             if self.data_dir:
-                self.data_fullpath = os.path.join(self.data_dir, '.letsdo-data')
-                self.task_fullpath = os.path.join(self.data_dir, '.letsdo-task')
+                self.data_fullpath = os.path.join(self.data_dir,
+                                                  '.letsdo-data')
+                self.task_fullpath = os.path.join(self.data_dir,
+                                                  '.letsdo-task')
             else:
                 info('letsdo data will be saved into HOME directory')
-                self.data_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-data'))
-                self.task_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-task'))
+                self.data_fullpath = os.path.expanduser(
+                    os.path.join('~', '.letsdo-data'))
+                self.task_fullpath = os.path.expanduser(
+                    os.path.join('~', '.letsdo-task'))
 
             if self.__get_value('TODO_FULLPATH'):
-                self.todo_fullpath = os.path.expanduser(self.__get_value('TODO_FULLPATH'))
+                self.todo_fullpath = os.path.expanduser(
+                    self.__get_value('TODO_FULLPATH'))
             else:
                 self.todo_fullpath = None
 
@@ -94,14 +98,17 @@ class Configuration(object):
 
         else:
             dbg('Config file not found. Using default')
-            self.data_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-data'))
-            self.task_fullpath = os.path.expanduser(os.path.join('~', '.letsdo-task'))
+            self.data_fullpath = os.path.expanduser(
+                os.path.join('~', '.letsdo-data'))
+            self.task_fullpath = os.path.expanduser(
+                os.path.join('~', '.letsdo-task'))
 
     def __get_value(self, key):
         try:
             value = os.path.expanduser(self.configuration[key])
         except KeyError as e:
-            dbg('configuration: Could not find \'{key}\' field: {msg}'.format(key=key, msg=e.message))
+            dbg('configuration: Could not find \'{key}\' field: {msg}'.format(
+                key=key, msg=e.message))
             return None
         return value
 
@@ -120,12 +127,14 @@ class Task(object):
 
         self.parse_name(name.strip())
         if start:
-            self.start_time = str2datetime(start.strip()) #datetime.datetime.strptime(start.strip(), '%Y-%m-%d %H:%M')
+            self.start_time = str2datetime(start.strip(
+            ))  #datetime.datetime.strptime(start.strip(), '%Y-%m-%d %H:%M')
         else:
             self.start_time = datetime.datetime.now()
 
         if end:
-            self.end_time = str2datetime(end.strip()) #datetime.datetime.strptime(end.strip(), '%Y-%m-%d %H:%M')
+            self.end_time = str2datetime(end.strip(
+            ))  #datetime.datetime.strptime(end.strip(), '%Y-%m-%d %H:%M')
             self.end_date = (self.end_time.strftime('%Y-%m-%d'))
             self.work_time = self.end_time - self.start_time
 
@@ -147,7 +156,8 @@ class Task(object):
         if stop_time_str:
             stop_time = str2datetime(stop_time_str)
             if stop_time < task.start_time:
-                warn('Given stop time (%s) is more recent than start time (%s)' % (stop_time, task.start_time))
+                warn('Given stop time (%s) is more recent than start time (%s)'
+                     % (stop_time, task.start_time))
                 return False
             date = stop_time.strftime('%Y-%m-%d')
         else:
@@ -158,7 +168,8 @@ class Task(object):
         start_time_str = str(task.start_time).split('.')[0][:-3]
         stop_time_str = str(stop_time).split('.')[0][:-3]
 
-        report = '%s,%s,%s,%s,%s\n' % (date, task.name, work_time_str, start_time_str, stop_time_str)
+        report = '%s,%s,%s,%s,%s\n' % (date, task.name, work_time_str,
+                                       start_time_str, stop_time_str)
         DATA_FILENAME = Configuration().data_fullpath
         with open(DATA_FILENAME, mode='a') as f:
             f.writelines(report)
@@ -167,7 +178,7 @@ class Task(object):
         os.remove(TASK_FILENAME)
         hours, minutes = work_time_str.split(':')
         info('Stopped \'{name}\' for {h}h {m}m'.format(
-                    name=task.name, h=hours, m=minutes))
+            name=task.name, h=hours, m=minutes))
         return True
 
     @staticmethod
@@ -191,7 +202,7 @@ class Task(object):
             time = str(now - task.start_time).split('.')[0]
             hours, minutes, seconds = time.split(':')
             info('Working on \'{name}\' for {h}h {m}m {s}s'.format(
-                    name=task.name, h=hours, m=minutes, s=seconds))
+                name=task.name, h=hours, m=minutes, s=seconds))
             return True
         else:
             info('No task running')
@@ -245,9 +256,12 @@ class Task(object):
             end_str = 'None'
 
         if self.id is not None:
-            return '[%d] - %s| %s (%s -> %s) - %s' % (self.id, self.end_date, work_str, start_str, end_str, self.name)
+            return '[%d] - %s| %s (%s -> %s) - %s' % (self.id, self.end_date,
+                                                      work_str, start_str,
+                                                      end_str, self.name)
 
-        return '%s| %s (%s -> %s) - %s' % (self.end_date, work_str, start_str, end_str, self.name)
+        return '%s| %s (%s -> %s) - %s' % (self.end_date, work_str, start_str,
+                                           end_str, self.name)
 
     def __eq__(self, other):
         return self.name == other.name
@@ -281,7 +295,9 @@ def autocomplete():
     completion = os.path.join(_ROOT, 'letsdo_scripts', 'letsdo_completion')
     info(message)
     print(open(completion).read())
-    print('--- CUT HERE ------------------------------------------------------------------')
+    print(
+        '--- CUT HERE ------------------------------------------------------------------'
+    )
     message = '''
     Do you want me to configure this automatically, copying the above script in your
     $HOME directory? [Y/n]
@@ -290,7 +306,9 @@ def autocomplete():
 
     resp = raw_input()
     if resp.lower() == 'y':
-        completionfile = os.path.join(os.path.expanduser('~',), '.letsdo_completion')
+        completionfile = os.path.join(
+            os.path.expanduser(
+                '~', ), '.letsdo_completion')
         with open(completionfile, 'w') as f:
             f.writelines(open(completion).read())
 
@@ -324,13 +342,13 @@ def strfdelta(tdelta, fmt='{H:2}h {M:02}m', inputtype='timedelta'):
     elif inputtype in ['s', 'seconds']:
         remainder = int(tdelta)
     elif inputtype in ['m', 'minutes']:
-        remainder = int(tdelta)*60
+        remainder = int(tdelta) * 60
     elif inputtype in ['h', 'hours']:
-        remainder = int(tdelta)*3600
+        remainder = int(tdelta) * 3600
     elif inputtype in ['d', 'days']:
-        remainder = int(tdelta)*86400
+        remainder = int(tdelta) * 86400
     elif inputtype in ['w', 'weeks']:
-        remainder = int(tdelta)*604800
+        remainder = int(tdelta) * 604800
 
     f = Formatter()
     desired_fields = [field_tuple[1] for field_tuple in f.parse(fmt)]
@@ -374,57 +392,65 @@ def str2datetime(string):
     if len(m) != 0:
         string = m[0]
         now_str = datetime.datetime.now().strftime('%H:%M')
-        return datetime.datetime.strptime(string + ' ' + now_str, '%Y-%m-%d %H:%M')
+        return datetime.datetime.strptime(string + ' ' + now_str,
+                                          '%Y-%m-%d %H:%M')
 
     m = re.findall('\d{4}/\d{2}/\d{2}', string)
     if len(m) != 0:
         string = m[0]
         now_str = datetime.datetime.now().strftime('%H:%M')
-        return datetime.datetime.strptime(string + ' ' + now_str, '%Y/%m/%d %H:%M')
+        return datetime.datetime.strptime(string + ' ' + now_str,
+                                          '%Y/%m/%d %H:%M')
 
     m = re.findall('\d{2}-\d{2} \d{2}:\d{2}', string)
     if len(m) != 0:
         string = m[0]
         year_str = datetime.datetime.today().strftime('%Y')
-        return datetime.datetime.strptime(year_str + '-' + string, '%Y-%m-%d %H:%M')
+        return datetime.datetime.strptime(year_str + '-' + string,
+                                          '%Y-%m-%d %H:%M')
 
     m = re.findall('\d{2}-\d{2} \d{2}.\d{2}', string)
     if len(m) != 0:
         string = m[0]
         year_str = datetime.datetime.today().strftime('%Y')
-        return datetime.datetime.strptime(year_str + '-' + string, '%Y-%m-%d %H:%M')
+        return datetime.datetime.strptime(year_str + '-' + string,
+                                          '%Y-%m-%d %H:%M')
 
     m = re.findall('\d{2}-\d{2}', string)
     if len(m) != 0:
         string = m[0]
         year_str = datetime.datetime.today().strftime('%Y')
         now_str = datetime.datetime.now().strftime('%H:%M')
-        return datetime.datetime.strptime(year_str + '-' + string + ' ' + now_str, '%Y-%m-%d %H:%M')
+        return datetime.datetime.strptime(
+            year_str + '-' + string + ' ' + now_str, '%Y-%m-%d %H:%M')
 
     m = re.findall('\d{2}:\d{2}', string)
     if len(m) != 0:
         string = m[0]
         today_str = datetime.datetime.today().strftime('%Y-%m-%d')
-        return datetime.datetime.strptime(today_str + ' ' + string, '%Y-%m-%d %H:%M')
+        return datetime.datetime.strptime(today_str + ' ' + string,
+                                          '%Y-%m-%d %H:%M')
 
     m = re.findall('\d:\d{2}', string)
     if len(m) != 0:
         string = m[0]
         today_str = datetime.datetime.today().strftime('%Y-%m-%d')
-        return datetime.datetime.strptime(today_str + ' ' + string, '%Y-%m-%d %H:%M')
+        return datetime.datetime.strptime(today_str + ' ' + string,
+                                          '%Y-%m-%d %H:%M')
 
     m = re.findall('\d{2}.\d{2}', string)
     if len(m) != 0:
         string = m[0]
         today_str = datetime.datetime.today().strftime('%Y-%m-%d')
-        return datetime.datetime.strptime(today_str + ' ' + string, '%Y-%m-%d %H.%M')
+        return datetime.datetime.strptime(today_str + ' ' + string,
+                                          '%Y-%m-%d %H.%M')
 
     m = re.findall('\d.\d{2}', string)
     if len(m) != 0:
         string = m[0]
         today_str = datetime.datetime.today().strftime('%Y-%m-%d')
-        return datetime.datetime.strptime(today_str + ' ' + string, '%Y-%m-%d %H.%M')
-
+        return datetime.datetime.strptime(today_str + ' ' + string,
+                                          '%Y-%m-%d %H.%M')
 
     raise ValueError('Date format not recognized: %s' % string)
 
@@ -433,13 +459,14 @@ def work_on(task_id=0, start_time_str=None):
     tasks = get_tasks(condition=lambda x: x.id == task_id)
     tasks = group_task_by(tasks, group='name')
     if not tasks:
-        err ("Could not find any task with ID '{id}'".format(id=task_id))
+        err("Could not find any task with ID '{id}'".format(id=task_id))
     else:
         assert (len(tasks) == 1)
         task = tasks[0]
         start_time = None
         if start_time_str:
-            date_str = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
+            date_str = datetime.datetime.strftime(datetime.datetime.today(),
+                                                  '%Y-%m-%d')
             start_time = date_str + ' ' + start_time_str
 
         Task(task.name, start=start_time).start()
@@ -463,7 +490,7 @@ def sanitize(text, filters=[]):
     has_link = md_link.search(text)
     if has_link:
         link_name = md_link.findall(text)
-        assert(len(link_name) == 1)
+        assert (len(link_name) == 1)
         text = re.sub('\[(.*)\]\(.*\)', link_name[0], text)
 
     return text
@@ -483,7 +510,9 @@ def get_todos():
                     if todo_start_tag in line.lower():
                         read = True
                         continue
-                    if read and ((todo_stop_tag and todo_stop_tag in line.lower()) or not line.strip()):
+                    if read and (
+                        (todo_stop_tag and todo_stop_tag in line.lower()) or
+                            not line.strip()):
                         read = False
                         break
 
@@ -492,9 +521,12 @@ def get_todos():
                         id += 1
                         tasks.append(Task(name=line, id=id))
             else:
-                tasks = [Task(name=sanitize(line), id=lineno+1) for lineno, line in enumerate(f.readlines())]
+                tasks = [
+                    Task(name=sanitize(line), id=lineno + 1)
+                    for lineno, line in enumerate(f.readlines())
+                ]
     except (TypeError, AttributeError, IOError):
-            dbg ("Could not get todo list. Todo file not set or incorrect.")
+        dbg("Could not get todo list. Todo file not set or incorrect.")
     return tasks
 
 
@@ -513,19 +545,19 @@ def get_tasks(condition=None, todos=None):
             for line in reversed(f.readlines()):
                 dbg(line)
                 fields = line.strip().split(',')
-                t = Task(name=fields[1],
-                         start=fields[3],
-                         end=fields[4])
+                t = Task(name=fields[1], start=fields[3], end=fields[4])
                 # If a task with the same name exists,
                 # keep the same ID as well
                 try:
                     same_task = tasks.index(t)
                     t.id = tasks[same_task].id
-                    dbg('{task_name} has old id {id}'.format(task_name=t.name, id=t.id))
+                    dbg('{task_name} has old id {id}'.format(
+                        task_name=t.name, id=t.id))
                 except ValueError:
                     id += 1
                     t.id = id
-                    dbg('{task_name} has new id {id}'.format(task_name=t.name, id=t.id))
+                    dbg('{task_name} has new id {id}'.format(
+                        task_name=t.name, id=t.id))
                 tasks.append(t)
 
         return filter(condition, tasks)
@@ -541,7 +573,10 @@ def group_task_by(tasks, group=None):
                 uniques.append(task)
 
         for main_task in uniques:
-            work_time_in_seconds = sum([same_task.work_time.seconds for same_task in tasks if same_task == main_task])
+            work_time_in_seconds = sum([
+                same_task.work_time.seconds for same_task in tasks
+                if same_task == main_task
+            ])
             work_time = datetime.timedelta(seconds=work_time_in_seconds)
             main_task.work_time = work_time
         return uniques
@@ -563,6 +598,7 @@ def report_task(tasks, filter=None):
     tot_work_time = datetime.timedelta()
 
     info('TaskID [   time  -    date    ] Task description')
+    info('')
 
     for task in tasks:
         tot_work_time += task.work_time
@@ -571,15 +607,19 @@ def report_task(tasks, filter=None):
         else:
             last_time = ''
         info(' {id:3d})  [ {worked:7s}{last_time} ] {name}'.format(
-             id=task.id,
-             worked=strfdelta(task.work_time, fmt='{H:2}h {M:02}m'),
-             last_time=last_time,
-             name=task.name))
+            id=task.id,
+            worked=strfdelta(task.work_time, fmt='{H:2}h {M:02}m'),
+            last_time=last_time,
+            name=task.name))
+
     info('----------------------------------')
+
     if filter:
-        info('{filter}: Total work time {time}'.format(filter=filter, time=strfdelta(tot_work_time)))
+        info('{filter}: Total work time {time}'.format(
+            filter=filter, time=strfdelta(tot_work_time)))
     else:
-        info('Total work time {time}'.format(filter=filter, time=strfdelta(tot_work_time)))
+        info('Total work time {time}'.format(
+            filter=filter, time=strfdelta(tot_work_time)))
     info('')
 
 
@@ -592,11 +632,7 @@ def report_full(filter=None):
             tok = line.split(',')
             if not filter or (filter in tok[4] or filter in tok[1]):
                 dbg('accepting %s' % line)
-                task = Task(
-                        name=tok[1],
-                        start=tok[3],
-                        end=tok[4],
-                        id=id)
+                task = Task(name=tok[1], start=tok[3], end=tok[4], id=id)
                 date = task.end_date
                 if date in tasks.keys():
                     tasks[date].append(task)
@@ -604,7 +640,8 @@ def report_full(filter=None):
                     tasks[date] = [task]
 
         if len(tasks) == 0:
-            info('No tasks found with filter \'{filter}\''.format(filter=filter))
+            info('No tasks found with filter \'{filter}\''.format(
+                filter=filter))
             return
 
         dates = sorted(tasks.keys(), reverse=True)
@@ -628,12 +665,15 @@ def report_full(filter=None):
                 start_str = '%s' % task.start_time.strftime('%H:%M')
                 end_str = '%s' % task.end_time.strftime('%H:%M')
 
-                column += '%s | %s -> %s = %s | %s' % (task.end_date, start_str, end_str, work_str, task.name)
+                column += '%s | %s -> %s = %s | %s' % (task.end_date,
+                                                       start_str, end_str,
+                                                       work_str, task.name)
                 column += '\n'
 
             print('-' * 60)
             print(column)
-            print('Work: {wtime},  Break: {btime}'.format(wtime=tot_time, btime=pause))
+            print('Work: {wtime},  Break: {btime}'.format(
+                wtime=tot_time, btime=pause))
             print('')
 
         return tot_time, pause
@@ -654,11 +694,13 @@ def do_report(args):
         return
     elif args['--yesterday']:
         yesterday = datetime.datetime.today() - datetime.timedelta(1)
-        yesterday_date = str(yesterday).split()[0]   # keep only the part with YYYY-MM-DD
+        yesterday_date = str(yesterday).split()[
+            0]  # keep only the part with YYYY-MM-DD
         by_logged_yesterday = lambda x: yesterday_date in str(x.end_date)
         tasks = get_tasks(by_logged_yesterday)
-    else: # today's tasks
-        today_date = datetime.datetime.strftime(datetime.datetime.today(), '%Y-%m-%d')
+    else:  # today's tasks
+        today_date = datetime.datetime.strftime(datetime.datetime.today(),
+                                                '%Y-%m-%d')
         by_logged_today = lambda x: today_date in str(x.end_date)
         tasks = get_tasks(by_logged_today)
 
@@ -699,7 +741,7 @@ def main():
         elif args['--replace']:
             target = ' '.join(args['--replace'])
             replacement = ' '.join(args['--with'])
-            dbg ("replacing '{0}' with '{1}'".format(target, replacement))
+            dbg("replacing '{0}' with '{1}'".format(target, replacement))
             Task.change(replacement, target)
 
         elif args['--to']:
@@ -707,7 +749,7 @@ def main():
                 id = eval(args['--id'])
                 tasks = get_tasks(lambda x: x.id == id)
                 if len(tasks) == 0:
-                    err ("Could not find tasks with id '%d'" & id)
+                    err("Could not find tasks with id '%d'" & id)
                 else:
                     task = tasks[0]
                     new_task_name = task.name
