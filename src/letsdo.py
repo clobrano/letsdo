@@ -2,27 +2,27 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo [--time=<time>] [--work-on=<id>|<name>...]
-    letsdo --list
-    letsdo --change <name>...
-    letsdo --replace=<target>... --with=<string>...
-    letsdo --to [<newtask>...|--id=<id>]
-    letsdo --stop [--time=<time>]
-    letsdo --report [--by-name|--detailed]
-    letsdo --report --yesterday [--by-name|--detailed]
-    letsdo --report --all [--by-name|--detailed] [<pattern>]
-    letsdo --report --day-by-day [--all] [--yesterday] [<pattern>]
-    letsdo --autocomplete
+    letsdo [--color] [--time=<time>] [--work-on=<id>|<name>...]
+    letsdo [--color] --list
+    letsdo [--color] --change <name>...
+    letsdo [--color] --replace=<target>... --with=<string>...
+    letsdo [--color] --to [<newtask>...|--id=<id>]
+    letsdo [--color] --stop [--time=<time>]
+    letsdo [--color] --report [--by-name|--detailed]
+    letsdo [--color] --report --yesterday [--by-name|--detailed]
+    letsdo [--color] --report --all [--by-name|--detailed] [<pattern>]
+    letsdo [--color] --report --day-by-day [--all] [--yesterday] [<pattern>]
+    letsdo [--color] --autocomplete
 
 options:
     --debug                     Enable debug logs
     --id<id>                    Task id (used with --to)
     --to                        Stop current task and switch to a new one
     -a --all                    Report activities for all stored days
-    -c --change                 Rename current task
     -d --day-by-day             Report tasks by daily basis
     -f --full                   Report today full activity with start/end time
     -l, --list                  Show Todo list
+    -c, --color                 Enable colorizer if available
     -r --report                 Report whole time spent on each task
     -s --stop                   Stop current running task
     -t <time> --time=<time>     Suggest the start/stop time of the task
@@ -41,7 +41,8 @@ import re
 from string import Formatter
 try:
     from raffaello import Raffaello, Commission
-    is_color_supported = True
+    is_raffaello_available = True
+
     request = '''
 \+[\w\-_]+=>color197_bold
 \@[\w\-_]+=>color046
@@ -53,16 +54,20 @@ try:
 '''
     raf = Raffaello(Commission(request).commission)
 except ImportError:
-    is_color_supported = False
+    is_raffaello_available = True
 
 # Logger
 level = logging.INFO
 logging.basicConfig(level=level, format='%(message)s')
 logger = logging.getLogger(__name__)
-if is_color_supported:
-    info = lambda x: logger.info(raf.paint(x))
-else:
-    info = lambda x: logger.info(x)
+is_color_enabled = False
+
+def info(msg):
+    if is_color_enabled:
+        logger.info(raf.paint(msg))
+    else:
+        logger.info(msg)
+
 err = lambda x: logger.error(x)
 warn = lambda x: logger.warn(x)
 dbg = lambda x: logger.debug(x)
@@ -713,7 +718,12 @@ def do_report(args):
 
 
 def main():
+    global is_color_enabled
     args = docopt.docopt(__doc__)
+
+    if args['--color']:
+        if is_raffaello_available:
+            is_color_enabled = True
 
     if args['<name>']:
         if args['--change']:
