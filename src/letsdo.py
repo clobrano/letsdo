@@ -39,6 +39,7 @@ import logging
 import yaml
 import re
 from string import Formatter
+import hashlib
 try:
     from raffaello import Raffaello, Commission
     is_raffaello_available = True
@@ -123,14 +124,15 @@ class Task(object):
         self.context = None
         self.end_date = None
         self.end_time = None
-        self.name = None
+        self.name = name.strip()
         self.start_time = None
         self.tags = None
         self.work_time = datetime.timedelta()
         self.id = id
         self.pause = 0
+        self.uid = None
 
-        self.parse_name(name.strip())
+        self.parse_name(self.name)
         if start:
             self.start_time = str2datetime(start.strip(
             ))  #datetime.datetime.strptime(start.strip(), '%Y-%m-%d %H:%M')
@@ -182,12 +184,13 @@ class Task(object):
         TASK_FILENAME = Configuration().task_fullpath
         os.remove(TASK_FILENAME)
         hours, minutes = work_time_str.split(':')
-        info('Stopped \'{name}\' for {h}h {m}m'.format(
-            name=task.name, h=hours, m=minutes))
+        info('Stopped \'{name}\' [id: {hash}] after {h}h {m}m of work'.format(
+            name=task.name, h=hours, m=minutes, hash=task.uid[:7]))
         return True
 
     @staticmethod
     def change(name, pattern=None):
+        # TODO: update uid
         task = Task.get_running()
         if task:
             if pattern:
@@ -206,8 +209,8 @@ class Task(object):
             now = datetime.datetime.now()
             time = str(now - task.start_time).split('.')[0]
             hours, minutes, seconds = time.split(':')
-            info('Working on \'{name}\' for {h}h {m}m {s}s'.format(
-                name=task.name, h=hours, m=minutes, s=seconds))
+            info('Working on \'{name}\' [id: {uid}] for {h}h {m}m {s}s'.format(
+                name=task.name, h=hours, m=minutes, s=seconds, uid=task.uid[:7]))
             return True
         else:
             info('No task running')
@@ -223,7 +226,7 @@ class Task(object):
     def start(self):
         if not Task.__is_running():
             if self.__create():
-                info('Starting task \'%s\'' % self.name)
+                info('Starting task \'{name}\' [id: {uid}]'.format(name=self.name, uid=self.uid[:7]))
                 return Task.get_running()
 
             err('Could not create new task')
@@ -241,6 +244,7 @@ class Task(object):
     def parse_name(self, name):
         name = name.replace(',', ' ')
         self.name = name
+        self.uid = hashlib.sha224(self.name).hexdigest()
         matches = re.findall('@[\w\-_]+', name)
         if len(matches) == 1:
             self.context = matches[0]
@@ -261,12 +265,12 @@ class Task(object):
             end_str = 'None'
 
         if self.id is not None:
-            return '[%d] - %s| %s (%s -> %s) - %s' % (self.id, self.end_date,
+            return '[%d] - %s| %s (%s -> %s) - [%s] %s' % (self.id, self.end_date,
                                                       work_str, start_str,
-                                                      end_str, self.name)
+                                                      end_str, self.uid[:7], self.name)
 
-        return '%s| %s (%s -> %s) - %s' % (self.end_date, work_str, start_str,
-                                           end_str, self.name)
+        return '%s| %s (%s -> %s) - [%s] %s' % (self.end_date, work_str, start_str,
+                                           end_str, self.uid[:7], self.name)
 
     def __eq__(self, other):
         return self.name == other.name
@@ -550,7 +554,7 @@ def get_tasks(condition=None, todos=None):
             for line in reversed(f.readlines()):
                 dbg(line)
                 fields = line.strip().split(',')
-                t = Task(name=fields[1], start=fields[3], end=fields[4])
+                t = Task(name=sanitize(fields[1]), start=fields[3], end=fields[4])
                 # If a task with the same name exists,
                 # keep the same ID as well
                 try:
@@ -602,7 +606,7 @@ def group_task_by(tasks, group=None):
 def report_task(tasks, filter=None):
     tot_work_time = datetime.timedelta()
 
-    info('TaskID [   time  -    date    ] Task description')
+    info('TaskID |   time  -    date    | [   id   ] Task description')
     info('')
 
     for task in tasks:
@@ -611,11 +615,12 @@ def report_task(tasks, filter=None):
             last_time = ' - ' + task.end_date
         else:
             last_time = ''
-        info(' {id:3d})  [ {worked:7s}{last_time} ] {name}'.format(
+        info(' {id:3d})  | {worked:7s}{last_time} | [{uid}] {name}'.format(
             id=task.id,
             worked=strfdelta(task.work_time, fmt='{H:2}h {M:02}m'),
             last_time=last_time,
-            name=task.name))
+            name=task.name,
+            uid=task.uid[:7]))
 
     info('----------------------------------')
 
@@ -722,8 +727,7 @@ def main():
     args = docopt.docopt(__doc__)
 
     if args['--color']:
-        if is_raffaello_available:
-            is_color_enabled = True
+        is_color_enabled = is_raffaello_available
 
     if args['<name>']:
         if args['--change']:
