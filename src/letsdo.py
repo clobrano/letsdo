@@ -699,7 +699,7 @@ def do_report(args):
         map = group_task_by(get_tasks(by_end_date), 'date')
 
         for key in sorted(map.keys()):
-            t = group_task_by(map[key], 'task')
+            t = group_task_by(map[key], 'name')
             report_task(t)
         return
     elif args['--yesterday']:
