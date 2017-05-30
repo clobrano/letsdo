@@ -736,7 +736,7 @@ def main():
             return
         elif not Task.get_running():
             new_task_name = ' '.join(args['<name>'])
-            Task(new_task_name).start()
+            Task(new_task_name, start=args['--time']).start()
         else:
             pass
     else:
