@@ -3,10 +3,9 @@
 '''
 Usage:
     letsdo [--color] [--time=<time>] [--work-on=<id>|<name>...]
+    letsdo [--color] --edit
     letsdo [--color] --list
-    letsdo [--color] --change <name>...
-    letsdo [--color] --replace=<target>... --with=<string>...
-    letsdo [--color] --to [<newtask>...|--id=<id>]
+    letsdo [--color] --to [<newtask>...|--work-on=<id>]
     letsdo [--color] --stop [--time=<time>]
     letsdo [--color] --report [--by-name|--detailed]
     letsdo [--color] --report --yesterday [--by-name|--detailed]
@@ -15,23 +14,21 @@ Usage:
     letsdo [--color] --autocomplete
 
 options:
-    --debug                     Enable debug logs
-    --id<id>                    Task id (used with --to)
-    --to                        Stop current task and switch to a new one
-    -a --all                    Report activities for all stored days
-    -d --day-by-day             Report tasks by daily basis
-    -f --full                   Report today full activity with start/end time
-    -l, --list                  Show Todo list
-    -c, --color                 Enable colorizer if available
-    -r --report                 Report whole time spent on each task
+    -w <id>, --work-on=<id>     Start working on a Task giving it's ID (it can be used together with --to as well)
     -s --stop                   Stop current running task
-    -t <time> --time=<time>     Suggest the start/stop time of the task
-    -w <id>, --work-on=<id>     Start working on a Task giving it's ID
-    -y --yesterday              Fast switch to show reports of the day before
+    -t <time> --time=<time>     Change the start/stop time of the task (to be used with --work-on, --to, --stop)
+    -e, --edit                  Edit current running task data (name, start time)
+    --to                        Stop current task and switch to a new one (see also --work-on)
+    -r --report                 Report whole time spent on each task
+    -y --yesterday              Select only yesterday's activities to be shown in report  (to be used with --report)
+    -a --all                    Select all activities to be shown in report  (to be used with --report)
+    -d --day-by-day             Report tasks by daily basis (to be used with --report)
+    -l, --list                  Show Todo list, if path to Todo list is configured 
+    -c, --color                 Enable colorizer if available (see raffaello)
+    --debug                     Enable debug logs
 '''
 
 import os
-import pickle
 import datetime
 import docopt
 import sys
@@ -40,6 +37,7 @@ import yaml
 import re
 from string import Formatter
 import hashlib
+import json
 try:
     from raffaello import Raffaello, Commission
     is_raffaello_available = True
@@ -134,23 +132,21 @@ class Task(object):
 
         self.parse_name(self.name)
         if start:
-            self.start_time = str2datetime(start.strip(
-            ))  #datetime.datetime.strptime(start.strip(), '%Y-%m-%d %H:%M')
+            self.start_time = str2datetime(start.strip())
         else:
             self.start_time = datetime.datetime.now()
 
         if end:
-            self.end_time = str2datetime(end.strip(
-            ))  #datetime.datetime.strptime(end.strip(), '%Y-%m-%d %H:%M')
+            self.end_time = str2datetime(end.strip())
             self.end_date = (self.end_time.strftime('%Y-%m-%d'))
             self.work_time = self.end_time - self.start_time
 
     @staticmethod
     def get_running():
-        TASK_FILENAME = Configuration().task_fullpath
         if Task.__is_running():
-            with open(TASK_FILENAME, 'r') as f:
-                return pickle.load(f)
+            with open(Configuration().task_fullpath, 'r') as f:
+                data = json.load(f)
+                return Task(data['name'], data['start'])
         return None
 
     @staticmethod
@@ -160,6 +156,7 @@ class Task(object):
             info('No task running')
             return
 
+        # Get strings for the task report
         if stop_time_str:
             stop_time = str2datetime(stop_time_str)
             if stop_time < task.start_time:
@@ -175,37 +172,28 @@ class Task(object):
         start_time_str = str(task.start_time).split('.')[0][:-3]
         stop_time_str = str(stop_time).split('.')[0][:-3]
 
-        report_line = '{date},{name},{worked_time},{start_time},{stop_time}'\
+        report_line = '{date},{name},{worked_time},{start_time},{stop_time}\n'\
                 .format(date=date,
                         name=task.name,
                         worked_time=work_time_str,
                         start_time=start_time_str,
                         stop_time=stop_time_str)
 
-        DATA_FILENAME = Configuration().data_fullpath
-        with open(DATA_FILENAME, mode='a') as f:
-            f.writelines(report_line)
+        try:
+            with open(Configuration().data_fullpath, mode='a') as f:
+                f.writelines(report_line)
+        except IOError, e:
+            err ('Could not save report: ' + err.message)
+            return False
 
-        TASK_FILENAME = Configuration().task_fullpath
-        os.remove(TASK_FILENAME)
+        # Delete current task data to mark it as stopped
+        os.remove(Configuration().task_fullpath)
+
         hours, minutes = work_time_str.split(':')
         info('Stopped \'{name}\' [id: {hash}] after {h}h {m}m of work'.format(
             name=task.name, h=hours, m=minutes, hash=task.uid[:7]))
+
         return True
-
-    @staticmethod
-    def change(name, pattern=None):
-        # TODO: update uid
-        task = Task.get_running()
-        if task:
-            if pattern:
-                old_name = task.name
-                name = old_name.replace(pattern, name)
-            info('Renaming task \'%s\' to \'%s\'' % (task.name, name))
-            task.parse_name(name)
-            return task.__create()
-
-        warn('No task running')
 
     @staticmethod
     def status():
@@ -231,7 +219,6 @@ class Task(object):
     def start(self):
         if not Task.__is_running():
             if self.__create():
-                info('Starting task \'{name}\' [id: {uid}]'.format(name=self.name, uid=self.uid[:7]))
                 return Task.get_running()
 
             err('Could not create new task')
@@ -241,10 +228,20 @@ class Task(object):
         return True
 
     def __create(self):
-        TASK_FILENAME = Configuration().task_fullpath
-        with open(TASK_FILENAME, 'w') as f:
-            pickle.dump(self, f)
-            return True
+        try:
+            with open(Configuration().task_fullpath, 'w') as f:
+                json_data = '''{
+    "name": "%s",
+    "start": "%s"
+}
+'''% (self.name, str(self.start_time))
+                f.write(json_data)
+                info('Started task [%s]:' % self.uid);
+                info(json_data);
+                return True
+        except IOError, err:
+            err ('Could not save task data: ' + err.message)
+            return False
 
     def parse_name(self, name):
         name = name.replace(',', ' ')
@@ -735,67 +732,68 @@ def main():
         is_color_enabled = is_raffaello_available
 
     if args['<name>']:
-        if args['--change']:
-            new_task_name = ' '.join(args['<name>'])
-            Task.change(new_task_name)
+        if Task.get_running():
+            info ("Another task is already running")
             return
-        elif not Task.get_running():
-            new_task_name = ' '.join(args['<name>'])
-            Task(new_task_name, start=args['--time']).start()
-        else:
-            pass
-    else:
-        if args['--list']:
-            todos = get_todos()
-            names = [t.name for t in todos]
+        new_task_name = ' '.join(args['<name>'])
+        Task(new_task_name, start=args['--time']).start()
 
-            in_todo_list = lambda x: x.name in names
-            tasks = get_tasks(in_todo_list, todos)
-            tasks = group_task_by(tasks, 'name')
-            report_task(tasks)
+    if args['--edit']:
+        task = Task.get_running()
+        if not task:
+            info ('No task running')
+            return
+        edit_command = '{editor} {filename}'\
+                .format(editor=os.getenv('EDITOR'),
+                        filename=Configuration().task_fullpath)
+        os.system(edit_command)
+        return
 
-        elif args['--stop']:
-            Task.stop(args['--time'])
+    if args['--list']:
+        todos = get_todos()
+        names = [t.name for t in todos]
 
-        elif args['--replace']:
-            target = ' '.join(args['--replace'])
-            replacement = ' '.join(args['--with'])
-            dbg("replacing '{0}' with '{1}'".format(target, replacement))
-            Task.change(replacement, target)
+        in_todo_list = lambda x: x.name in names
+        tasks = get_tasks(in_todo_list, todos)
+        tasks = group_task_by(tasks, 'name')
+        report_task(tasks)
 
-        elif args['--to']:
-            if args['--id']:
-                id = eval(args['--id'])
-                tasks = get_tasks(lambda x: x.id == id)
-                if len(tasks) == 0:
-                    err("Could not find tasks with id '%d'" & id)
-                else:
-                    task = tasks[0]
-                    new_task_name = task.name
-            else:
-                new_task_name = ' '.join(args['<newtask>'])
+    elif args['--stop']:
+        Task.stop(args['--time'])
 
-            Task.stop()
-            Task(new_task_name).start()
-
-        elif args['--work-on']:
+    elif args['--to']:
+        if args['--work-on']:
             id = eval(args['--work-on'])
-            work_on(task_id=id, start_time_str=args['--time'])
-            sys.exit(0)
+            tasks = get_tasks(lambda x: x.id == id)
+            if len(tasks) == 0:
+                err("Could not find tasks with id '%d'" & id)
+            else:
+                task = tasks[0]
+                new_task_name = task.name
+        else:
+            new_task_name = ' '.join(args['<newtask>'])
 
-        elif args['--report']:
-            do_report(args)
+        Task.stop()
+        Task(new_task_name).start()
 
-        elif args['--autocomplete']:
-            autocomplete()
+    elif args['--work-on']:
+        id = eval(args['--work-on'])
+        work_on(task_id=id, start_time_str=args['--time'])
+        sys.exit(0)
 
-        elif Task.get_running():
-            Task.status()
+    elif args['--report']:
+        do_report(args)
 
-        elif not args['<name>']:
-            args['<name>'] = ['unknown']
+    elif args['--autocomplete']:
+        autocomplete()
 
-            return do_report(args)
+    elif Task.get_running():
+        Task.status()
+
+    elif not args['<name>']:
+        args['<name>'] = ['unknown']
+
+        return do_report(args)
 
 
 if __name__ == '__main__':
