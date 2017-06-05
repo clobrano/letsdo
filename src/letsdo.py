@@ -175,11 +175,16 @@ class Task(object):
         start_time_str = str(task.start_time).split('.')[0][:-3]
         stop_time_str = str(stop_time).split('.')[0][:-3]
 
-        report = '%s,%s,%s,%s,%s\n' % (date, task.name, work_time_str,
-                                       start_time_str, stop_time_str)
+        report_line = '{date},{name},{worked_time},{start_time},{stop_time}'\
+                .format(date=date,
+                        name=task.name,
+                        worked_time=work_time_str,
+                        start_time=start_time_str,
+                        stop_time=stop_time_str)
+
         DATA_FILENAME = Configuration().data_fullpath
         with open(DATA_FILENAME, mode='a') as f:
-            f.writelines(report)
+            f.writelines(report_line)
 
         TASK_FILENAME = Configuration().task_fullpath
         os.remove(TASK_FILENAME)
