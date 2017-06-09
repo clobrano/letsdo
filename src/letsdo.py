@@ -7,6 +7,7 @@ Usage:
     letsdo [--color] --list
     letsdo [--color] --to [<newtask>...|--work-on=<id>]
     letsdo [--color] --stop [--time=<time>]
+    letsdo [--color] --cancel
     letsdo [--color] --report [--by-name|--detailed]
     letsdo [--color] --report --yesterday [--by-name|--detailed]
     letsdo [--color] --report --all [--by-name|--detailed] [<pattern>]
@@ -23,7 +24,7 @@ options:
     -y --yesterday              Select only yesterday's activities to be shown in report  (to be used with --report)
     -a --all                    Select all activities to be shown in report  (to be used with --report)
     -d --day-by-day             Report tasks by daily basis (to be used with --report)
-    -l, --list                  Show Todo list, if path to Todo list is configured 
+    -l, --list                  Show Todo list, if path to Todo list is configured
     -c, --color                 Enable colorizer if available (see raffaello)
     --debug                     Enable debug logs
 '''
@@ -194,6 +195,16 @@ class Task(object):
             name=task.name, h=hours, m=minutes, hash=task.uid[:7]))
 
         return True
+
+    @staticmethod
+    def cancel():
+        task = Task.get_running()
+        if task:
+            with open(Configuration().task_fullpath, 'r') as f:
+                content = f.read()
+            os.remove(Configuration().task_fullpath)
+            info('Cancelled task [{id}]'.format(id=task.uid))
+            info(content)
 
     @staticmethod
     def status():
@@ -747,6 +758,10 @@ def main():
                 .format(editor=os.getenv('EDITOR'),
                         filename=Configuration().task_fullpath)
         os.system(edit_command)
+        return
+
+    if args['--cancel']:
+        Task.cancel()
         return
 
     if args['--list']:
