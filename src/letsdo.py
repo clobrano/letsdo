@@ -249,7 +249,7 @@ class Task(object):
 }
 '''% (self.name, str(self.start_time))
                 f.write(json_data)
-                info('Started task [%s]:' % self.uid);
+                info('Started task [%s]:' % self.uid[:7]);
                 info(json_data);
                 return True
         except IOError, err:
