@@ -8,6 +8,7 @@ Usage:
     letsdo [--color] --to [<newtask>...|--work-on=<id>]
     letsdo [--color] --stop [--time=<time>]
     letsdo [--color] --cancel
+    letsdo [--color] --back-to-work
     letsdo [--color] --report [--by-name|--detailed]
     letsdo [--color] --report --yesterday [--by-name|--detailed]
     letsdo [--color] --report --all [--by-name|--detailed] [<pattern>]
@@ -17,6 +18,7 @@ Usage:
 options:
     -w <id>, --work-on=<id>     Start working on a Task giving it's ID (it can be used together with --to as well)
     -s --stop                   Stop current running task
+    -b, --back-to-work          Restart latest task done
     -t <time> --time=<time>     Change the start/stop time of the task (to be used with --work-on, --to, --stop)
     -e, --edit                  Edit current running task data (name, start time)
     --to                        Stop current task and switch to a new one (see also --work-on)
@@ -763,6 +765,14 @@ def main():
 
     if args['--cancel']:
         Task.cancel()
+        return
+
+    if args['--back-to-work']:
+        today_date = datetime.datetime.strftime(datetime.datetime.today(),
+                                                '%Y-%m-%d')
+        by_logged_today = lambda x: today_date in str(x.end_date)
+        last_task = get_tasks(by_logged_today)[0]
+        Task(name=last_task.name).start();
         return
 
     if args['--list']:
