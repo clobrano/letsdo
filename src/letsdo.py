@@ -748,6 +748,7 @@ def main():
             return
         new_task_name = ' '.join(args['<name>'])
         Task(new_task_name, start=args['--time']).start()
+        return
 
     if args['--edit']:
         task = Task.get_running()
