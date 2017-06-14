@@ -12,6 +12,10 @@ __version__ = '0.3.4'
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+def long_description():
+    if os.path.exists('README.rst'):
+        return read('README.rst');
+    return read('README.md')
 
 setup(name='letsdo',
       author='Carlo Lobrano',
@@ -22,7 +26,7 @@ setup(name='letsdo',
       install_requires=['docopt', 'PyYaml'],
       keywords=['productivity', 'time tracker'],
       license="MIT",
-      long_description = read('README.rst'),
+      long_description = long_description(),
       package_dir={'': 'src'},
       packages=find_packages('src'),
       py_modules=['letsdo'],
