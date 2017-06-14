@@ -2,33 +2,26 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo [--color] [--time=<time>] [--work-on=<id>|<name>...]
-    letsdo [--color] --edit
-    letsdo [--color] --list
-    letsdo [--color] --to [<newtask>...|--work-on=<id>]
-    letsdo [--color] --stop [--time=<time>]
-    letsdo [--color] --cancel
-    letsdo [--color] --back-to-work
-    letsdo [--color] --report [--by-name|--detailed]
-    letsdo [--color] --report --yesterday [--by-name|--detailed]
-    letsdo [--color] --report --all [--by-name|--detailed] [<pattern>]
-    letsdo [--color] --report --day-by-day [--all] [--yesterday] [<pattern>]
-    letsdo [--color] --autocomplete
+    letsdo [--color] start [--time=<time>] [--id=<id>|<name>...]
+    letsdo [--color] edit
+    letsdo [--color] list
+    letsdo [--color] to [<newtask>...|--id=<id>]
+    letsdo [--color] stop [--time=<time>]
+    letsdo [--color] cancel
+    letsdo [--color] last
+    letsdo [--color] [report] [--all | --today | --yesterday] [--detailed | --day-by-day] [<pattern>]
+    letsdo [--color] [report]  [--all] [<pattern>]
+    letsdo [--color] autocomplete
 
 options:
-    -w <id>, --work-on=<id>     Start working on a Task giving it's ID (it can be used together with --to as well)
-    -s --stop                   Stop current running task
-    -b, --back-to-work          Restart latest task done
-    -t <time> --time=<time>     Change the start/stop time of the task (to be used with --work-on, --to, --stop)
-    -e, --edit                  Edit current running task data (name, start time)
-    --to                        Stop current task and switch to a new one (see also --work-on)
-    -r --report                 Report whole time spent on each task
-    -y --yesterday              Select only yesterday's activities to be shown in report  (to be used with --report)
-    -a --all                    Select all activities to be shown in report  (to be used with --report)
-    -d --day-by-day             Report tasks by daily basis (to be used with --report)
-    -l, --list                  Show Todo list, if path to Todo list is configured
-    -c, --color                 Enable colorizer if available (see raffaello)
-    --debug                     Enable debug logs
+    -i <id>, --id=<id>     Start working on a Task giving it's ID (it can be used together with --to as well)
+    --today, -t            Show only the tasks done today (to be used with report)
+    --time=<time>          Change the start/stop time of the task on the fly (to be used with --id, to, stop)
+    -y --yesterday         Select only yesterday's activities to be shown in report  (to be used with --report)
+    -a --all               Select all activities to be shown in report  (to be used with --report)
+    -d --day-by-day        Report tasks by daily basis (to be used with --report)
+    -c, --color            Enable colorizer if available (see raffaello)
+    --debug                Enable debug logs
 '''
 
 import os
@@ -41,6 +34,7 @@ import re
 from string import Formatter
 import hashlib
 import json
+from terminaltables import SingleTable
 try:
     from raffaello import Raffaello, Commission
     is_raffaello_available = True
@@ -51,8 +45,9 @@ try:
 \#[\w\-_]+=>color202_bold
 \d*h\s\d{1,2}m=>cyan_bold
 \d{2,4}-\d{2}-\d{2}=>cyan_bold
-^TaskID.*=>color255_underlined
-^TaskID.*=>color255_bold
+^TaskID.*=>color009_bold
+.*TODAY'S.*=>color009_bold
+.*YESTERDAY'S.*=>color009_bold
 '''
     raf = Raffaello(Commission(request).commission)
 except ImportError:
@@ -74,6 +69,10 @@ err = lambda x: logger.error(x)
 warn = lambda x: logger.warn(x)
 dbg = lambda x: logger.debug(x)
 
+def paint(msg):
+    if msg and is_color_enabled:
+        return raf.paint(str(msg))
+    return msg
 
 class Configuration(object):
     def __init__(self):
@@ -618,34 +617,44 @@ def group_task_by(tasks, group=None):
         return tasks
 
 
-def report_task(tasks, filter=None):
+def report_task(tasks, filter=None, title=None):
     tot_work_time = datetime.timedelta()
 
-    info('TaskID |   time  -    date    | [   id   ] Task description')
-    info('')
+    table_data = [
+            ['ID', 'Last date', 'Time', 'Hash', 'Task description'],
+    ]
 
     for task in tasks:
         tot_work_time += task.work_time
+
         if task.end_date:
-            last_time = ' - ' + task.end_date
+            last_time = task.end_date
         else:
             last_time = ''
-        info(' {id:3d})  | {worked:7s}{last_time} | [{uid}] {name}'.format(
-            id=task.id,
-            worked=strfdelta(task.work_time, fmt='{H:2}h {M:02}m'),
-            last_time=last_time,
-            name=task.name,
-            uid=task.uid[:7]))
 
-    info('----------------------------------')
+        row = [ paint(task.id),
+                paint(last_time),
+                paint(strfdelta(task.work_time, fmt='{H:2}h {M:02}m')),
+                paint(task.uid[:7]),
+                paint(task.name)]
 
+        table_data.append(row)
+
+    table = SingleTable(table_data)
+    if title:
+        table.title = title
+    else:
+        table.title = filter
+
+    info('')
+    print(table.table)
+    info('')
     if filter:
         info('{filter}: Total work time {time}'.format(
             filter=filter, time=strfdelta(tot_work_time)))
     else:
         info('Total work time {time}'.format(
             filter=filter, time=strfdelta(tot_work_time)))
-    info('')
 
 
 def report_full(filter=None):
@@ -706,6 +715,8 @@ def report_full(filter=None):
 
 def do_report(args):
     pattern = args['<pattern>']
+    title=None
+
     if args['--all']:
         by_name_or_end_date = lambda x: not pattern or (pattern in str(x.end_date) or pattern in x.name)
         tasks = get_tasks(by_name_or_end_date)
@@ -715,26 +726,29 @@ def do_report(args):
 
         for key in sorted(map.keys()):
             t = group_task_by(map[key], 'name')
-            report_task(t)
+            report_task(t, title="Daily Tasks")
         return
     elif args['--yesterday']:
+        title="Yesterday's"
         yesterday = datetime.datetime.today() - datetime.timedelta(1)
         yesterday_date = str(yesterday).split()[
             0]  # keep only the part with YYYY-MM-DD
         by_logged_yesterday = lambda x: yesterday_date in str(x.end_date)
         tasks = get_tasks(by_logged_yesterday)
-    else:  # today's tasks
+    else:  # Defaults on today's tasks
+        title="Today's"
         today_date = datetime.datetime.strftime(datetime.datetime.today(),
                                                 '%Y-%m-%d')
         by_logged_today = lambda x: today_date in str(x.end_date)
         tasks = get_tasks(by_logged_today)
 
     # By default show Task grouped by name
-    if not args['--detailed']:
-        tasks = group_task_by(tasks, 'name')
-        report_task(tasks)
-    else:
+    if args['--detailed']:
+        # TODO
         pass
+    else:
+        tasks = group_task_by(tasks, 'name')
+        report_task(tasks, title=title)
 
 
 def main():
@@ -744,15 +758,20 @@ def main():
     if args['--color']:
         is_color_enabled = is_raffaello_available
 
-    if args['<name>']:
-        if Task.get_running():
-            info ("Another task is already running")
+    if args['start']:
+        if args['<name>']:
+            if Task.get_running():
+                info ("Another task is already running")
+                return
+            new_task_name = ' '.join(args['<name>'])
+            Task(new_task_name, start=args['--time']).start()
             return
-        new_task_name = ' '.join(args['<name>'])
-        Task(new_task_name, start=args['--time']).start()
-        return
+        if args['--id']:
+            id = eval(args['--id'])
+            work_on(task_id=id, start_time_str=args['--time'])
+            return 
 
-    if args['--edit']:
+    if args['edit']:
         task = Task.get_running()
         if not task:
             info ('No task running')
@@ -763,11 +782,11 @@ def main():
         os.system(edit_command)
         return
 
-    if args['--cancel']:
+    if args['cancel']:
         Task.cancel()
         return
 
-    if args['--back-to-work']:
+    if args['last']:
         today_date = datetime.datetime.strftime(datetime.datetime.today(),
                                                 '%Y-%m-%d')
         by_logged_today = lambda x: today_date in str(x.end_date)
@@ -775,21 +794,23 @@ def main():
         Task(name=last_task.name).start();
         return
 
-    if args['--list']:
+    if args['list']:
         todos = get_todos()
         names = [t.name for t in todos]
 
         in_todo_list = lambda x: x.name in names
         tasks = get_tasks(in_todo_list, todos)
         tasks = group_task_by(tasks, 'name')
-        report_task(tasks)
+        report_task(tasks, title="Todos")
+        return
 
-    elif args['--stop']:
+    if args['stop']:
         Task.stop(args['--time'])
+        return
 
-    elif args['--to']:
-        if args['--work-on']:
-            id = eval(args['--work-on'])
+    if args['to']:
+        if args['--id']:
+            id = eval(args['--id'])
             tasks = get_tasks(lambda x: x.id == id)
             if len(tasks) == 0:
                 err("Could not find tasks with id '%d'" & id)
@@ -801,25 +822,25 @@ def main():
 
         Task.stop()
         Task(new_task_name).start()
+        return
 
-    elif args['--work-on']:
-        id = eval(args['--work-on'])
-        work_on(task_id=id, start_time_str=args['--time'])
-        sys.exit(0)
-
-    elif args['--report']:
-        do_report(args)
-
-    elif args['--autocomplete']:
+    if args['autocomplete']:
         autocomplete()
+        return
 
-    elif Task.get_running():
+    if args['report']:
+        return do_report(args)
+
+    # Default, if a task is running show it
+    if Task.get_running():
         Task.status()
+        return
 
-    elif not args['<name>']:
+    # Default do_report
+    if not args['<name>']:
         args['<name>'] = ['unknown']
 
-        return do_report(args)
+    return do_report(args)
 
 
 if __name__ == '__main__':
