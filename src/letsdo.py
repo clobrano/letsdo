@@ -9,9 +9,9 @@ Usage:
     letsdo [--color] stop [--time=<time>]
     letsdo [--color] cancel
     letsdo [--color] last
+    letsdo [--color] autocomplete
     letsdo [--color] [report] [--all | --today | --yesterday] [--detailed | --day-by-day] [<pattern>]
     letsdo [--color] [report]  [--all] [<pattern>]
-    letsdo [--color] autocomplete
 
 options:
     -i <id>, --id=<id>     Start working on a Task giving it's ID (it can be used together with --to as well)
@@ -303,30 +303,25 @@ def autocomplete():
     - contexts already used (words starting by @ in the task name)
     - tags already used (words starting by + in the task name)
 
-    To enable this feature copy the text after the CUT HERE line into a file and:
+    To enable this feature do either of the following: 
+        - put letsdo_completion file under /etc/bash_completion.d/ for system-wide autocompletion
+    or:
+        - put letsdo_completion file in your home directory and "source" it in your .bashrc
+        e.g.
+            source /full/path/to/letsdo_completion
 
-        - put the file under /etc/bash_completion.d/ for system-wide autocompletion
+    Letsdo can copy the script in your $HOME for you if you replay with "Y" at this message, otherwise
+    the letsdo_completion file will be printed out here and it is up to you to copy and save it
+    as said above.
 
-    otherwise
-
-        - put the file somewhere in your home directory and source it in your .bashrc
-        - source /full/path/to/letsdo_completion
-
-    --- CUT HERE ------------------------------------------------------------------
+    Do you want Letsdo to copy the script in your $HOME directory? [Y/n]
     '''
+
     _ROOT = os.path.abspath(os.path.dirname(__file__))
     completion = os.path.join(_ROOT, 'letsdo_scripts', 'letsdo_completion')
-    info(message)
-    print(open(completion).read())
-    print(
-        '--- CUT HERE ------------------------------------------------------------------'
-    )
-    message = '''
-    Do you want me to configure this automatically, copying the above script in your
-    $HOME directory? [Y/n]
-    '''
-    info(message)
 
+    info(message)
+    
     resp = raw_input()
     if resp.lower() == 'y':
         completionfile = os.path.join(
@@ -334,6 +329,11 @@ def autocomplete():
                 '~', ), '.letsdo_completion')
         with open(completionfile, 'w') as f:
             f.writelines(open(completion).read())
+    else:
+        print(
+            '--- CUT HERE ------------------------------------------------------------------'
+        )
+        print(open(completion).read())
 
 
 def strfdelta(tdelta, fmt='{H:2}h {M:02}m', inputtype='timedelta'):

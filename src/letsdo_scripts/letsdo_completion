@@ -5,7 +5,7 @@ _letsdo()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    cmds="--help --force --change --stop --keep --to --report --full --daily --autocomplete --time --id"
+    cmds="--help --all --today --yesterday --day-by-day --time --id --color"
     if [[ ${cur} == -* ]] ; then
         COMPREPLY=( $(compgen -W "${cmds}" -- ${cur}) )
         return 0
@@ -27,6 +27,12 @@ _letsdo()
             COMPREPLY=( $(compgen -W "${tags}" -- ${cur}) )
             return 0
         fi
+    fi
+
+    cmds="start edit list to stop cancel last report"
+    if [[ ${cur} == * ]] ; then
+        COMPREPLY=( $(compgen -W "${cmds}" -- ${cur}) )
+        return 0
     fi
 }
 
