@@ -1,3 +1,4 @@
 docopt
 pytest==3.0.2
 PyYaml
+terminaltables
