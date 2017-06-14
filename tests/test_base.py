@@ -121,13 +121,6 @@ TODO_FULLPATH: ~/footodo.txt
         value = str2datetime(string)
         self.assertEqual(value, expected_datetime)
 
-
-    def test_replace_with_running_task(self):
-        if not os.path.exists(self.conf.task_fullpath):
-            Task(name='old name').start()
-        Task.change('new', 'old')
-        self.assertEqual(Task.get_running().name, 'new name')
-
     def test_continue_task_by_index(self):
         for i in range(3):
             t = Task('task {id}'.format(id=i))
@@ -175,18 +168,6 @@ TODO_FULLPATH: ~/footodo.txt
             Task().start()
         task = Task.get_running()
         self.assertIsNotNone(task)
-
-    def test_change_non_running_task(self):
-        if os.path.exists(self.conf.task_fullpath):
-            os.remove(self.conf.task_fullpath)
-        ret = Task.change('newname')
-        self.assertIsNone(ret)
-
-    def test_change_running_task(self):
-        if not os.path.exists(self.conf.task_fullpath):
-            Task().start()
-        Task.change('newname')
-        self.assertEqual(Task.get_running().name, 'newname')
 
     def test_stop_non_running_task(self):
         if os.path.exists(self.conf.task_fullpath):
