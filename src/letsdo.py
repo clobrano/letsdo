@@ -243,10 +243,10 @@ class Task(object):
         try:
             with open(Configuration().task_fullpath, 'w') as f:
                 json_data = '''{
-    "name": "%s",
-    "start": "%s"
+    "name": %s,
+    "start": %s
 }
-'''% (self.name, str(self.start_time))
+'''% (json.dumps(self.name), json.dumps(str(self.start_time)))
                 f.write(json_data)
                 info('Started task [%s]:' % self.uid[:7]);
                 info(json_data);
@@ -303,7 +303,7 @@ def autocomplete():
     - contexts already used (words starting by @ in the task name)
     - tags already used (words starting by + in the task name)
 
-    To enable this feature do either of the following: 
+    To enable this feature do either of the following:
         - put letsdo_completion file under /etc/bash_completion.d/ for system-wide autocompletion
     or:
         - put letsdo_completion file in your home directory and "source" it in your .bashrc
@@ -321,7 +321,7 @@ def autocomplete():
     completion = os.path.join(_ROOT, 'letsdo_scripts', 'letsdo_completion')
 
     info(message)
-    
+
     resp = raw_input()
     if resp.lower() == 'y':
         completionfile = os.path.join(
@@ -769,7 +769,7 @@ def main():
         if args['--id']:
             id = eval(args['--id'])
             work_on(task_id=id, start_time_str=args['--time'])
-            return 
+            return
 
     if args['edit']:
         task = Task.get_running()
