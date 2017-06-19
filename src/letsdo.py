@@ -2,16 +2,16 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo [--color] start [--time=<time>] [--id=<id>|<name>...]
-    letsdo [--color] edit
-    letsdo [--color] list
-    letsdo [--color] to [<newtask>...|--id=<id>]
-    letsdo [--color] stop [--time=<time>]
-    letsdo [--color] cancel
-    letsdo [--color] last
-    letsdo [--color] autocomplete
-    letsdo [--color] [report] [--all | --today | --yesterday] [--detailed | --day-by-day] [<pattern>]
-    letsdo [--color] [report]  [--all] [<pattern>]
+    letsdo todos        [--color] 
+    letsdo report       [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [<pattern>]
+    letsdo start        [--color] [--time=<time>] [--id=<id>|<name>...]
+    letsdo edit         [--color] 
+    letsdo to           [--color] [<newtask>...|--id=<id>]
+    letsdo stop         [--color] [--time=<time>]
+    letsdo cancel       [--color] 
+    letsdo last         [--color] 
+    letsdo autocomplete [--color]
+    letsdo              [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [<pattern>]
 
 options:
     -i <id>, --id=<id>     Start working on a Task giving it's ID (it can be used together with --to as well)
@@ -794,7 +794,7 @@ def main():
         Task(name=last_task.name).start();
         return
 
-    if args['list']:
+    if args['todos']:
         todos = get_todos()
         names = [t.name for t in todos]
 

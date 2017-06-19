@@ -29,7 +29,7 @@ _letsdo()
         fi
     fi
 
-    cmds="start edit list to stop cancel last report"
+    cmds="todos report start stop edit last to cancel"
     if [[ ${cur} == * ]] ; then
         COMPREPLY=( $(compgen -W "${cmds}" -- ${cur}) )
         return 0
