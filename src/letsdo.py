@@ -9,7 +9,7 @@ Usage:
     letsdo to           [--color] [<newtask>...|--id=<id>]
     letsdo stop         [--color] [--time=<time>]
     letsdo cancel       [--color] 
-    letsdo last         [--color] 
+    letsdo last         [--color] [--time=<time>]
     letsdo autocomplete [--color]
     letsdo              [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [<pattern>]
 
@@ -791,7 +791,7 @@ def main():
                                                 '%Y-%m-%d')
         by_logged_today = lambda x: today_date in str(x.end_date)
         last_task = get_tasks(by_logged_today)[0]
-        Task(name=last_task.name).start();
+        Task(name=last_task.name, start=args['--time']).start();
         return
 
     if args['todos']:
