@@ -614,15 +614,21 @@ def group_task_by(tasks, group=None):
                 map[date] = [t]
         return map
     else:
+        warn ('Could not group task by: ' + group);
         return tasks
 
 
-def report_task(tasks, filter=None, title=None):
+def report_task(tasks, filter=None, title=None, detailed=False):
     tot_work_time = datetime.timedelta()
 
-    table_data = [
-            ['ID', 'Last date', 'Time', 'Hash', 'Task description'],
-    ]
+    if detailed:
+        table_data = [
+                ['ID', 'Date', 'Interval', 'Hash', 'Task description'],
+        ]
+    else:
+        table_data = [
+                ['ID', 'Last date', 'Time', 'Hash', 'Task description'],
+        ]
 
     for task in tasks:
         tot_work_time += task.work_time
@@ -632,9 +638,16 @@ def report_task(tasks, filter=None, title=None):
         else:
             last_time = ''
 
+        if detailed:
+            time = '{begin} -> {end}'.\
+                    format(begin=task.start_time.strftime('%H:%M'),
+                            end=task.end_time.strftime('%H:%M'))
+        else:
+            time = strfdelta(task.work_time, fmt='{H:2}h {M:02}m')
+
         row = [ paint(task.id),
                 paint(last_time),
-                paint(strfdelta(task.work_time, fmt='{H:2}h {M:02}m')),
+                paint(time),
                 paint(task.uid[:7]),
                 paint(task.name)]
 
@@ -731,8 +744,7 @@ def do_report(args):
     elif args['--yesterday']:
         title="Yesterday's"
         yesterday = datetime.datetime.today() - datetime.timedelta(1)
-        yesterday_date = str(yesterday).split()[
-            0]  # keep only the part with YYYY-MM-DD
+        yesterday_date = str(yesterday).split()[0]  # keep only the part with YYYY-MM-DD
         by_logged_yesterday = lambda x: yesterday_date in str(x.end_date)
         tasks = get_tasks(by_logged_yesterday)
     else:  # Defaults on today's tasks
@@ -743,12 +755,10 @@ def do_report(args):
         tasks = get_tasks(by_logged_today)
 
     # By default show Task grouped by name
-    if args['--detailed']:
-        # TODO
-        pass
-    else:
+    if not args['--detailed']:
         tasks = group_task_by(tasks, 'name')
-        report_task(tasks, title=title)
+
+    report_task(tasks, title=title, detailed=args['--detailed'])
 
 
 def main():
