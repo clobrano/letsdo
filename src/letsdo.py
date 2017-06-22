@@ -755,7 +755,9 @@ def do_report(args):
         tasks = get_tasks(by_logged_today)
 
     # By default show Task grouped by name
-    if not args['--detailed']:
+    if args['--detailed']:
+        tasks.reverse()
+    else:
         tasks = group_task_by(tasks, 'name')
 
     report_task(tasks, title=title, detailed=args['--detailed'])
