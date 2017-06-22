@@ -622,13 +622,9 @@ def report_task(tasks, filter=None, title=None, detailed=False):
     tot_work_time = datetime.timedelta()
 
     if detailed:
-        table_data = [
-                ['ID', 'Date', 'Interval', 'Hash', 'Task description'],
-        ]
+        table_data = [['ID', 'Date', 'Interval', 'Time', 'Task description']]
     else:
-        table_data = [
-                ['ID', 'Last date', 'Time', 'Hash', 'Task description'],
-        ]
+        table_data = [['ID', 'Last date', 'Time', 'Task description']]
 
     for task in tasks:
         tot_work_time += task.work_time
@@ -638,18 +634,23 @@ def report_task(tasks, filter=None, title=None, detailed=False):
         else:
             last_time = ''
 
+        time = strfdelta(task.work_time, fmt='{H:2}h {M:02}m')
+
         if detailed:
-            time = '{begin} -> {end}'.\
+            interval = '{begin} -> {end}'.\
                     format(begin=task.start_time.strftime('%H:%M'),
                             end=task.end_time.strftime('%H:%M'))
+            row = [ paint(task.id),
+                    paint(last_time),
+                    paint(interval),
+                    paint(time),
+                    paint(task.name)]
         else:
-            time = strfdelta(task.work_time, fmt='{H:2}h {M:02}m')
 
-        row = [ paint(task.id),
-                paint(last_time),
-                paint(time),
-                paint(task.uid[:7]),
-                paint(task.name)]
+            row = [ paint(task.id),
+                    paint(last_time),
+                    paint(time),
+                    paint(task.name)]
 
         table_data.append(row)
 
