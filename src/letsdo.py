@@ -3,7 +3,7 @@
 '''
 Usage:
     letsdo todos        [--color] 
-    letsdo report       [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [<pattern>]
+    letsdo report       [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
     letsdo start        [--color] [--time=<time>] [--id=<id>|<name>...]
     letsdo edit         [--color] 
     letsdo to           [--color] [<newtask>...|--id=<id>]
@@ -11,7 +11,7 @@ Usage:
     letsdo cancel       [--color] 
     letsdo last         [--color] [--time=<time>]
     letsdo autocomplete [--color]
-    letsdo              [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [<pattern>]
+    letsdo              [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
 
 options:
     -i <id>, --id=<id>     Start working on a Task giving it's ID (it can be used together with --to as well)
@@ -21,6 +21,7 @@ options:
     -a --all               Select all activities to be shown in report  (to be used with --report)
     -d --day-by-day        Report tasks by daily basis (to be used with --report)
     -c, --color            Enable colorizer if available (see raffaello)
+    --ascii                Print report table in ASCII characters (for VIM integration)
     --debug                Enable debug logs
 '''
 
@@ -34,7 +35,7 @@ import re
 from string import Formatter
 import hashlib
 import json
-from terminaltables import SingleTable
+from terminaltables import SingleTable, AsciiTable
 try:
     from raffaello import Raffaello, Commission
     is_raffaello_available = True
@@ -618,7 +619,7 @@ def group_task_by(tasks, group=None):
         return tasks
 
 
-def report_task(tasks, filter=None, title=None, detailed=False):
+def report_task(tasks, filter=None, title=None, detailed=False, ascii=False):
     tot_work_time = datetime.timedelta()
 
     if detailed:
@@ -654,7 +655,11 @@ def report_task(tasks, filter=None, title=None, detailed=False):
 
         table_data.append(row)
 
-    table = SingleTable(table_data)
+    if ascii:
+        table = AsciiTable(table_data)
+    else:
+        table = SingleTable(table_data)
+
     if title:
         table.title = title
     else:
@@ -761,7 +766,7 @@ def do_report(args):
     else:
         tasks = group_task_by(tasks, 'name')
 
-    report_task(tasks, title=title, detailed=args['--detailed'])
+    report_task(tasks, title=title, detailed=args['--detailed'], ascii=args['--ascii']);
 
 
 def main():
