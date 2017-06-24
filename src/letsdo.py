@@ -554,15 +554,20 @@ def get_todos():
     return tasks
 
 
-def get_tasks(condition=None, todos=None):
+def get_tasks(condition=None, todos=[]):
     datafilename = Configuration().data_fullpath
+
     # Some todos might have been logged yet and some other don't.
     # Pass this list to avoid duplication, but I do not like
     # this solution
     if todos:
         tasks = todos
-    else:
+    elif todos == []:
         tasks = get_todos()
+    else:
+        # Skip todos loading
+        tasks = []
+
     id = len(tasks)
     try:
         with open(datafilename) as f:
@@ -805,10 +810,7 @@ def main():
         return
 
     if args['last']:
-        today_date = datetime.datetime.strftime(datetime.datetime.today(),
-                                                '%Y-%m-%d')
-        by_logged_today = lambda x: today_date in str(x.end_date)
-        last_task = get_tasks(by_logged_today)[0]
+        last_task = get_tasks(todos=None)[0]
         Task(name=last_task.name, start=args['--time']).start();
         return
 
