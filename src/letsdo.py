@@ -15,12 +15,12 @@ Usage:
 
 options:
     -i <id>, --id=<id>     Start working on a Task giving it's ID (it can be used together with --to as well)
-    --today, -t            Show only the tasks done today (to be used with report)
-    --time=<time>          Change the start/stop time of the task on the fly (to be used with --id, to, stop)
+    -t, --today            Show only the tasks done today (to be used with report)
     -y --yesterday         Select only yesterday's activities to be shown in report  (to be used with --report)
     -a --all               Select all activities to be shown in report  (to be used with --report)
     -d --day-by-day        Report tasks by daily basis (to be used with --report)
     -c, --color            Enable colorizer if available (see raffaello)
+    --time=<time>          Change the start/stop time of the task on the fly (to be used with --id, to, stop)
     --ascii                Print report table in ASCII characters (for VIM integration)
     --debug                Enable debug logs
 '''
@@ -741,29 +741,34 @@ def do_report(args):
     pattern = args['<pattern>']
     title=None
 
-    if args['--all']:
-        by_name_or_end_date = lambda x: not pattern or (pattern in str(x.end_date) or pattern in x.name)
-        tasks = get_tasks(by_name_or_end_date)
-    elif args['--day-by-day']:
-        by_end_date = lambda x: not pattern or pattern in str(x.end_date)
-        map = group_task_by(get_tasks(by_end_date), 'date')
-
-        for key in sorted(map.keys()):
-            t = group_task_by(map[key], 'name')
-            report_task(t, title="Daily Tasks")
-        return
-    elif args['--yesterday']:
-        title="Yesterday's"
-        yesterday = datetime.datetime.today() - datetime.timedelta(1)
-        yesterday_date = str(yesterday).split()[0]  # keep only the part with YYYY-MM-DD
-        by_logged_yesterday = lambda x: yesterday_date in str(x.end_date)
-        tasks = get_tasks(by_logged_yesterday)
-    else:  # Defaults on today's tasks
-        title="Today's"
+    if args['--today']:
+        title="Today's Tasks "
         today_date = datetime.datetime.strftime(datetime.datetime.today(),
                                                 '%Y-%m-%d')
         by_logged_today = lambda x: today_date in str(x.end_date)
         tasks = get_tasks(by_logged_today)
+        
+    elif args['--day-by-day']:
+        title = ""
+        if pattern:
+            title = ": by pattern < {pattern} > ".format(pattern=pattern)
+        by_end_date = lambda x: not pattern or (pattern in str(x.end_date) or pattern in str(x.name))
+        map = group_task_by(get_tasks(by_end_date), 'date')
+
+        for key in sorted(map.keys()):
+            t = group_task_by(map[key], 'name')
+            report_task(t, title=key + title)
+        return
+    elif args['--yesterday']:
+        title="Yesterday's Tasks "
+        yesterday = datetime.datetime.today() - datetime.timedelta(1)
+        yesterday_date = str(yesterday).split()[0]  # keep only the part with YYYY-MM-DD
+        by_logged_yesterday = lambda x: yesterday_date in str(x.end_date)
+        tasks = get_tasks(by_logged_yesterday)
+    else:  # Defaults on all tasks
+        title="All Tasks and Todos "
+        by_name_or_end_date = lambda x: not pattern or (pattern in str(x.end_date) or pattern in x.name)
+        tasks = get_tasks(by_name_or_end_date)
 
     # By default show Task grouped by name
     if args['--detailed']:
