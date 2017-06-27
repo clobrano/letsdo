@@ -628,11 +628,13 @@ def group_task_by(tasks, group=None):
         return tasks
 
 
-def report_task(tasks, filter=None, title=None, detailed=False, ascii=False):
+def report_task(tasks, filter=None, title=None, detailed=False, todos=False, ascii=False):
     tot_work_time = datetime.timedelta()
 
     if detailed:
         table_data = [['ID', 'Date', 'Interval', 'Time', 'Task description']]
+    elif todos:
+        table_data = [['ID', 'Time', 'Task description']]
     else:
         table_data = [['ID', 'Last date', 'Time', 'Task description']]
 
@@ -653,6 +655,10 @@ def report_task(tasks, filter=None, title=None, detailed=False, ascii=False):
             row = [ paint(task.id),
                     paint(last_time),
                     paint(interval),
+                    paint(time),
+                    paint(task.name)]
+        elif todos:
+            row = [ paint(task.id),
                     paint(time),
                     paint(task.name)]
         else:
@@ -834,7 +840,7 @@ def main():
         in_todo_list = lambda x: x.name in names
         tasks = get_tasks(in_todo_list, todos=todos)
         tasks = group_task_by(tasks, 'name')
-        report_task(tasks, title="Todos")
+        report_task(tasks, todos=True, title="Todos")
         return
 
     if args['stop']:
