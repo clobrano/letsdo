@@ -22,7 +22,6 @@ options:
     -c, --color            Enable colorizer if available (see raffaello)
     --time=<time>          Change the start/stop time of the task on the fly (to be used with --id, to, stop)
     --ascii                Print report table in ASCII characters (for VIM integration)
-    --debug                Enable debug logs
 '''
 
 import os
@@ -527,20 +526,25 @@ def get_todos():
             todo_start_tag = Configuration().todo_start_tag
             todo_stop_tag = Configuration().todo_stop_tag
 
+            got_stop_tag = lambda line: todo_stop_tag and todo_stop_tag in line.lower()
+            got_empty_line = lambda line: len(line.strip()) == 0
+
+
             if todo_start_tag:
-                read = False
+                reading = False
                 id = 0
                 for line in f.readlines():
+                    line = line.rstrip()
+
                     if todo_start_tag in line.lower():
-                        read = True
+                        reading = True
                         continue
-                    if read and (
-                        (todo_stop_tag and todo_stop_tag in line.lower()) or
-                            not line.strip()):
-                        read = False
+
+                    if reading and (got_stop_tag(line) or got_empty_line(line)):
+                        reading = False
                         break
 
-                    if read:
+                    if reading:
                         line = sanitize(line)
                         id += 1
                         tasks.append(Task(name=line, id=id))
@@ -821,10 +825,14 @@ def main():
 
     if args['todos']:
         todos = get_todos()
+        if (len(todos) == 0):
+            info ('Could not find any Todos');
+            return
+
         names = [t.name for t in todos]
 
         in_todo_list = lambda x: x.name in names
-        tasks = get_tasks(in_todo_list, todos)
+        tasks = get_tasks(in_todo_list, todos=todos)
         tasks = group_task_by(tasks, 'name')
         report_task(tasks, title="Todos")
         return
