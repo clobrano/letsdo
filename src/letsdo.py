@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo todos        [--color] 
+    letsdo todos        [--color]
     letsdo report       [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
     letsdo start        [--color] [--time=<time>] [--id=<id>|<name>...]
-    letsdo edit         [--color] 
+    letsdo edit         [--color]
     letsdo to           [--color] [<newtask>...|--id=<id>]
     letsdo stop         [--color] [--time=<time>]
-    letsdo cancel       [--color] 
+    letsdo cancel       [--color]
     letsdo last         [--color] [--time=<time>]
     letsdo autocomplete [--color]
     letsdo              [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
@@ -757,7 +757,7 @@ def do_report(args):
                                                 '%Y-%m-%d')
         by_logged_today = lambda x: today_date in str(x.end_date)
         tasks = get_tasks(by_logged_today)
-        
+
     elif args['--day-by-day']:
         title = ""
         if pattern:
@@ -776,6 +776,11 @@ def do_report(args):
         by_logged_yesterday = lambda x: yesterday_date in str(x.end_date)
         tasks = get_tasks(by_logged_yesterday)
     else:  # Defaults on all tasks
+        if not pattern:
+            info ("Do you really want to see ALL tasks (it might be a looong list) [Y/n]? (hint: for today's task just add --today flag)")
+            resp = raw_input()
+            if resp.lower() == 'n' or resp.lower() == 'no':
+                return
         title="All Tasks and Todos "
         by_name_or_end_date = lambda x: not pattern or (pattern in str(x.end_date) or pattern in x.name)
         tasks = get_tasks(by_name_or_end_date)
