@@ -4,7 +4,7 @@
 Usage:
     letsdo todos        [--color]
     letsdo report       [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
-    letsdo start        [--color] [--time=<time>] [--id=<id>|<name>...]
+    letsdo do        [--color] [--time=<time>] [--id=<id>|<name>...]
     letsdo edit         [--color]
     letsdo to           [--color] [<newtask>...|--id=<id>]
     letsdo stop         [--color] [--time=<time>]
@@ -801,7 +801,7 @@ def main():
     if args['--color']:
         is_color_enabled = is_raffaello_available
 
-    if args['start']:
+    if args['do']:
         if args['<name>']:
             if Task.get_running():
                 info ("Another task is already running")
