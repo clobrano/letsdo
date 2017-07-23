@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo todos        [--color] 
+    letsdo todos        [--color]
     letsdo report       [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
     letsdo start        [--color] [--time=<time>] [--id=<id>|<name>...]
-    letsdo edit         [--color] 
+    letsdo edit         [--color]
     letsdo to           [--color] [<newtask>...|--id=<id>]
     letsdo stop         [--color] [--time=<time>]
-    letsdo cancel       [--color] 
+    letsdo cancel       [--color]
     letsdo last         [--color] [--time=<time>]
     letsdo autocomplete [--color]
     letsdo              [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
@@ -757,7 +757,7 @@ def do_report(args):
                                                 '%Y-%m-%d')
         by_logged_today = lambda x: today_date in str(x.end_date)
         tasks = get_tasks(by_logged_today)
-        
+
     elif args['--day-by-day']:
         title = ""
         if pattern:
@@ -765,7 +765,10 @@ def do_report(args):
         by_end_date = lambda x: not pattern or (pattern in str(x.end_date) or pattern in str(x.name))
         map = group_task_by(get_tasks(by_end_date), 'date')
 
+        print(map.keys())
         for key in sorted(map.keys()):
+            if not key:
+                continue
             t = group_task_by(map[key], 'name')
             report_task(t, title=key + title)
         return
