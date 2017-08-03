@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo todos        [--color] 
+    letsdo todos        [--color] [--ascii]
     letsdo report       [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
-    letsdo do        [--color] [--time=<time>] [--id=<id>|<name>...]
+    letsdo do           [--color] [--time=<time>] [--id=<id>|<name>...]
     letsdo edit         [--color] 
     letsdo to           [--color] [<newtask>...|--id=<id>]
     letsdo stop         [--color] [--time=<time>]
@@ -256,9 +256,12 @@ class Task(object):
             return False
 
     def parse_name(self, name):
+        # Sanitizing name (commas are still used to separate infos and cannot
+        # be used in task's name
         name = name.replace(',', ' ')
         self.name = name
         self.uid = hashlib.sha224(self.name).hexdigest()
+        # Storing contexts (@) and projects (+)
         matches = re.findall('@[\w\-_]+', name)
         if len(matches) == 1:
             self.context = matches[0]
@@ -497,7 +500,7 @@ def work_on(task_id=0, start_time_str=None):
 
 def sanitize(text, filters=[]):
     # remove initial list symbol (if any)
-    if re.match('[\-\*]', text):
+    if re.match('^[\-\*]', text):
         text = re.sub('^[\-\*]', '', text)
 
     # remove initial date (yyyy-mm-dd)
@@ -847,7 +850,7 @@ def main():
         in_todo_list = lambda x: x.name in names
         tasks = get_tasks(in_todo_list, todos=todos)
         tasks = group_task_by(tasks, 'name')
-        report_task(tasks, todos=True, title="Todos")
+        report_task(tasks, todos=True, title="Todos", ascii=args['--ascii'])
         return
 
     if args['stop']:
