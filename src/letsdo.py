@@ -5,10 +5,10 @@ Usage:
     letsdo todos        [--color] [--ascii]
     letsdo report       [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
     letsdo do           [--color] [--time=<time>] [--id=<id>|<name>...]
-    letsdo edit         [--color] 
+    letsdo edit         [--color]
     letsdo to           [--color] [<newtask>...|--id=<id>]
     letsdo stop         [--color] [--time=<time>]
-    letsdo cancel       [--color] 
+    letsdo cancel       [--color]
     letsdo last         [--color] [--time=<time>]
     letsdo autocomplete [--color]
     letsdo              [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
@@ -760,7 +760,7 @@ def do_report(args):
                                                 '%Y-%m-%d')
         by_logged_today = lambda x: today_date in str(x.end_date)
         tasks = get_tasks(by_logged_today)
-        
+
     elif args['--day-by-day']:
         title = ""
         if pattern:
@@ -772,7 +772,8 @@ def do_report(args):
             if not key:
                 continue
             t = group_task_by(map[key], 'name')
-            report_task(t, title=key + title)
+            sorted_by_time = sorted (t, key=lambda x: x.work_time, reverse=True)
+            report_task(sorted_by_time, title=key + title)
         return
     elif args['--yesterday']:
         title="Yesterday's Tasks "
