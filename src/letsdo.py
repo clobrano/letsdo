@@ -4,9 +4,9 @@
 Usage:
     letsdo todos        [--color] [--ascii]
     letsdo report       [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
-    letsdo do           [--color] [--time=<time>] [--id=<id>|<name>...]
+    letsdo do           [--color] [--time=<time>] [<name>...]
     letsdo edit         [--color]
-    letsdo to           [--color] [<newtask>...|--id=<id>]
+    letsdo to           [--color] [<newtask>...]
     letsdo stop         [--color] [--time=<time>]
     letsdo cancel       [--color]
     letsdo last         [--color] [--time=<time>]
@@ -14,13 +14,12 @@ Usage:
     letsdo              [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
 
 options:
-    -i <id>, --id=<id>     Start working on a Task giving it's ID (it can be used together with --to as well)
     -t, --today            Show only the tasks done today (to be used with report)
     -y --yesterday         Select only yesterday's activities to be shown in report  (to be used with --report)
     -a --all               Select all activities to be shown in report  (to be used with --report)
     -d --day-by-day        Report tasks by daily basis (to be used with --report)
     -c, --color            Enable colorizer if available (see raffaello)
-    --time=<time>          Change the start/stop time of the task on the fly (to be used with --id, to, stop)
+    --time=<time>          Change the start/stop time of the task on the fly (to be used with to, stop)
     --ascii                Print report table in ASCII characters (for VIM integration)
 '''
 
@@ -799,6 +798,20 @@ def do_report(args):
 
     report_task(tasks, title=title, detailed=args['--detailed'], ascii=args['--ascii']);
 
+def guess_task_id_from_string (task_name):
+    guess_id = 0
+
+    if len(task_name) == 1:
+        task_name = task_name [0]
+        try:
+            guess_id = int (task_name)
+        except ValueError:
+            return False
+    else:
+        return False
+
+    return guess_id
+
 
 def main():
     global is_color_enabled
@@ -809,15 +822,17 @@ def main():
 
     if args['do']:
         if args['<name>']:
+            name = args['<name>']
             if Task.get_running():
                 info ("Another task is already running")
                 return
+            # Check whether the given task name is actually a task ID
+            id = guess_task_id_from_string (name)
+            if id != False:
+                work_on(task_id=id, start_time_str=args['--time'])
+                return
             new_task_name = ' '.join(args['<name>'])
             Task(new_task_name, start=args['--time']).start()
-            return
-        if args['--id']:
-            id = eval(args['--id'])
-            work_on(task_id=id, start_time_str=args['--time'])
             return
 
     if args['edit']:
@@ -859,16 +874,19 @@ def main():
         return
 
     if args['to']:
-        if args['--id']:
-            id = eval(args['--id'])
+        name = args['<newtask>']
+        id = guess_task_id_from_string (name)
+        if id != False:
             tasks = get_tasks(lambda x: x.id == id)
+
             if len(tasks) == 0:
                 err("Could not find tasks with id '%d'" & id)
+                return
             else:
                 task = tasks[0]
                 new_task_name = task.name
         else:
-            new_task_name = ' '.join(args['<newtask>'])
+            new_task_name = ' '.join(name)
 
         Task.stop()
         Task(new_task_name).start()
