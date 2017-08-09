@@ -817,7 +817,7 @@ def main():
     global is_color_enabled
     args = docopt.docopt(__doc__)
 
-    if args['--color']:
+    if args['--color'] or 'LETSDO_COLOR' in os.environ:
         is_color_enabled = is_raffaello_available
 
     if args['do']:
