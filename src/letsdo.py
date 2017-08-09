@@ -3,7 +3,7 @@
 '''
 Usage:
     letsdo todos        [--color] [--ascii]
-    letsdo report       [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
+    letsdo show         [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
     letsdo do           [--color] [--time=<time>] [<name>...]
     letsdo edit         [--color]
     letsdo to           [--color] [<newtask>...]
@@ -11,16 +11,15 @@ Usage:
     letsdo cancel       [--color]
     letsdo last         [--color] [--time=<time>]
     letsdo autocomplete [--color]
-    letsdo              [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
 
 options:
-    -t, --today            Show only the tasks done today (to be used with report)
-    -y --yesterday         Select only yesterday's activities to be shown in report  (to be used with --report)
-    -a --all               Select all activities to be shown in report  (to be used with --report)
-    -d --day-by-day        Report tasks by daily basis (to be used with --report)
-    -c, --color            Enable colorizer if available (see raffaello)
-    --time=<time>          Change the start/stop time of the task on the fly (to be used with to, stop)
     --ascii                Print report table in ASCII characters (for VIM integration)
+    --time=<time>          Change the start/stop time of the task on the fly (to be used with to, stop)
+    -a --all               Select all activities to be shown in report  (to be used with --show)
+    -c, --color            Enable colorizer if available (see raffaello)
+    -d --day-by-day        Report tasks by daily basis (to be used with --show)
+    -t, --today            Show only the tasks done today (to be used with show)
+    -y --yesterday         Select only yesterday's activities to be shown in report  (to be used with --show)
 '''
 
 import os
@@ -896,7 +895,7 @@ def main():
         autocomplete()
         return
 
-    if args['report']:
+    if args['show']:
         return do_report(args)
 
     # Default, if a task is running show it
