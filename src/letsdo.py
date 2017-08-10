@@ -2,24 +2,20 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    letsdo todos        [--color] [--ascii]
-    letsdo show         [--color] [--all | --today | --yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
-    letsdo do           [--color] [--time=<time>] [<name>...]
-    letsdo edit         [--color]
-    letsdo to           [--color] [<newtask>...]
-    letsdo stop         [--color] [--time=<time>]
-    letsdo cancel       [--color]
-    letsdo last         [--color] [--time=<time>]
-    letsdo autocomplete [--color]
+    lets show         [--no-color] [todo | all | today | yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
+    lets do           [--no-color] [--time=<time>] [<name>...]
+    lets edit         [--no-color]
+    lets goto         [--no-color] [<newtask>...]
+    lets stop         [--no-color] [--time=<time>]
+    lets cancel       [--no-color]
+    lets last         [--no-color] [--time=<time>]
+    lets autocomplete
+    lets status       [--no-color]
 
 options:
     --ascii                Print report table in ASCII characters (for VIM integration)
-    --time=<time>          Change the start/stop time of the task on the fly (to be used with to, stop)
-    -a --all               Select all activities to be shown in report  (to be used with --show)
-    -c, --color            Enable colorizer if available (see raffaello)
-    -d --day-by-day        Report tasks by daily basis (to be used with --show)
-    -t, --today            Show only the tasks done today (to be used with show)
-    -y --yesterday         Select only yesterday's activities to be shown in report  (to be used with --show)
+    -t, --time=<time>          Change the start/stop time of the task on the fly (to be used with to, stop)
+    --no-color            Disable colorizer (see raffaello)
 '''
 
 import os
@@ -752,7 +748,7 @@ def do_report(args):
     pattern = args['<pattern>']
     title=None
 
-    if args['--today']:
+    if args['today']:
         title="Today's Tasks "
         today_date = datetime.datetime.strftime(datetime.datetime.today(),
                                                 '%Y-%m-%d')
@@ -773,7 +769,7 @@ def do_report(args):
             sorted_by_time = sorted (t, key=lambda x: x.work_time, reverse=True)
             report_task(sorted_by_time, title=key + title)
         return
-    elif args['--yesterday']:
+    elif args['yesterday']:
         title="Yesterday's Tasks "
         yesterday = datetime.datetime.today() - datetime.timedelta(1)
         yesterday_date = str(yesterday).split()[0]  # keep only the part with YYYY-MM-DD
@@ -781,7 +777,7 @@ def do_report(args):
         tasks = get_tasks(by_logged_yesterday)
     else:  # Defaults on all tasks
         if not pattern:
-            info ("Do you really want to see ALL tasks (it might be a looong list) [Y/n]? (hint: for today's task just add --today flag)")
+            info ("Do you really want to see ALL tasks (it might be a looong list) [Y/n]? (hint: for today's task just add today flag)")
             resp = raw_input()
             if resp.lower() == 'n' or resp.lower() == 'no':
                 return
@@ -816,7 +812,7 @@ def main():
     global is_color_enabled
     args = docopt.docopt(__doc__)
 
-    if args['--color'] or 'LETSDO_COLOR' in os.environ:
+    if not args['--no-color'] and 'LETSDO_COLOR' in os.environ:
         is_color_enabled = is_raffaello_available
 
     if args['do']:
@@ -854,7 +850,7 @@ def main():
         Task(name=last_task.name, start=args['--time']).start();
         return
 
-    if args['todos']:
+    if args['todo']:
         todos = get_todos()
         if (len(todos) == 0):
             info ('Could not find any Todos');
@@ -872,7 +868,7 @@ def main():
         Task.stop(args['--time'])
         return
 
-    if args['to']:
+    if args['goto']:
         name = args['<newtask>']
         id = guess_task_id_from_string (name)
         if id != False:
@@ -896,7 +892,21 @@ def main():
         return
 
     if args['show']:
-        return do_report(args)
+        if args ['todo']:
+            todos = get_todos()
+            if (len(todos) == 0):
+                info ('Could not find any Todos');
+                return
+
+            names = [t.name for t in todos]
+
+            in_todo_list = lambda x: x.name in names
+            tasks = get_tasks(in_todo_list, todos=todos)
+            tasks = group_task_by(tasks, 'name')
+            report_task(tasks, todos=True, title="Todos", ascii=args['--ascii'])
+            return
+        else:
+            return do_report(args)
 
     # Default, if a task is running show it
     if Task.get_running():
@@ -907,7 +917,8 @@ def main():
     if not args['<name>']:
         args['<name>'] = ['unknown']
 
-    return do_report(args)
+    if args ['status']:
+        return do_report(args)
 
 
 if __name__ == '__main__':
