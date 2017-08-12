@@ -22,49 +22,16 @@ import os
 import datetime
 import docopt
 import sys
-import logging
 import yaml
 import re
 from string import Formatter
 import hashlib
 import json
 from terminaltables import SingleTable, AsciiTable
-try:
-    from raffaello import Raffaello, Commission
-    is_raffaello_available = True
-
-    request = '''
-\+[\w\-_]+=>color197_bold
-\@[\w\-_]+=>color046
-\#[\w\-_]+=>color202_bold
-\d*h\s\d{1,2}m=>cyan_bold
-\d{2,4}-\d{2}-\d{2}=>cyan_bold
-^TaskID.*=>color009_bold
-.*TODAY'S.*=>color009_bold
-.*YESTERDAY'S.*=>color009_bold
-'''
-    raf = Raffaello(Commission(request).commission)
-except ImportError:
-    is_raffaello_available = False
-
-# Logger
-level = logging.INFO
-logging.basicConfig(level=level, format='%(message)s')
-logger = logging.getLogger(__name__)
-is_color_enabled = False
-
-def info(msg):
-    if is_color_enabled:
-        logger.info(raf.paint(msg))
-    else:
-        logger.info(msg)
-
-err = lambda x: logger.error(x)
-warn = lambda x: logger.warn(x)
-dbg = lambda x: logger.debug(x)
+from log import info, err, warn, dbg, do_color
 
 def paint(msg):
-    if msg and is_color_enabled:
+    if msg and do_color:
         return raf.paint(str(msg))
     return msg
 
@@ -809,11 +776,11 @@ def guess_task_id_from_string (task_name):
 
 
 def main():
-    global is_color_enabled
+    global do_color
     args = docopt.docopt(__doc__)
 
-    if not args['--no-color'] and 'LETSDO_COLOR' in os.environ:
-        is_color_enabled = is_raffaello_available
+    if not args['--no-color']:
+        do_color = False
 
     if args['do']:
         if args['<name>']:
