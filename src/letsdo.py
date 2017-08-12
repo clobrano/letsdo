@@ -45,7 +45,7 @@ try:
 '''
     raf = Raffaello(Commission(request).commission)
 except ImportError:
-    is_raffaello_available = True
+    is_raffaello_available = False
 
 # Logger
 level = logging.INFO
