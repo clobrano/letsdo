@@ -1,6 +1,6 @@
 import os
 import yaml
-from log import dbg
+from log import info, dbg
 
 class Configuration(object):
     def __init__(self):

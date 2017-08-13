@@ -8,48 +8,49 @@ Usage:
     lets goto         [--no-color] [<newtask>...]
     lets stop         [--no-color] [--time=<time>]
     lets cancel       [--no-color]
-    lets last         [--no-color] [--time=<time>]
     lets autocomplete
     lets status       [--no-color]
 
 options:
-    --ascii                Print report table in ASCII characters (for VIM integration)
-    -t, --time=<time>          Change the start/stop time of the task on the fly (to be used with to, stop)
-    --no-color            Disable colorizer (see raffaello)
+    --ascii           Print report table in ASCII characters
+    -t, --time=<time> Change the start/stop time of the task on the fly
+    --no-color        Disable colorizer (see raffaello)
 '''
 
 import os
-import docopt
-import datetime
-import sys
 import re
-from string import Formatter
 import hashlib
 import json
+import datetime
+import docopt
 from terminaltables import SingleTable, AsciiTable
-from log import info, err, warn, dbg, do_color
+from log import info, err, warn, dbg, RAFFAELLO
 from configuration import Configuration
-from timetoolkit import format_h_m, str2datetime, strfdelta
+from timetoolkit import str2datetime, strfdelta
+
 
 def paint(msg):
-    if msg and do_color:
-        return raf.paint(str(msg))
+    '''Colorize message'''
+    if msg and RAFFAELLO:
+        return RAFFAELLO.paint(str(msg))
     return msg
 
+
 class Task(object):
+    '''Class representing a running task'''
     def __init__(self, name=None, start_str=None, end_str=None, id=None):
         if not name:
             raise ValueError
 
         self.name = name.strip()
         self.id = id
-        self.uid = None
 
         self.context = None
         self.tags = None
         self.parse_name(self.name)
 
-        # Adjust Task's start time with a string representing a time or a date + time,
+        # Adjust Task's start time with a string representing a
+        # time or a date + time,
         # otherwise the task starts now.
         # See std2datetime for available formats.
         if start_str:
@@ -65,12 +66,11 @@ class Task(object):
             self.work_time = datetime.timedelta()
 
     @property
-    def last_end_date (self):
+    def last_end_date(self):
         ''' The last day when this Task was active'''
         if self.end_time:
             return self.end_time.strftime('%Y-%m-%d')
-        else:
-            return None
+        return None
 
     @staticmethod
     def __is_running():
@@ -80,14 +80,16 @@ class Task(object):
 
     @staticmethod
     def get_running():
+        '''Check whether a task is running'''
         if Task.__is_running():
-            with open(Configuration().task_fullpath, 'r') as f:
-                data = json.load(f)
+            with open(Configuration().task_fullpath, 'r') as cfile:
+                data = json.load(cfile)
                 return Task(data['name'], data['start'])
         return None
 
     @staticmethod
     def stop(stop_time_str=None):
+        '''Stop task'''
         task = Task.get_running()
         if not task:
             info('No task running')
@@ -110,52 +112,57 @@ class Task(object):
         stop_time_str = str(stop_time).split('.')[0][:-3]
 
         report_line = '{date},{name},,{start_time},{stop_time}\n'\
-                .format(date=date,
-                        name=task.name,
-                        start_time=start_time_str,
-                        stop_time=stop_time_str)
+                      .format(date=date,
+                              name=task.name,
+                              start_time=start_time_str,
+                              stop_time=stop_time_str)
 
         try:
-            with open(Configuration().data_fullpath, mode='a') as f:
-                f.writelines(report_line)
-        except IOError, e:
-            err ('Could not save report: ' + err.message)
+            with open(Configuration().data_fullpath, mode='a') as cfile:
+                cfile.writelines(report_line)
+        except IOError, error:
+            err('Could not save report: ' + error.message)
             return False
 
         # Delete current task data to mark it as stopped
         os.remove(Configuration().task_fullpath)
 
         hours, minutes = work_time_str.split(':')
-        info('Stopped \'{name}\' [id: {hash}] after {h}h {m}m of work'.format(
-            name=task.name, h=hours, m=minutes, hash=task.uid[:7]))
+        info('Stopped \'{name}\' after {h}h {m}m of work'.format(
+            name=task.name, h=hours, m=minutes))
 
         return True
 
     @staticmethod
     def cancel():
+        '''Interrupt task without saving it in history'''
         task = Task.get_running()
         if task:
-            with open(Configuration().task_fullpath, 'r') as f:
-                content = f.read()
+            with open(Configuration().task_fullpath, 'r') as cfile:
+                content = cfile.read()
             os.remove(Configuration().task_fullpath)
-            info('Cancelled task [{id}]'.format(id=task.uid))
+            info('Cancelled task')
             info(content)
 
     @staticmethod
     def status():
+        '''Get status of current running task'''
         task = Task.get_running()
         if task:
             now = datetime.datetime.now()
             time = str(now - task.start_time).split('.')[0]
             hours, minutes, seconds = time.split(':')
-            info('Working on \'{name}\' [id: {uid}] for {h}h {m}m {s}s'.format(
-                name=task.name, h=hours, m=minutes, s=seconds, uid=task.uid[:7]))
+            info('Working on \'{name}\' for {h}h {m}m {s}s'
+                 .format(name=task.name,
+                         h=hours,
+                         m=minutes,
+                         s=seconds))
             return True
-        else:
-            info('No task running')
-            return False
-    
+        info('No task running')
+        return False
+
     def start(self):
+        '''Start task'''
         if not Task.__is_running():
             if self.__create():
                 return Task.get_running()
@@ -168,31 +175,31 @@ class Task(object):
 
     def __create(self):
         try:
-            with open(Configuration().task_fullpath, 'w') as f:
+            with open(Configuration().task_fullpath, 'w') as cfile:
                 json_data = '''{
     "name": %s,
     "start": %s
 }
-'''% (json.dumps(self.name), json.dumps(str(self.start_time)))
-                f.write(json_data)
-                info('Started task [%s]:' % self.uid[:7]);
-                info(json_data);
+''' % (json.dumps(self.name), json.dumps(str(self.start_time)))
+                cfile.write(json_data)
+                info('Started task:')
+                info(json_data)
                 return True
-        except IOError, err:
-            err ('Could not save task data: ' + err.message)
+        except IOError, error:
+            err('Could not save task data: ' + error.message)
             return False
 
     def parse_name(self, name):
+        '''Parse Task's name to get context and tags, if any'''
         # Sanitizing name (commas are still used to separate infos and cannot
         # be used in task's name
         name = name.replace(',', ' ')
         self.name = name
-        self.uid = hashlib.sha224(self.name).hexdigest()
         # Storing contexts (@) and projects (+)
-        matches = re.findall('@[\w\-_]+', name)
+        matches = re.findall(r'@[\w\-_]+', name)
         if len(matches) == 1:
             self.context = matches[0]
-        matches = re.findall('\+[\w\-_]+', name)
+        matches = re.findall(r'\+[\w\-_]+', name)
         if len(matches) >= 1:
             self.tags = matches
 
@@ -209,24 +216,31 @@ class Task(object):
             end_str = 'None'
 
         if self.id is not None:
-            return '[%d] - %s| %s (%s -> %s) - [%s] %s' % (self.id, self.last_end_date,
-                                                      work_str, start_str,
-                                                      end_str, self.uid[:7], self.name)
+            return '[%d] - %s| %s (%s -> %s) - %s' % (self.id,
+                                                      self.last_end_date,
+                                                      work_str,
+                                                      start_str,
+                                                      end_str,
+                                                      self.name)
 
-        return '%s| %s (%s -> %s) - [%s] %s' % (self.last_end_date, work_str, start_str,
-                                           end_str, self.uid[:7], self.name)
+        return '%s| %s (%s -> %s) - %s' % (self.last_end_date,
+                                           work_str,
+                                           start_str,
+                                           end_str,
+                                           self.name)
 
     def __eq__(self, other):
         return self.name == other.name
 
     def __ne__(self, other):
-        return not (self.name == other.name)
+        return self.name != other.name
 
     def __hash__(self):
         return hash((self.name))
 
 
 def autocomplete():
+    '''Setup autocomplete'''
     message = '''
     Letsdo CLI is able to suggest:
     - command line flags
@@ -234,21 +248,23 @@ def autocomplete():
     - tags already used (words starting by + in the task name)
 
     To enable this feature do either of the following:
-        - put letsdo_completion file under /etc/bash_completion.d/ for system-wide autocompletion
+        - put letsdo_completion file under /etc/bash_completion.d/ for
+            system-wide autocompletion
     or:
-        - put letsdo_completion file in your home directory and "source" it in your .bashrc
+        - put letsdo_completion file in your home directory and "source" it in
+            your .bashrc
         e.g.
             source /full/path/to/letsdo_completion
 
-    Letsdo can copy the script in your $HOME for you if you replay with "Y" at this message, otherwise
-    the letsdo_completion file will be printed out here and it is up to you to copy and save it
-    as said above.
+    Letsdo can copy the script in your $HOME for you if you replay with "Y" at
+    this message, otherwise the letsdo_completion file will be printed out here
+    and it is up to you to copy and save it as said above.
 
     Do you want Letsdo to copy the script in your $HOME directory? [Y/n]
     '''
 
-    _ROOT = os.path.abspath(os.path.dirname(__file__))
-    completion = os.path.join(_ROOT, 'letsdo_scripts', 'letsdo_completion')
+    root = os.path.abspath(os.path.dirname(__file__))
+    completion = os.path.join(root, 'letsdo_scripts', 'letsdo_completion')
 
     info(message)
 
@@ -257,22 +273,23 @@ def autocomplete():
         completionfile = os.path.join(
             os.path.expanduser(
                 '~', ), '.letsdo_completion')
-        with open(completionfile, 'w') as f:
-            f.writelines(open(completion).read())
+        with open(completionfile, 'w') as cfile:
+            cfile.writelines(open(completion).read())
     else:
         print(
-            '--- CUT HERE ------------------------------------------------------------------'
+            '--- CUT HERE ----------------------------------------------------'
         )
         print(open(completion).read())
 
 
 def work_on(task_id=0, start_time_str=None):
+    '''Start given task id'''
     tasks = get_tasks(condition=lambda x: x.id == task_id)
     tasks = group_task_by(tasks, group='name')
     if not tasks:
         err("Could not find any task with ID '{id}'".format(id=task_id))
     else:
-        assert (len(tasks) == 1)
+        assert(len(tasks) == 1)
         task = tasks[0]
         start_time = None
         if start_time_str:
@@ -283,52 +300,54 @@ def work_on(task_id=0, start_time_str=None):
         Task(task.name, start_str=start_time).start()
 
 
-def sanitize(text, filters=[]):
+def sanitize(text):
+    '''Remove symbols, dates and Markdown syntax from text'''
     # remove initial list symbol (if any)
-    if re.match('^[\-\*]', text):
-        text = re.sub('^[\-\*]', '', text)
+    if re.match(r'^[\-\*]', text):
+        text = re.sub(r'^[\-\*]', '', text)
 
     # remove initial date (yyyy-mm-dd)
-    if re.match('^\s*\d+-\d+-\d+\s+', text):
-        text = re.sub('^\s*\d+-\d+-\d+\s+', '', text)
+    if re.match(r'^\s*\d+-\d+-\d+\s+', text):
+        text = re.sub(r'^\s*\d+-\d+-\d+\s+', '', text)
 
     # remove initial date (yy\date-of-year)
-    if re.match('^\s*\d+/\d+\s+', text):
-        text = re.sub('^\s*\d+/\d+\s+', '', text)
+    if re.match(r'^\s*\d+/\d+\s+', text):
+        text = re.sub(r'^\s*\d+/\d+\s+', '', text)
 
     # remove markdown links
-    md_link = re.compile('\[(.*)\]\(.*\)')
+    md_link = re.compile(r'\[(.*)\]\(.*\)')
     has_link = md_link.search(text)
     if has_link:
         link_name = md_link.findall(text)
-        assert (len(link_name) == 1)
-        text = re.sub('\[(.*)\]\(.*\)', link_name[0], text)
+        assert(len(link_name) == 1)
+        text = re.sub(r'\[(.*)\]\(.*\)', link_name[0], text)
 
     return text
 
 
 def get_todos():
+    '''Get Tasks from todo list'''
     tasks = []
     try:
-        with open(Configuration().todo_fullpath, 'r') as f:
+        with open(Configuration().todo_fullpath, 'r') as cfile:
             todo_start_tag = Configuration().todo_start_tag
             todo_stop_tag = Configuration().todo_stop_tag
 
             got_stop_tag = lambda line: todo_stop_tag and todo_stop_tag in line.lower()
             got_empty_line = lambda line: len(line.strip()) == 0
 
-
             if todo_start_tag:
                 reading = False
                 id = 0
-                for line in f.readlines():
+                for line in cfile.readlines():
                     line = line.rstrip()
 
                     if todo_start_tag in line.lower():
                         reading = True
                         continue
 
-                    if reading and (got_stop_tag(line) or got_empty_line(line)):
+                    if reading and \
+                       (got_stop_tag(line) or got_empty_line(line)):
                         reading = False
                         break
 
@@ -339,14 +358,15 @@ def get_todos():
             else:
                 tasks = [
                     Task(name=sanitize(line), id=lineno + 1)
-                    for lineno, line in enumerate(f.readlines())
+                    for lineno, line in enumerate(cfile.readlines())
                 ]
-    except (TypeError, AttributeError, IOError):
+    except(TypeError, AttributeError, IOError):
         dbg("Could not get todo list. Todo file not set or incorrect.")
     return tasks
 
 
 def get_tasks(condition=None, todos=[]):
+    '''Get all tasks'''
     datafilename = Configuration().data_fullpath
 
     # Some todos might have been logged yet and some other don't.
@@ -362,35 +382,39 @@ def get_tasks(condition=None, todos=[]):
 
     id = len(tasks)
     try:
-        with open(datafilename) as f:
-            for line in reversed(f.readlines()):
+        with open(datafilename) as cfile:
+            for line in reversed(cfile.readlines()):
                 dbg(line)
                 fields = line.strip().split(',')
-                if not fields [1]:
+                if not fields[1]:
                     continue
                 # Take care of old history format with worked_time
                 if len(fields) == 5:
-                    t = Task(name=sanitize(fields[1]), start_str=fields[3], end_str=fields[4])
+                    task = Task(name=sanitize(fields[1]),
+                                start_str=fields[3],
+                                end_str=fields[4])
                 elif len(fields) == 4:
-                    t = Task(name=sanitize(fields[1]), start_str=fields[2], end_str=fields[3])
+                    task = Task(name=sanitize(fields[1]),
+                                start_str=fields[2],
+                                end_str=fields[3])
                 else:
-                    raise Exception ("History has unexpected number of fields ({num_fields}: {fields})".format (
-                        num_fields=len(fields),
-                        fields=fields))
+                    raise Exception("History has unexpected number of fields \
+                            ({num_fields}: {fields})"
+                            .format(num_fields=len(fields), fields=fields))
 
                 # If a task with the same name exists,
                 # keep the same ID as well
                 try:
-                    same_task = tasks.index(t)
-                    t.id = tasks[same_task].id
+                    same_task = tasks.index(task)
+                    task.id = tasks[same_task].id
                     dbg('{task_name} has old id {id}'.format(
-                        task_name=t.name, id=t.id))
+                        task_name=task.name, id=task.id))
                 except ValueError:
                     id += 1
-                    t.id = id
+                    task.id = id
                     dbg('{task_name} has new id {id}'.format(
-                        task_name=t.name, id=t.id))
-                tasks.append(t)
+                        task_name=task.name, id=task.id))
+                tasks.append(task)
 
         return filter(condition, tasks)
     except IOError:
@@ -398,10 +422,11 @@ def get_tasks(condition=None, todos=[]):
 
 
 def group_task_by(tasks, group=None):
-    if group is 'name':
+    '''Group given task by name or date'''
+    if group == 'name':
         uniques = []
         for task in tasks:
-            if not task in uniques:
+            if task not in uniques:
                 uniques.append(task)
 
         for main_task in uniques:
@@ -413,29 +438,31 @@ def group_task_by(tasks, group=None):
             main_task.work_time = work_time
         return uniques
 
-    elif group is 'date':
-        map = {}
-        for t in tasks:
-            date = t.end_date
-            if date in map.keys():
-                map[date].append(t)
+    if group == 'date':
+        task_map = {}
+        for task in tasks:
+            date = task.end_date
+            if date in task_map.keys():
+                task_map[date].append(task)
             else:
-                map[date] = [t]
-        return map
+                task_map[date] = [task]
+        return task_map
     else:
-        warn ('Could not group task by: ' + group);
+        warn('Could not group tasks by: ' + group)
         return tasks
 
 
-def report_task(tasks, filter=None, title=None, detailed=False, todos=False, ascii=False):
+def report_task(tasks, cfilter=None, title=None,
+                detailed=False, todos=False, ascii=False):
+    '''Visual task report'''
     tot_work_time = datetime.timedelta()
 
     if detailed:
-        table_data = [['ID', 'Date', 'Interval', 'Time', 'Task description']]
+        table_data = [['ID', 'Date', 'Interval', 'Tracked', 'Task description']]
     elif todos:
-        table_data = [['ID', 'Time', 'Task description']]
+        table_data = [['ID', 'Tracked', 'Task description']]
     else:
-        table_data = [['ID', 'Last date', 'Time', 'Task description']]
+        table_data = [['ID', 'Last time', 'Tracked', 'Task description']]
 
     for task in tasks:
         tot_work_time += task.work_time
@@ -450,22 +477,22 @@ def report_task(tasks, filter=None, title=None, detailed=False, todos=False, asc
         if detailed:
             interval = '{begin} -> {end}'.\
                     format(begin=task.start_time.strftime('%H:%M'),
-                            end=task.end_time.strftime('%H:%M'))
-            row = [ paint(task.id),
-                    paint(last_time),
-                    paint(interval),
-                    paint(time),
-                    paint(task.name)]
+                           end=task.end_time.strftime('%H:%M'))
+            row = [paint(task.id),
+                   paint(last_time),
+                   paint(interval),
+                   paint(time),
+                   paint(task.name)]
         elif todos:
-            row = [ paint(task.id),
-                    paint(time),
-                    paint(task.name)]
+            row = [paint(task.id),
+                   paint(time),
+                   paint(task.name)]
         else:
 
-            row = [ paint(task.id),
-                    paint(last_time),
-                    paint(time),
-                    paint(task.name)]
+            row = [paint(task.id),
+                   paint(last_time),
+                   paint(time),
+                   paint(task.name)]
 
         table_data.append(row)
 
@@ -477,131 +504,99 @@ def report_task(tasks, filter=None, title=None, detailed=False, todos=False, asc
     if title:
         table.title = title
     else:
-        table.title = filter
+        table.title = cfilter
 
     info('')
     print(table.table)
     info('')
-    if filter:
+    if cfilter:
         info('{filter}: Total work time {time}'.format(
-            filter=filter, time=strfdelta(tot_work_time)))
+            filter=cfilter, time=strfdelta(tot_work_time)))
     else:
-        info('Total work time {time}'.format(
-            filter=filter, time=strfdelta(tot_work_time)))
-
-
-def report_full(filter=None):
-    tasks = {}
-    datafilename = Configuration().data_fullpath
-    with open(datafilename) as f:
-        for id, line in enumerate(f.readlines()):
-            line = line.strip()
-            tok = line.split(',')
-            if not filter or (filter in tok[4] or filter in tok[1]):
-                dbg('accepting %s' % line)
-                task = Task(name=tok[1], start_str=tok[3], end_str=tok[4], id=id)
-                date = task.last_end_date
-                if date in tasks.keys():
-                    tasks[date].append(task)
-                else:
-                    tasks[date] = [task]
-
-        if len(tasks) == 0:
-            info('No tasks found with filter \'{filter}\''.format(
-                filter=filter))
-            return
-
-        dates = sorted(tasks.keys(), reverse=True)
-        for date in dates:
-            column = ''
-            tot_time = datetime.timedelta()
-            pause_start = None
-            pause_stop = None
-            pause = datetime.timedelta()
-            for task in tasks[date]:
-                # Computing pause time
-                if pause_start is not None:
-                    pause_stop = task.start_time
-                    pause += pause_stop - pause_start
-                pause_start = task.end_time
-                pause_stop = task.start_time
-
-                # Computing work time
-                tw = task.work_time
-                work_str = '%s' % ':'.join(str(task.work_time).split(':')[0:2])
-                start_str = '%s' % task.start_time.strftime('%H:%M')
-                end_str = '%s' % task.end_time.strftime('%H:%M')
-
-                column += '%s | %s -> %s = %s | %s' % (task.last_end_date,
-                                                       start_str, end_str,
-                                                       work_str, task.name)
-                column += '\n'
-
-            print('-' * 60)
-            print(column)
-            print('Work: {wtime},  Break: {btime}'.format(
-                wtime=tot_time, btime=pause))
-            print('')
-
-        return tot_time, pause
+        info('Total work time {time}'.format(time=strfdelta(tot_work_time)))
 
 
 def do_report(args):
+    '''Wrap show reports'''
     pattern = args['<pattern>']
-    title=None
+
+    if args['todo']:
+        todos = get_todos()
+        if not todos:
+            info('Could not find any Todos')
+            return
+
+        names = [t.name for t in todos]
+
+        in_todo_list = lambda x: x.name in names
+        tasks = get_tasks(in_todo_list, todos=todos)
+        tasks = group_task_by(tasks, 'name')
+        report_task(tasks, todos=True, ascii=args['--ascii'])
+        return
 
     if args['today']:
-        title="Today's Tasks "
         today_date = datetime.datetime.strftime(datetime.datetime.today(),
                                                 '%Y-%m-%d')
+
         by_logged_today = lambda x: today_date in str(x.last_end_date)
         tasks = get_tasks(by_logged_today)
 
-    elif args['--day-by-day']:
-        title = ""
-        if pattern:
-            title = ": by pattern < {pattern} > ".format(pattern=pattern)
-        by_end_date = lambda x: not pattern or (pattern in str(x.last_end_date) or pattern in str(x.name))
-        map = group_task_by(get_tasks(by_end_date), 'date')
-
-        for key in sorted(map.keys()):
-            if not key:
-                continue
-            t = group_task_by(map[key], 'name')
-            sorted_by_time = sorted (t, key=lambda x: x.work_time, reverse=True)
-            report_task(sorted_by_time, title=key + title)
-        return
     elif args['yesterday']:
-        title="Yesterday's Tasks "
         yesterday = datetime.datetime.today() - datetime.timedelta(1)
-        yesterday_date = str(yesterday).split()[0]  # keep only the part with YYYY-MM-DD
+        # keep only the part with YYYY-MM-DD
+        yesterday_date = str(yesterday).split()[0]
+
         by_logged_yesterday = lambda x: yesterday_date in str(x.last_end_date)
+
         tasks = get_tasks(by_logged_yesterday)
-    else:  # Defaults on all tasks
-        if not pattern:
-            info ("Do you really want to see ALL tasks (it might be a looong list) [Y/n]? (hint: for today's task just add today flag)")
-            resp = raw_input()
-            if resp.lower() == 'n' or resp.lower() == 'no':
-                return
-        title="All Tasks and Todos "
-        by_name_or_end_date = lambda x: not pattern or (pattern in str(x.last_end_date) or pattern in x.name)
+
+    elif args['all']:
+        by_name_or_end_date = lambda x: not pattern or \
+            (pattern in str(x.last_end_date) or pattern in x.name)
+
         tasks = get_tasks(by_name_or_end_date)
 
-    # By default show Task grouped by name
-    if args['--detailed']:
-        tasks.reverse()
+    elif args['--day-by-day']:
+        by_end_date = lambda x: not pattern or (pattern in str(x.last_end_date) or pattern in str(x.name))
+        task_map = group_task_by(get_tasks(by_end_date), 'date')
+
+        for key in sorted(task_map.keys()):
+
+            if not key:
+                continue
+
+            task = group_task_by(task_map[key], 'name')
+            sorted_by_time = sorted(task,
+                                    key=lambda x: x.work_time,
+                                    reverse=True)
+
+            report_task(sorted_by_time)
+        return
+
     else:
+        # Just see if there is something running
+        Task.status()
+        return
+
+    # By default show Task grouped by name
+    if not args['--detailed']:
         tasks = group_task_by(tasks, 'name')
+    else:
+        # Otherwise show detailed report ordered
+        # by time
+        tasks.reverse()
 
-    report_task(tasks, title=title, detailed=args['--detailed'], ascii=args['--ascii']);
+    report_task(tasks, detailed=args['--detailed'], ascii=args['--ascii'])
 
-def guess_task_id_from_string (task_name):
+
+def guess_task_id_from_string(task_name):
+    '''Get task ID from task name'''
     guess_id = 0
 
     if len(task_name) == 1:
-        task_name = task_name [0]
+        task_name = task_name[0]
         try:
-            guess_id = int (task_name)
+            guess_id = int(task_name)
         except ValueError:
             return False
     else:
@@ -611,23 +606,30 @@ def guess_task_id_from_string (task_name):
 
 
 def main():
-    global do_color
+    global RAFFAELLO
     args = docopt.docopt(__doc__)
 
-    if not args['--no-color']:
-        do_color = False
+    if args['--no-color']:
+        RAFFAELLO = None
 
     if args['do']:
         if args['<name>']:
             name = args['<name>']
             if Task.get_running():
-                info ("Another task is already running")
+                info("Another task is already running")
                 return
+
+            if name == ['last']:
+                last_task = get_tasks(todos=None)[0]
+                Task(name=last_task.name, start_str=args['--time']).start()
+                return
+
             # Check whether the given task name is actually a task ID
-            id = guess_task_id_from_string (name)
-            if id != False:
+            id = guess_task_id_from_string(name)
+            if id is not False:
                 work_on(task_id=id, start_time_str=args['--time'])
                 return
+
             new_task_name = ' '.join(args['<name>'])
             Task(new_task_name, start_str=args['--time']).start()
             return
@@ -635,11 +637,11 @@ def main():
     if args['edit']:
         task = Task.get_running()
         if not task:
-            info ('No task running')
+            info('No task running')
             return
         edit_command = '{editor} {filename}'\
-                .format(editor=os.getenv('EDITOR'),
-                        filename=Configuration().task_fullpath)
+                       .format(editor=os.getenv('EDITOR'),
+                               filename=Configuration().task_fullpath)
         os.system(edit_command)
         return
 
@@ -647,19 +649,13 @@ def main():
         Task.cancel()
         return
 
-    if args['last']:
-        last_task = get_tasks(todos=None)[0]
-        Task(name=last_task.name, start_str=args['--time']).start();
-        return
-
     if args['todo']:
         todos = get_todos()
-        if (len(todos) == 0):
-            info ('Could not find any Todos');
+        if todos == []:
+            info('Could not find any Todos')
             return
 
         names = [t.name for t in todos]
-
         in_todo_list = lambda x: x.name in names
         tasks = get_tasks(in_todo_list, todos=todos)
         tasks = group_task_by(tasks, 'name')
@@ -672,11 +668,11 @@ def main():
 
     if args['goto']:
         name = args['<newtask>']
-        id = guess_task_id_from_string (name)
-        if id != False:
+        id = guess_task_id_from_string(name)
+        if id is not False:
             tasks = get_tasks(lambda x: x.id == id)
 
-            if len(tasks) == 0:
+            if not tasks:
                 err("Could not find tasks with id '%d'" & id)
                 return
             else:
@@ -694,21 +690,7 @@ def main():
         return
 
     if args['see']:
-        if args ['todo']:
-            todos = get_todos()
-            if (len(todos) == 0):
-                info ('Could not find any Todos');
-                return
-
-            names = [t.name for t in todos]
-
-            in_todo_list = lambda x: x.name in names
-            tasks = get_tasks(in_todo_list, todos=todos)
-            tasks = group_task_by(tasks, 'name')
-            report_task(tasks, todos=True, title="Todos", ascii=args['--ascii'])
-            return
-        else:
-            return do_report(args)
+        return do_report(args)
 
     # Default, if a task is running show it
     if Task.get_running():
@@ -719,9 +701,7 @@ def main():
     if not args['<name>']:
         args['<name>'] = ['unknown']
 
-    if args ['see']:
-        return do_report(args)
-
+    return do_report(args)
 
 if __name__ == '__main__':
     main()
