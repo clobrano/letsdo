@@ -49,11 +49,6 @@ class Task(object):
         self.tags = None
         self.parse_name(self.name)
 
-        self.end_date = None
-        self.end_time = None
-        self.start_time = None
-        self.work_time = datetime.timedelta()
-
         # Adjust Task's start time with a string representing a time or a date + time,
         # otherwise the task starts now.
         # See std2datetime for available formats.
@@ -62,11 +57,20 @@ class Task(object):
         else:
             self.start_time = datetime.datetime.now()
 
-        # TODO do we really expect end time here?
         if end_str:
             self.end_time = str2datetime(end_str.strip())
-            self.end_date = (self.end_time.strftime('%Y-%m-%d'))
             self.work_time = self.end_time - self.start_time
+        else:
+            self.end_time = None
+            self.work_time = datetime.timedelta()
+
+    @property
+    def last_end_date (self):
+        ''' The last day when this Task was active'''
+        if self.end_time:
+            return self.end_time.strftime('%Y-%m-%d')
+        else:
+            return None
 
     @staticmethod
     def __is_running():
@@ -105,10 +109,9 @@ class Task(object):
         start_time_str = str(task.start_time).split('.')[0][:-3]
         stop_time_str = str(stop_time).split('.')[0][:-3]
 
-        report_line = '{date},{name},{worked_time},{start_time},{stop_time}\n'\
+        report_line = '{date},{name},,{start_time},{stop_time}\n'\
                 .format(date=date,
                         name=task.name,
-                        worked_time=work_time_str,
                         start_time=start_time_str,
                         stop_time=stop_time_str)
 
@@ -151,7 +154,7 @@ class Task(object):
         else:
             info('No task running')
             return False
-
+    
     def start(self):
         if not Task.__is_running():
             if self.__create():
@@ -206,11 +209,11 @@ class Task(object):
             end_str = 'None'
 
         if self.id is not None:
-            return '[%d] - %s| %s (%s -> %s) - [%s] %s' % (self.id, self.end_date,
+            return '[%d] - %s| %s (%s -> %s) - [%s] %s' % (self.id, self.last_end_date,
                                                       work_str, start_str,
                                                       end_str, self.uid[:7], self.name)
 
-        return '%s| %s (%s -> %s) - [%s] %s' % (self.end_date, work_str, start_str,
+        return '%s| %s (%s -> %s) - [%s] %s' % (self.last_end_date, work_str, start_str,
                                            end_str, self.uid[:7], self.name)
 
     def __eq__(self, other):
@@ -363,7 +366,18 @@ def get_tasks(condition=None, todos=[]):
             for line in reversed(f.readlines()):
                 dbg(line)
                 fields = line.strip().split(',')
-                t = Task(name=sanitize(fields[1]), start_str=fields[3], end_str=fields[4])
+                if not fields [1]:
+                    continue
+                # Take care of old history format with worked_time
+                if len(fields) == 5:
+                    t = Task(name=sanitize(fields[1]), start_str=fields[3], end_str=fields[4])
+                elif len(fields) == 4:
+                    t = Task(name=sanitize(fields[1]), start_str=fields[2], end_str=fields[3])
+                else:
+                    raise Exception ("History has unexpected number of fields ({num_fields}: {fields})".format (
+                        num_fields=len(fields),
+                        fields=fields))
+
                 # If a task with the same name exists,
                 # keep the same ID as well
                 try:
@@ -426,8 +440,8 @@ def report_task(tasks, filter=None, title=None, detailed=False, todos=False, asc
     for task in tasks:
         tot_work_time += task.work_time
 
-        if task.end_date:
-            last_time = task.end_date
+        if task.last_end_date:
+            last_time = task.last_end_date
         else:
             last_time = ''
 
@@ -486,7 +500,7 @@ def report_full(filter=None):
             if not filter or (filter in tok[4] or filter in tok[1]):
                 dbg('accepting %s' % line)
                 task = Task(name=tok[1], start_str=tok[3], end_str=tok[4], id=id)
-                date = task.end_date
+                date = task.last_end_date
                 if date in tasks.keys():
                     tasks[date].append(task)
                 else:
@@ -518,7 +532,7 @@ def report_full(filter=None):
                 start_str = '%s' % task.start_time.strftime('%H:%M')
                 end_str = '%s' % task.end_time.strftime('%H:%M')
 
-                column += '%s | %s -> %s = %s | %s' % (task.end_date,
+                column += '%s | %s -> %s = %s | %s' % (task.last_end_date,
                                                        start_str, end_str,
                                                        work_str, task.name)
                 column += '\n'
@@ -540,14 +554,14 @@ def do_report(args):
         title="Today's Tasks "
         today_date = datetime.datetime.strftime(datetime.datetime.today(),
                                                 '%Y-%m-%d')
-        by_logged_today = lambda x: today_date in str(x.end_date)
+        by_logged_today = lambda x: today_date in str(x.last_end_date)
         tasks = get_tasks(by_logged_today)
 
     elif args['--day-by-day']:
         title = ""
         if pattern:
             title = ": by pattern < {pattern} > ".format(pattern=pattern)
-        by_end_date = lambda x: not pattern or (pattern in str(x.end_date) or pattern in str(x.name))
+        by_end_date = lambda x: not pattern or (pattern in str(x.last_end_date) or pattern in str(x.name))
         map = group_task_by(get_tasks(by_end_date), 'date')
 
         for key in sorted(map.keys()):
@@ -561,7 +575,7 @@ def do_report(args):
         title="Yesterday's Tasks "
         yesterday = datetime.datetime.today() - datetime.timedelta(1)
         yesterday_date = str(yesterday).split()[0]  # keep only the part with YYYY-MM-DD
-        by_logged_yesterday = lambda x: yesterday_date in str(x.end_date)
+        by_logged_yesterday = lambda x: yesterday_date in str(x.last_end_date)
         tasks = get_tasks(by_logged_yesterday)
     else:  # Defaults on all tasks
         if not pattern:
@@ -570,7 +584,7 @@ def do_report(args):
             if resp.lower() == 'n' or resp.lower() == 'no':
                 return
         title="All Tasks and Todos "
-        by_name_or_end_date = lambda x: not pattern or (pattern in str(x.end_date) or pattern in x.name)
+        by_name_or_end_date = lambda x: not pattern or (pattern in str(x.last_end_date) or pattern in x.name)
         tasks = get_tasks(by_name_or_end_date)
 
     # By default show Task grouped by name
