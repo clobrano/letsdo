@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    lets show         [--no-color] [todo | all | today | yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
+    lets see          [--no-color] [todo | all | today | yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
     lets do           [--no-color] [--time=<time>] [<name>...]
     lets edit         [--no-color]
     lets goto         [--no-color] [<newtask>...]
@@ -37,28 +37,42 @@ def paint(msg):
     return msg
 
 class Task(object):
-    def __init__(self, name='unknown', start=None, end=None, id=None):
-        self.context = None
-        self.end_date = None
-        self.end_time = None
+    def __init__(self, name=None, start_str=None, end_str=None, id=None):
+        if not name:
+            raise ValueError
+
         self.name = name.strip()
-        self.start_time = None
-        self.tags = None
-        self.work_time = datetime.timedelta()
         self.id = id
-        self.pause = 0
         self.uid = None
 
+        self.context = None
+        self.tags = None
         self.parse_name(self.name)
-        if start:
-            self.start_time = str2datetime(start.strip())
+
+        self.end_date = None
+        self.end_time = None
+        self.start_time = None
+        self.work_time = datetime.timedelta()
+
+        # Adjust Task's start time with a string representing a time or a date + time,
+        # otherwise the task starts now.
+        # See std2datetime for available formats.
+        if start_str:
+            self.start_time = str2datetime(start_str.strip())
         else:
             self.start_time = datetime.datetime.now()
 
-        if end:
-            self.end_time = str2datetime(end.strip())
+        # TODO do we really expect end time here?
+        if end_str:
+            self.end_time = str2datetime(end_str.strip())
             self.end_date = (self.end_time.strftime('%Y-%m-%d'))
             self.work_time = self.end_time - self.start_time
+
+    @staticmethod
+    def __is_running():
+        exists = os.path.exists(Configuration().task_fullpath)
+        dbg('Is a task running? {}'.format(exists))
+        return exists
 
     @staticmethod
     def get_running():
@@ -137,13 +151,6 @@ class Task(object):
         else:
             info('No task running')
             return False
-
-    @staticmethod
-    def __is_running():
-        TASK_FILENAME = Configuration().task_fullpath
-        exists = os.path.exists(TASK_FILENAME)
-        dbg('is it running? %d' % exists)
-        return exists
 
     def start(self):
         if not Task.__is_running():
@@ -270,7 +277,7 @@ def work_on(task_id=0, start_time_str=None):
                                                   '%Y-%m-%d')
             start_time = date_str + ' ' + start_time_str
 
-        Task(task.name, start=start_time).start()
+        Task(task.name, start_str=start_time).start()
 
 
 def sanitize(text, filters=[]):
@@ -356,7 +363,7 @@ def get_tasks(condition=None, todos=[]):
             for line in reversed(f.readlines()):
                 dbg(line)
                 fields = line.strip().split(',')
-                t = Task(name=sanitize(fields[1]), start=fields[3], end=fields[4])
+                t = Task(name=sanitize(fields[1]), start_str=fields[3], end_str=fields[4])
                 # If a task with the same name exists,
                 # keep the same ID as well
                 try:
@@ -478,7 +485,7 @@ def report_full(filter=None):
             tok = line.split(',')
             if not filter or (filter in tok[4] or filter in tok[1]):
                 dbg('accepting %s' % line)
-                task = Task(name=tok[1], start=tok[3], end=tok[4], id=id)
+                task = Task(name=tok[1], start_str=tok[3], end_str=tok[4], id=id)
                 date = task.end_date
                 if date in tasks.keys():
                     tasks[date].append(task)
@@ -608,7 +615,7 @@ def main():
                 work_on(task_id=id, start_time_str=args['--time'])
                 return
             new_task_name = ' '.join(args['<name>'])
-            Task(new_task_name, start=args['--time']).start()
+            Task(new_task_name, start_str=args['--time']).start()
             return
 
     if args['edit']:
@@ -628,7 +635,7 @@ def main():
 
     if args['last']:
         last_task = get_tasks(todos=None)[0]
-        Task(name=last_task.name, start=args['--time']).start();
+        Task(name=last_task.name, start_str=args['--time']).start();
         return
 
     if args['todo']:
@@ -672,7 +679,7 @@ def main():
         autocomplete()
         return
 
-    if args['show']:
+    if args['see']:
         if args ['todo']:
             todos = get_todos()
             if (len(todos) == 0):
@@ -698,7 +705,7 @@ def main():
     if not args['<name>']:
         args['<name>'] = ['unknown']
 
-    if args ['status']:
+    if args ['see']:
         return do_report(args)
 
 

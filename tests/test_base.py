@@ -150,8 +150,8 @@ TODO_FULLPATH: ~/footodo.txt
         self.assertEquals(task.tags, ['+some', '+tags'])
 
     def test_create_unnamed_task(self):
-        task = Task()
-        self.assertEquals(task.name, 'unknown')
+        with self.assertRaises (ValueError) as context:
+            Task ()
 
     def test_create_named_task(self):
         task = Task('named')
@@ -165,7 +165,7 @@ TODO_FULLPATH: ~/footodo.txt
 
     def test_get_running_task(self):
         if not os.path.exists(self.conf.task_fullpath):
-            Task().start()
+            Task('foo task').start()
         task = Task.get_running()
         self.assertIsNotNone(task)
 
@@ -184,7 +184,7 @@ TODO_FULLPATH: ~/footodo.txt
 
     def test_stop_running_task(self):
         if not os.path.exists(self.conf.task_fullpath):
-            Task().start()
+            Task('foo task').start()
         if not os.path.exists(self.conf.data_fullpath):
             with open(self.conf.data_fullpath, mode='w') as f:
                 f.write('')
@@ -199,13 +199,13 @@ TODO_FULLPATH: ~/footodo.txt
     def test_start_task(self):
         if os.path.exists(self.conf.task_fullpath):
             os.remove(self.conf.task_fullpath)
-        Task().start()
+        Task('foo task').start()
         self.assertTrue(os.path.exists(self.conf.task_fullpath))
 
     def test_status_task(self):
         if os.path.exists(self.conf.task_fullpath):
             os.remove(self.conf.task_fullpath)
-        Task().start()
+        Task('foo task').start()
         self.assertTrue(Task.status())
 
 
