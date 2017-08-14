@@ -2,14 +2,13 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    lets see          [--no-color] [todo | all | today | yesterday] [--detailed | --day-by-day] [--ascii] [<pattern>]
-    lets do           [--no-color] [--time=<time>] [<name>...]
-    lets edit         [--no-color]
-    lets goto         [--no-color] [<newtask>...]
-    lets stop         [--no-color] [--time=<time>]
-    lets cancel       [--no-color]
+    lets see          [todo|all|today|yesterday] [--detailed|--day-by-day] [--ascii] [<pattern>]
+    lets do           [--time=<time>] [<name>...]
+    lets edit
+    lets stop         [--time=<time>]
+    lets goto         [<newtask>...]
+    lets cancel
     lets autocomplete
-    lets status       [--no-color]
 
 options:
     --ascii           Print report table in ASCII characters
@@ -19,7 +18,6 @@ options:
 
 import os
 import re
-import hashlib
 import json
 import datetime
 import docopt
@@ -38,12 +36,12 @@ def paint(msg):
 
 class Task(object):
     '''Class representing a running task'''
-    def __init__(self, name=None, start_str=None, end_str=None, id=None):
+    def __init__(self, name=None, start_str=None, end_str=None, tid=None):
         if not name:
             raise ValueError
 
         self.name = name.strip()
-        self.id = id
+        self.tid = tid
 
         self.context = None
         self.tags = None
@@ -215,8 +213,8 @@ class Task(object):
         else:
             end_str = 'None'
 
-        if self.id is not None:
-            return '[%d] - %s| %s (%s -> %s) - %s' % (self.id,
+        if self.tid is not None:
+            return '[%d] - %s| %s (%s -> %s) - %s' % (self.tid,
                                                       self.last_end_date,
                                                       work_str,
                                                       start_str,
@@ -284,7 +282,7 @@ def autocomplete():
 
 def work_on(task_id=0, start_time_str=None):
     '''Start given task id'''
-    tasks = get_tasks(condition=lambda x: x.id == task_id)
+    tasks = get_tasks(condition=lambda x: x.tid == task_id)
     tasks = group_task_by(tasks, group='name')
     if not tasks:
         err("Could not find any task with ID '{id}'".format(id=task_id))
@@ -338,7 +336,7 @@ def get_todos():
 
             if todo_start_tag:
                 reading = False
-                id = 0
+                tid = 0
                 for line in cfile.readlines():
                     line = line.rstrip()
 
@@ -353,11 +351,11 @@ def get_todos():
 
                     if reading:
                         line = sanitize(line)
-                        id += 1
-                        tasks.append(Task(name=line, id=id))
+                        tid += 1
+                        tasks.append(Task(name=line, tid=tid))
             else:
                 tasks = [
-                    Task(name=sanitize(line), id=lineno + 1)
+                    Task(name=sanitize(line), tid=lineno + 1)
                     for lineno, line in enumerate(cfile.readlines())
                 ]
     except(TypeError, AttributeError, IOError):
@@ -380,7 +378,7 @@ def get_tasks(condition=None, todos=[]):
         # Skip todos loading
         tasks = []
 
-    id = len(tasks)
+    tid = len(tasks)
     try:
         with open(datafilename) as cfile:
             for line in reversed(cfile.readlines()):
@@ -403,17 +401,17 @@ def get_tasks(condition=None, todos=[]):
                             .format(num_fields=len(fields), fields=fields))
 
                 # If a task with the same name exists,
-                # keep the same ID as well
+                # keep the same tid as well
                 try:
                     same_task = tasks.index(task)
-                    task.id = tasks[same_task].id
-                    dbg('{task_name} has old id {id}'.format(
-                        task_name=task.name, id=task.id))
+                    task.tid = tasks[same_task].tid
+                    dbg('{task_name} has old id {tid}'.format(
+                        task_name=task.name, tid=task.tid))
                 except ValueError:
-                    id += 1
-                    task.id = id
-                    dbg('{task_name} has new id {id}'.format(
-                        task_name=task.name, id=task.id))
+                    tid += 1
+                    task.tid = tid
+                    dbg('{task_name} has new id {tid}'.format(
+                        task_name=task.name, tid=task.tid))
                 tasks.append(task)
 
         return filter(condition, tasks)
@@ -478,18 +476,18 @@ def report_task(tasks, cfilter=None, title=None,
             interval = '{begin} -> {end}'.\
                     format(begin=task.start_time.strftime('%H:%M'),
                            end=task.end_time.strftime('%H:%M'))
-            row = [paint(task.id),
+            row = [paint(task.tid),
                    paint(last_time),
                    paint(interval),
                    paint(time),
                    paint(task.name)]
         elif todos:
-            row = [paint(task.id),
+            row = [paint(task.tid),
                    paint(time),
                    paint(task.name)]
         else:
 
-            row = [paint(task.id),
+            row = [paint(task.tid),
                    paint(last_time),
                    paint(time),
                    paint(task.name)]
@@ -624,10 +622,10 @@ def main():
                 Task(name=last_task.name, start_str=args['--time']).start()
                 return
 
-            # Check whether the given task name is actually a task ID
-            id = guess_task_id_from_string(name)
-            if id is not False:
-                work_on(task_id=id, start_time_str=args['--time'])
+            # Check whether the given task name is actually a task tid
+            tid = guess_task_id_from_string(name)
+            if tid is not False:
+                work_on(task_id=tid, start_time_str=args['--time'])
                 return
 
             new_task_name = ' '.join(args['<name>'])
@@ -668,12 +666,12 @@ def main():
 
     if args['goto']:
         name = args['<newtask>']
-        id = guess_task_id_from_string(name)
-        if id is not False:
-            tasks = get_tasks(lambda x: x.id == id)
+        tid = guess_task_id_from_string(name)
+        if tid is not False:
+            tasks = get_tasks(lambda x: x.tid == tid)
 
             if not tasks:
-                err("Could not find tasks with id '%d'" & id)
+                err("Could not find tasks with id {tid}".format(tid=tid))
                 return
             else:
                 task = tasks[0]
@@ -702,6 +700,7 @@ def main():
         args['<name>'] = ['unknown']
 
     return do_report(args)
+
 
 if __name__ == '__main__':
     main()
