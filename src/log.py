@@ -22,7 +22,11 @@ try:
 except ImportError:
     RAFFAELLO = None
 
-LEVEL = logging.DEBUG
+if 'LETSDO_DEBUG' in os.environ:
+    LEVEL = logging.DEBUG
+else:
+    LEVEL = logging.INFO
+
 logging.basicConfig(level=LEVEL, format='%(message)s')
 LOGGER = logging.getLogger(__name__)
 
