@@ -1,11 +1,11 @@
-_letsdo()
+_lets()
 {
     local cur prev opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    cmds="--help --all --today --yesterday --day-by-day --time --id --color"
+    cmds="--help --no-color --time --detailed --day-by-day --ascii"
     if [[ ${cur} == -* ]] ; then
         COMPREPLY=( $(compgen -W "${cmds}" -- ${cur}) )
         return 0
@@ -29,7 +29,7 @@ _letsdo()
         fi
     fi
 
-    cmds="todos report start stop edit last to cancel"
+    cmds="see do edit stop goto cancel config todo all today yesterday"
     if [[ ${cur} == * ]] ; then
         COMPREPLY=( $(compgen -W "${cmds}" -- ${cur}) )
         return 0
@@ -52,4 +52,4 @@ parse_yaml() {
       }
    }'
 }
-complete -F _letsdo letsdo
+complete -F _lets lets

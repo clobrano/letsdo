@@ -2,18 +2,22 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    lets see          [todo|all|today|yesterday] [--detailed|--day-by-day] [--ascii] [<pattern>]
-    lets do           [--time=<time>] [<name>...]
+    lets see    [--no-color] [todo|all|today|yesterday] [--detailed|--day-by-day] [--ascii] [<pattern>]
+    lets do     [--no-color] [--time=<time>] [<name>...]
     lets edit
-    lets stop         [--time=<time>]
-    lets goto         [<newtask>...]
+    lets stop   [--no-color] [--time=<time>]
+    lets goto   [--no-color] [<newtask>...]
     lets cancel
-    lets autocomplete
+    lets config data.directory <fullpath>
+    lets config todo.file      <fullpath>
+    lets config todo.start     <tag>
+    lets config todo.stop      <tag>
+    lets config autocomplete
 
 options:
     --ascii           Print report table in ASCII characters
     -t, --time=<time> Change the start/stop time of the task on the fly
-    --no-color        Disable colorizer (see raffaello)
+    --no-color        Disable colorizer (depends on raffaello python package)
 '''
 
 import os
@@ -23,7 +27,7 @@ import datetime
 import docopt
 from terminaltables import SingleTable, AsciiTable
 from log import info, err, warn, dbg, RAFFAELLO
-from configuration import Configuration
+from configuration import Configuration, do_config
 from timetoolkit import str2datetime, strfdelta
 
 
@@ -237,49 +241,6 @@ class Task(object):
         return hash((self.name))
 
 
-def autocomplete():
-    '''Setup autocomplete'''
-    message = '''
-    Letsdo CLI is able to suggest:
-    - command line flags
-    - contexts already used (words starting by @ in the task name)
-    - tags already used (words starting by + in the task name)
-
-    To enable this feature do either of the following:
-        - put letsdo_completion file under /etc/bash_completion.d/ for
-            system-wide autocompletion
-    or:
-        - put letsdo_completion file in your home directory and "source" it in
-            your .bashrc
-        e.g.
-            source /full/path/to/letsdo_completion
-
-    Letsdo can copy the script in your $HOME for you if you replay with "Y" at
-    this message, otherwise the letsdo_completion file will be printed out here
-    and it is up to you to copy and save it as said above.
-
-    Do you want Letsdo to copy the script in your $HOME directory? [Y/n]
-    '''
-
-    root = os.path.abspath(os.path.dirname(__file__))
-    completion = os.path.join(root, 'letsdo_scripts', 'letsdo_completion')
-
-    info(message)
-
-    resp = raw_input()
-    if resp.lower() == 'y':
-        completionfile = os.path.join(
-            os.path.expanduser(
-                '~', ), '.letsdo_completion')
-        with open(completionfile, 'w') as cfile:
-            cfile.writelines(open(completion).read())
-    else:
-        print(
-            '--- CUT HERE ----------------------------------------------------'
-        )
-        print(open(completion).read())
-
-
 def work_on(task_id=0, start_time_str=None):
     '''Start given task id'''
     tasks = get_tasks(condition=lambda x: x.tid == task_id)
@@ -396,9 +357,8 @@ def get_tasks(condition=None, todos=[]):
                                 start_str=fields[2],
                                 end_str=fields[3])
                 else:
-                    raise Exception("History has unexpected number of fields \
-                            ({num_fields}: {fields})"
-                            .format(num_fields=len(fields), fields=fields))
+                    raise Exception("History unexpected fields ({}: {})"
+                                    .format(len(fields), fields))
 
                 # If a task with the same name exists,
                 # keep the same tid as well
@@ -456,11 +416,11 @@ def report_task(tasks, cfilter=None, title=None,
     tot_work_time = datetime.timedelta()
 
     if detailed:
-        table_data = [['ID', 'Date', 'Interval', 'Tracked', 'Task description']]
+        table_data = [['ID', 'Date', 'Interval', 'Tracked', 'Description']]
     elif todos:
-        table_data = [['ID', 'Tracked', 'Task description']]
+        table_data = [['ID', 'Tracked', 'Description']]
     else:
-        table_data = [['ID', 'Last time', 'Tracked', 'Task description']]
+        table_data = [['ID', 'Last time', 'Tracked', 'Description']]
 
     for task in tasks:
         tot_work_time += task.work_time
@@ -683,12 +643,12 @@ def main():
         Task(new_task_name).start()
         return
 
-    if args['autocomplete']:
-        autocomplete()
-        return
-
     if args['see']:
         return do_report(args)
+
+    if args['config']:
+        do_config(args)
+        return
 
     # Default, if a task is running show it
     if Task.get_running():
