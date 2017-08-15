@@ -19,7 +19,8 @@ try:
 \d{2,4}-\d{2}-\d{2}=>cyan_bold
 '''
         RAFFAELLO = Raffaello(Commission(REQUEST).commission)
-except ImportError:
+except ImportError as error:
+    print('could not colorize output: {}'.format(error))
     RAFFAELLO = None
 
 if 'LETSDO_DEBUG' in os.environ:
