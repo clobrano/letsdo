@@ -122,7 +122,7 @@ class Task(object):
         try:
             with open(Configuration().data_fullpath, mode='a') as cfile:
                 cfile.writelines(report_line)
-        except IOError, error:
+        except IOError as error:
             err('Could not save report: ' + error.message)
             return False
 
@@ -187,7 +187,7 @@ class Task(object):
                 info('Started task:')
                 info(json_data)
                 return True
-        except IOError, error:
+        except IOError as error:
             err('Could not save task data: ' + error.message)
             return False
 
@@ -319,8 +319,8 @@ def get_todos():
                     Task(name=sanitize(line), tid=lineno + 1)
                     for lineno, line in enumerate(cfile.readlines())
                 ]
-    except(TypeError, AttributeError, IOError):
-        dbg("Could not get todo list. Todo file not set or incorrect.")
+    except(TypeError, AttributeError, IOError) as error:
+        dbg("could not get todo list: {}".format(error))
     return tasks
 
 

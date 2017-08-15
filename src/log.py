@@ -2,10 +2,17 @@
 Logging facility
 '''
 import os
+import sys
 import logging
 
 try:
     if 'LETSDO_COLOR' not in os.environ:
+        RAFFAELLO = None
+    elif sys.version_info > (2, 7):
+        print('due to Raffaello limitation, '
+              'colorizing is supported only on python <= 2.7. '
+              'You might want to disable colorizing '
+              'to remove this notification')
         RAFFAELLO = None
     else:
         from raffaello import Raffaello, Commission
