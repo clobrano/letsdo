@@ -468,10 +468,10 @@ def report_task(tasks, cfilter=None, title=None,
     print(table.table)
     info('')
     if cfilter:
-        info('{filter}: Total work time {time}'.format(
+        info('{filter}: Tracked time {time}'.format(
             filter=cfilter, time=strfdelta(tot_work_time)))
     else:
-        info('Total work time {time}'.format(time=strfdelta(tot_work_time)))
+        info('Tracked time {time}'.format(time=strfdelta(tot_work_time)))
 
 
 def do_report(args):

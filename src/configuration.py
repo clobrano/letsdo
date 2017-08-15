@@ -57,12 +57,10 @@ class Configuration(object):
         return value
 
     def __save(self):
-        data = {
-            "DATADIR": self.data_dir,
-            "TODO_FULLPATH": self.todo_fullpath,
-            "TODO_START_TAG": self.todo_start_tag,
-            "TODO_STOP_TAG": self.todo_stop_tag
-                }
+        data = {"DATADIR": self.data_dir,
+                "TODO_FULLPATH": self.todo_fullpath,
+                "TODO_START_TAG": self.todo_start_tag,
+                "TODO_STOP_TAG": self.todo_stop_tag}
         with open(self.conf_file_path, 'w') as cfile:
             yaml.dump(data, cfile, default_flow_style=False)
 
