@@ -8,14 +8,8 @@ import logging
 try:
     if 'LETSDO_COLOR' not in os.environ:
         RAFFAELLO = None
-    elif sys.version_info > (2, 7):
-        print('due to Raffaello limitation, '
-              'colorizing is supported only on python <= 2.7. '
-              'You might want to disable colorizing '
-              'to remove this notification')
-        RAFFAELLO = None
     else:
-        from raffaello import Raffaello, Commission
+        from raffaello import Raffaello, parse_request
 
         REQUEST = r'''
 \+[\w\-_]+=>color197_bold
@@ -25,7 +19,7 @@ try:
 \d+h\s=>cyan_bold
 \d{2,4}-\d{2}-\d{2}=>cyan_bold
 '''
-        RAFFAELLO = Raffaello(Commission(REQUEST).commission)
+        RAFFAELLO = Raffaello(parse_request(REQUEST))
 except ImportError as error:
     print('could not colorize output: {}'.format(error))
     RAFFAELLO = None

@@ -23,7 +23,7 @@ options:
 import os
 import re
 import json
-import datetime
+from datetime import datetime, timedelta
 import docopt
 from terminaltables import SingleTable, AsciiTable
 from log import info, err, warn, dbg, RAFFAELLO
@@ -58,14 +58,14 @@ class Task(object):
         if start_str:
             self.start_time = str2datetime(start_str.strip())
         else:
-            self.start_time = datetime.datetime.now()
+            self.start_time = datetime.now()
 
         if end_str:
             self.end_time = str2datetime(end_str.strip())
             self.work_time = self.end_time - self.start_time
         else:
             self.end_time = None
-            self.work_time = datetime.timedelta()
+            self.work_time = timedelta()
 
     @property
     def last_end_date(self):
@@ -106,14 +106,14 @@ class Task(object):
                 return False
             date = stop_time.strftime('%Y-%m-%d')
         else:
-            stop_time = datetime.datetime.now()
-            date = datetime.date.today()
+            stop_time = datetime.now()
+            date = datetime.today()
 
         work_time_str = str(stop_time - task.start_time).split('.')[0][:-3]
         start_time_str = str(task.start_time).split('.')[0][:-3]
         stop_time_str = str(stop_time).split('.')[0][:-3]
 
-        report_line = '{date},{name},,{start_time},{stop_time}\n'\
+        report_line = '{date},{name},{start_time},{stop_time}\n'\
                       .format(date=date,
                               name=task.name,
                               start_time=start_time_str,
@@ -151,7 +151,7 @@ class Task(object):
         '''Get status of current running task'''
         task = Task.get_running()
         if task:
-            now = datetime.datetime.now()
+            now = datetime.now()
             time = str(now - task.start_time).split('.')[0]
             hours, minutes, seconds = time.split(':')
             info('Working on \'{name}\' for {h}h {m}m {s}s'
@@ -252,8 +252,8 @@ def work_on(task_id=0, start_time_str=None):
         task = tasks[0]
         start_time = None
         if start_time_str:
-            date_str = datetime.datetime.strftime(datetime.datetime.today(),
-                                                  '%Y-%m-%d')
+            date_str = datetime.strftime(datetime.today(),
+                                         '%Y-%m-%d')
             start_time = date_str + ' ' + start_time_str
 
         Task(task.name, start_str=start_time).start()
@@ -326,8 +326,6 @@ def get_todos():
 
 def get_tasks(condition=None, todos=[]):
     '''Get all tasks'''
-    datafilename = Configuration().data_fullpath
-
     # Some todos might have been logged yet and some other don't.
     # Pass this list to avoid duplication, but I do not like
     # this solution
@@ -341,7 +339,7 @@ def get_tasks(condition=None, todos=[]):
 
     tid = len(tasks)
     try:
-        with open(datafilename) as cfile:
+        with open(Configuration().data_fullpath) as cfile:
             for line in reversed(cfile.readlines()):
                 dbg(line)
                 fields = line.strip().split(',')
@@ -374,7 +372,7 @@ def get_tasks(condition=None, todos=[]):
                         task_name=task.name, tid=task.tid))
                 tasks.append(task)
 
-        return filter(condition, tasks)
+        return list(filter(condition, tasks))
     except IOError:
         return []
 
@@ -392,7 +390,7 @@ def group_task_by(tasks, group=None):
                 same_task.work_time.seconds for same_task in tasks
                 if same_task == main_task
             ])
-            work_time = datetime.timedelta(seconds=work_time_in_seconds)
+            work_time = timedelta(seconds=work_time_in_seconds)
             main_task.work_time = work_time
         return uniques
 
@@ -413,7 +411,7 @@ def group_task_by(tasks, group=None):
 def report_task(tasks, cfilter=None, title=None,
                 detailed=False, todos=False, ascii=False):
     '''Visual task report'''
-    tot_work_time = datetime.timedelta()
+    tot_work_time = timedelta()
 
     if detailed:
         table_data = [['ID', 'Date', 'Interval', 'Tracked', 'Description']]
@@ -434,8 +432,8 @@ def report_task(tasks, cfilter=None, title=None,
 
         if detailed:
             interval = '{begin} -> {end}'.\
-                    format(begin=task.start_time.strftime('%H:%M'),
-                           end=task.end_time.strftime('%H:%M'))
+                       format(begin=task.start_time.strftime('%H:%M'),
+                              end=task.end_time.strftime('%H:%M'))
             row = [paint(task.tid),
                    paint(last_time),
                    paint(interval),
@@ -446,7 +444,6 @@ def report_task(tasks, cfilter=None, title=None,
                    paint(time),
                    paint(task.name)]
         else:
-
             row = [paint(task.tid),
                    paint(last_time),
                    paint(time),
@@ -458,11 +455,6 @@ def report_task(tasks, cfilter=None, title=None,
         table = AsciiTable(table_data)
     else:
         table = SingleTable(table_data)
-
-    if title:
-        table.title = title
-    else:
-        table.title = cfilter
 
     info('')
     print(table.table)
@@ -493,22 +485,14 @@ def do_report(args):
         return
 
     if args['today']:
-        today_date = datetime.datetime.strftime(datetime.datetime.today(),
-                                                '%Y-%m-%d')
-
-        by_logged_today = lambda x: today_date in str(x.last_end_date)
-        tasks = get_tasks(by_logged_today)
+        pattern = datetime.strftime(datetime.today(), '%Y-%m-%d')
 
     elif args['yesterday']:
-        yesterday = datetime.datetime.today() - datetime.timedelta(1)
+        yesterday = datetime.today() - timedelta(1)
         # keep only the part with YYYY-MM-DD
-        yesterday_date = str(yesterday).split()[0]
+        pattern = str(yesterday).split()[0]
 
-        by_logged_yesterday = lambda x: yesterday_date in str(x.last_end_date)
-
-        tasks = get_tasks(by_logged_yesterday)
-
-    elif args['all']:
+    if args['all'] or pattern:
         by_name_or_end_date = lambda x: not pattern or \
             (pattern in str(x.last_end_date) or pattern in x.name)
 
