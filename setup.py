@@ -1,21 +1,31 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+'''
+Setuptool configuration for letsdo
+'''
 import os
 from setuptools import setup, find_packages
 
-__version__ = '0.5.0'
+__version__ = '0.5.1'
 
 # Utility function to read the README file.
 # Used for the long_description.  It's nice, because now 1) we have a top level
 # README file and 2) it's easier to type in the README file than to put a raw
 # string in below ...
+
+
 def read(fname):
+    '''Read a file in current directory'''
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+
 def long_description():
+    '''Check whether RST readme file exists to
+    read it, otherwise it looks for a Markdown one'''
     if os.path.exists('README.rst'):
-        return read('README.rst');
+        return read('README.rst')
     return read('README.md')
+
 
 setup(name='letsdo',
       author='Carlo Lobrano',
@@ -26,7 +36,7 @@ setup(name='letsdo',
       install_requires=['docopt', 'PyYaml', 'terminaltables'],
       keywords=['productivity', 'GTD', 'time tracker'],
       license="MIT",
-      long_description = long_description(),
+      long_description=long_description(),
       package_dir={'': 'src'},
       packages=find_packages('src'),
       py_modules=['letsdo', 'log', 'configuration', 'timetoolkit'],
