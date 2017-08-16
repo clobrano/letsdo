@@ -18,6 +18,9 @@ class TestLetsdo(unittest.TestCase):
         test_configuration = \
 '''DATADIR: ~/
 TODO_FULLPATH: ~/footodo.txt
+TODO_FULLPATH: ''
+TODO_START_TAG: ''
+TODO_STOP_TAG: ''
 '''
         self.test_conf_file = os.path.expanduser(os.path.join('~', '.letsdo'))
         self.user_conf_bak = os.path.expanduser(os.path.join('~', '.letsdo.bak'))
@@ -46,18 +49,14 @@ TODO_FULLPATH: ~/footodo.txt
             os.remove(self.conf.task_fullpath)
 
     def test_group_task_by(self):
-        expected = set()
         t = Task('group 1', start_str='15:00').start()
         t.stop('15:05')
-        expected.add(t)
 
         t = Task('group 2', start_str='16:00').start()
         t.stop('16:01')
-        expected.add(t)
 
         t = Task('group 1', start_str='16:02').start()
         t.stop('16:03')
-        expected.add(t)
 
         real = group_task_by(get_tasks(), 'name')
         self.assertEquals(len(real), 2)

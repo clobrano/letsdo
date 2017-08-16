@@ -3,7 +3,7 @@ This module keeps the classes and function that manage user customization
 '''
 import os
 import yaml
-from log import info, err, dbg
+from .log import info, err, dbg
 
 
 class Configuration(object):
@@ -136,7 +136,7 @@ def autocomplete():
 
     info(message)
 
-    resp = raw_input()
+    resp = input()
     if resp.lower() == 'y':
         completionfile = os.path.join(
             os.path.expanduser(
