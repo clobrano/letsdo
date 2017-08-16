@@ -4,6 +4,7 @@ import unittest
 import os
 import datetime
 from time import sleep
+from datetime import timedelta
 from letsdo.src.letsdo import Task
 from letsdo.src.letsdo import Configuration
 from letsdo.src.letsdo import work_on
@@ -46,20 +47,24 @@ TODO_FULLPATH: ~/footodo.txt
 
     def test_group_task_by(self):
         expected = set()
-        t = Task('group 1').start()
-        t.stop()
+        t = Task('group 1', start_str='15:00').start()
+        t.stop('15:05')
         expected.add(t)
 
-        t = Task('group 2').start()
-        t.stop()
+        t = Task('group 2', start_str='16:00').start()
+        t.stop('16:01')
         expected.add(t)
 
-        t = Task('group 1').start()
-        t.stop()
+        t = Task('group 1', start_str='16:02').start()
+        t.stop('16:03')
         expected.add(t)
 
-        real = set(group_task_by(get_tasks(), 'name'))
-        self.assertEquals(real.difference(expected), set())
+        real = group_task_by(get_tasks(), 'name')
+        self.assertEquals(len(real), 2)
+        self.assertEquals(real[0].name, 'group 1')
+        self.assertEquals(real[0].work_time, timedelta(minutes=6))
+        self.assertEquals(real[1].name, 'group 2')
+        self.assertEquals(real[1].work_time, timedelta(minutes=1))
 
     def test_str2datetime(self):
         string = '2016-11-10 19:02'
@@ -150,7 +155,7 @@ TODO_FULLPATH: ~/footodo.txt
         self.assertEquals(task.tags, ['+some', '+tags'])
 
     def test_create_unnamed_task(self):
-        with self.assertRaises (ValueError) as context:
+        with self.assertRaises (TypeError) as context:
             Task ()
 
     def test_create_named_task(self):

@@ -21,7 +21,7 @@ options:
 '''
 
 import os
-import sys
+import hashlib
 import re
 import json
 from datetime import datetime, timedelta
@@ -30,11 +30,6 @@ from terminaltables import SingleTable, AsciiTable
 from log import info, err, warn, dbg, RAFFAELLO
 from configuration import Configuration, do_config
 from timetoolkit import str2datetime, strfdelta
-
-# detect python version
-PYTHON_VERSION = 2
-if sys.version_info >= (3, 0):
-    PYTHON_VERSION = 3
 
 
 def paint(msg):
@@ -46,16 +41,12 @@ def paint(msg):
 
 class Task(object):
     '''Class representing a running task'''
-    def __init__(self, name=None, start_str=None, end_str=None, tid=None):
-        if not name:
-            raise ValueError
-
-        self.name = name.strip()
-        self.tid = tid
-
+    def __init__(self, name, start_str=None, end_str=None, tid=None):
         self.context = None
         self.tags = None
-        self.parse_name(self.name)
+        self.__parse_name(name.strip())
+        self.uid = self.__hash()
+        self.tid = tid
 
         # Adjust Task's start time with a string representing a
         # time or a date + time,
@@ -181,6 +172,10 @@ class Task(object):
         warn('Another task is running')
         return True
 
+    def __hash(self):
+        gen = hashlib.sha256(self.name.encode())
+        return gen.hexdigest()
+
     def __create(self):
         try:
             with open(Configuration().task_fullpath, 'w') as cfile:
@@ -197,8 +192,7 @@ class Task(object):
             err('Could not save task data: ' + error.message)
             return False
 
-    def parse_name(self, name):
-        '''Parse Task's name to get context and tags, if any'''
+    def __parse_name(self, name):
         # Sanitizing name (commas are still used to separate infos and cannot
         # be used in task's name
         name = name.replace(',', ' ')
@@ -212,7 +206,6 @@ class Task(object):
             self.tags = matches
 
     def __repr__(self):
-        work_str = '%s' % str(self.work_time).split('.')[0]
         if self.start_time:
             start_str = '%s' % self.start_time.strftime('%H:%M')
         else:
@@ -220,31 +213,32 @@ class Task(object):
 
         if self.end_time:
             end_str = '%s' % self.end_time.strftime('%H:%M')
+            work_str = '%s' % str(self.work_time).split('.')[0]
         else:
             end_str = 'None'
+            work_str = 'in progress'
 
         if self.tid is not None:
-            return '[%d] - %s| %s (%s -> %s) - %s' % (self.tid,
-                                                      self.last_end_date,
-                                                      work_str,
-                                                      start_str,
-                                                      end_str,
-                                                      self.name)
+            return '[%d:%s] - %s| %s (%s -> %s) - %s' % (self.tid,
+                                                         self.uid,
+                                                         self.last_end_date,
+                                                         work_str,
+                                                         start_str,
+                                                         end_str,
+                                                         self.name)
 
-        return '%s| %s (%s -> %s) - %s' % (self.last_end_date,
-                                           work_str,
-                                           start_str,
-                                           end_str,
-                                           self.name)
+        return '[%s] - %s| %s (%s -> %s) - %s' % (self.uid,
+                                                  self.last_end_date,
+                                                  work_str,
+                                                  start_str,
+                                                  end_str,
+                                                  self.name)
 
     def __eq__(self, other):
         return self.name == other.name
 
     def __ne__(self, other):
         return self.name != other.name
-
-    def __hash__(self):
-        return hash((self.name))
 
 
 def work_on(task_id=0, start_time_str=None):
@@ -331,10 +325,9 @@ def get_todos():
 
 
 def get_tasks(condition=None, todos=[]):
-    '''Get all tasks'''
+    '''Get all tasks by condition'''
     # Some todos might have been logged yet and some other don't.
-    # Pass this list to avoid duplication, but I do not like
-    # this solution
+    # Pass todo list to avoid duplication (but looking for a better solution)
     if todos:
         tasks = todos
     elif todos == []:
@@ -344,12 +337,14 @@ def get_tasks(condition=None, todos=[]):
         tasks = []
 
     tid = len(tasks)
+    uids = dict()
     try:
         with open(Configuration().data_fullpath) as cfile:
             for line in reversed(cfile.readlines()):
                 fields = line.strip().split(',')
                 if not fields[1]:
                     continue
+
                 # Take care of old history format with worked_time
                 if len(fields) == 5:
                     task = Task(name=sanitize(fields[1]),
@@ -363,14 +358,13 @@ def get_tasks(condition=None, todos=[]):
                     raise Exception("History unexpected fields ({}: {})"
                                     .format(len(fields), fields))
 
-                # If a task with the same name exists,
-                # keep the same tid as well
-                try:
-                    same_task = tasks.index(task)
-                    task.tid = tasks[same_task].tid
-                except ValueError:
+                # Tasks with same UID share the same Task ID as well
+                # (task ID is easier to use that UID that's a hash)
+                if task.uid not in uids:
                     tid += 1
-                    task.tid = tid
+                    uids[task.uid] = tid
+
+                task.tid = uids[task.uid]
                 tasks.append(task)
 
         return list(filter(condition, tasks))
@@ -481,7 +475,6 @@ def do_report(args):
 
         in_todo_list = lambda x: x.name in names
         tasks = get_tasks(in_todo_list, todos=todos)
-        print(tasks[0])
         tasks = group_task_by(tasks, 'name')
         report_task(tasks, todos=True, ascii=args['--ascii'])
         return
@@ -568,7 +561,7 @@ def main():
                 Task(name=last_task.name, start_str=args['--time']).start()
                 return
 
-            # Check whether the given task name is actually a task tid
+            # Check whether the given task name is actually a task id
             tid = guess_task_id_from_string(name)
             if tid is not False:
                 work_on(task_id=tid, start_time_str=args['--time'])
