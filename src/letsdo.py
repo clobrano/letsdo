@@ -27,9 +27,9 @@ import json
 from datetime import datetime, timedelta
 import docopt
 from terminaltables import SingleTable, AsciiTable
-from log import info, err, warn, dbg, RAFFAELLO
-from configuration import Configuration, do_config
-from timetoolkit import str2datetime, strfdelta
+from src.log import info, err, warn, dbg, RAFFAELLO
+from src.configuration import Configuration, do_config
+from src.timetoolkit import str2datetime, strfdelta
 
 
 def paint(msg):
