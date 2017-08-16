@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 Usage:
@@ -21,6 +21,7 @@ options:
 '''
 
 import os
+import sys
 import re
 import json
 from datetime import datetime, timedelta
@@ -29,6 +30,11 @@ from terminaltables import SingleTable, AsciiTable
 from log import info, err, warn, dbg, RAFFAELLO
 from configuration import Configuration, do_config
 from timetoolkit import str2datetime, strfdelta
+
+# detect python version
+PYTHON_VERSION = 2
+if sys.version_info >= (3, 0):
+    PYTHON_VERSION = 3
 
 
 def paint(msg):
@@ -341,7 +347,6 @@ def get_tasks(condition=None, todos=[]):
     try:
         with open(Configuration().data_fullpath) as cfile:
             for line in reversed(cfile.readlines()):
-                dbg(line)
                 fields = line.strip().split(',')
                 if not fields[1]:
                     continue
@@ -363,13 +368,9 @@ def get_tasks(condition=None, todos=[]):
                 try:
                     same_task = tasks.index(task)
                     task.tid = tasks[same_task].tid
-                    dbg('{task_name} has old id {tid}'.format(
-                        task_name=task.name, tid=task.tid))
                 except ValueError:
                     tid += 1
                     task.tid = tid
-                    dbg('{task_name} has new id {tid}'.format(
-                        task_name=task.name, tid=task.tid))
                 tasks.append(task)
 
         return list(filter(condition, tasks))
@@ -473,13 +474,14 @@ def do_report(args):
     if args['todo']:
         todos = get_todos()
         if not todos:
-            info('Could not find any Todos')
+            err('Could not find any Todos')
             return
 
         names = [t.name for t in todos]
 
         in_todo_list = lambda x: x.name in names
         tasks = get_tasks(in_todo_list, todos=todos)
+        print(tasks[0])
         tasks = group_task_by(tasks, 'name')
         report_task(tasks, todos=True, ascii=args['--ascii'])
         return
@@ -589,19 +591,6 @@ def main():
 
     if args['cancel']:
         Task.cancel()
-        return
-
-    if args['todo']:
-        todos = get_todos()
-        if todos == []:
-            info('Could not find any Todos')
-            return
-
-        names = [t.name for t in todos]
-        in_todo_list = lambda x: x.name in names
-        tasks = get_tasks(in_todo_list, todos=todos)
-        tasks = group_task_by(tasks, 'name')
-        report_task(tasks, todos=True, title="Todos", ascii=args['--ascii'])
         return
 
     if args['stop']:
