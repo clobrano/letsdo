@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    lets see    [--no-color] [todo|all|today|yesterday] [--detailed|--day-by-day] [--ascii] [<pattern>]
-    lets do     [--no-color] [--time=<time>] [<name>...]
+    lets see    [todo|all|today|yesterday] [--detailed|--day-by-day] [--ascii] [<pattern>] [--no-color]
+    lets do     [--time=<time>] [<name>...] [--no-color]
+    lets stop   [--time=<time>] [--no-color]
+    lets goto   [<newtask>...] [--no-color]
+    lets cancel [--no-color]
     lets edit
-    lets stop   [--no-color] [--time=<time>]
-    lets goto   [--no-color] [<newtask>...]
-    lets cancel
     lets config data.directory <fullpath>
     lets config todo.file      <fullpath>
     lets config todo.start     <tag>
@@ -392,7 +392,8 @@ def group_task_by(tasks, group=None):
     if group == 'date':
         task_map = {}
         for task in tasks:
-            date = task.end_date
+            print(task)
+            date = task.last_end_date
             if date in task_map.keys():
                 task_map[date].append(task)
             else:
@@ -487,18 +488,11 @@ def do_report(args):
         # keep only the part with YYYY-MM-DD
         pattern = str(yesterday).split()[0]
 
-    if args['all'] or pattern:
-        by_name_or_end_date = lambda x: not pattern or \
-            (pattern in str(x.last_end_date) or pattern in x.name)
-
-        tasks = get_tasks(by_name_or_end_date)
-
-    elif args['--day-by-day']:
+    if args['--day-by-day']:
         by_end_date = lambda x: not pattern or (pattern in str(x.last_end_date) or pattern in str(x.name))
-        task_map = group_task_by(get_tasks(by_end_date), 'date')
+        task_map = group_task_by(get_tasks(by_end_date, todos=None), 'date')
 
         for key in sorted(task_map.keys()):
-
             if not key:
                 continue
 
@@ -509,6 +503,11 @@ def do_report(args):
 
             report_task(sorted_by_time)
         return
+    elif args['all'] or pattern:
+        by_name_or_end_date = lambda x: not pattern or \
+            (pattern in str(x.last_end_date) or pattern in x.name)
+
+        tasks = get_tasks(by_name_or_end_date)
 
     else:
         # Just see if there is something running
