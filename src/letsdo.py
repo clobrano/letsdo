@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    lets see    [todo|all|today|yesterday] [--detailed|--day-by-day] [--ascii] [<pattern>] [--no-color]
+    lets see    [todo|all|today|yesterday|config] [--detailed|--day-by-day] [--ascii] [<pattern>] [--no-color]
     lets do     [--time=<time>] [<name>...] [--no-color]
     lets stop   [--time=<time>] [--no-color]
     lets goto   [<newtask>...] [--no-color]
@@ -27,8 +27,8 @@ import json
 from datetime import datetime, timedelta
 import docopt
 from terminaltables import SingleTable, AsciiTable
-from log import info, err, warn, dbg, RAFFAELLO
-from configuration import Configuration, do_config
+from log import info, LOGGER, RAFFAELLO
+from configuration import Configuration, autocomplete
 from timetoolkit import str2datetime, strfdelta
 
 
@@ -74,7 +74,7 @@ class Task(object):
     @staticmethod
     def __is_running():
         exists = os.path.exists(Configuration().task_fullpath)
-        dbg('Is a task running? {}'.format(exists))
+        LOGGER.debug('Is a task running? {}'.format(exists))
         return exists
 
     @staticmethod
@@ -98,7 +98,7 @@ class Task(object):
         if stop_time_str:
             stop_time = str2datetime(stop_time_str)
             if stop_time < task.start_time:
-                warn('Given stop time (%s) is more recent than start time (%s)'
+                LOGGER.warn('Given stop time (%s) is more recent than start time (%s)'
                      % (stop_time, task.start_time))
                 return False
             date = stop_time.strftime('%Y-%m-%d')
@@ -120,7 +120,7 @@ class Task(object):
             with open(Configuration().data_fullpath, mode='a') as cfile:
                 cfile.writelines(report_line)
         except IOError as error:
-            err('Could not save report: ' + error.message)
+            LOGGER.error('Could not save report: ' + error.message)
             return False
 
         # Delete current task data to mark it as stopped
@@ -166,10 +166,10 @@ class Task(object):
             if self.__create():
                 return Task.get_running()
 
-            err('Could not create new task')
+            LOGGER.error('Could not create new task')
             return False
 
-        warn('Another task is running')
+        LOGGER.warn('Another task is running')
         return True
 
     def __hash(self):
@@ -189,7 +189,7 @@ class Task(object):
                 info(json_data)
                 return True
         except IOError as error:
-            err('Could not save task data: ' + error.message)
+            LOGGER.error('Could not save task data: ' + error.message)
             return False
 
     def __parse_name(self, name):
@@ -246,7 +246,7 @@ def work_on(task_id=0, start_time_str=None):
     tasks = get_tasks(condition=lambda x: x.tid == task_id)
     tasks = group_task_by(tasks, group='name')
     if not tasks:
-        err("Could not find any task with ID '{id}'".format(id=task_id))
+        LOGGER.error("Could not find any task with ID '{id}'".format(id=task_id))
     else:
         assert(len(tasks) == 1)
         task = tasks[0]
@@ -287,6 +287,11 @@ def sanitize(text):
 def get_todos():
     '''Get Tasks from todo list'''
     tasks = []
+
+    if not Configuration().todo_fullpath or \
+       not os.path.exists(Configuration().todo_fullpath):
+        return tasks
+
     try:
         with open(Configuration().todo_fullpath, 'r') as cfile:
             todo_start_tag = Configuration().todo_start_tag
@@ -320,7 +325,7 @@ def get_todos():
                     for lineno, line in enumerate(cfile.readlines())
                 ]
     except(TypeError, AttributeError, IOError) as error:
-        dbg("could not get todo list: {}".format(error))
+        LOGGER.error("could not get todo list: {}".format(error))
     return tasks
 
 
@@ -400,7 +405,7 @@ def group_task_by(tasks, group=None):
                 task_map[date] = [task]
         return task_map
     else:
-        warn('Could not group tasks by: ' + group)
+        LOGGER.warn('Could not group tasks by: ' + group)
         return tasks
 
 
@@ -469,7 +474,7 @@ def do_report(args):
     if args['todo']:
         todos = get_todos()
         if not todos:
-            err('Could not find any Todos')
+            LOGGER.error('Could not find any Todos')
             return
 
         names = [t.name for t in todos]
@@ -541,6 +546,26 @@ def guess_task_id_from_string(task_name):
     return guess_id
 
 
+def do_config(args):
+    '''Wrapper for configuration changes'''
+    if args['data.directory']:
+        Configuration().data_dir = args['<fullpath>']
+
+    elif args['todo.file']:
+        Configuration().todo_fullpath = args['<fullpath>']
+
+    elif args['todo.start']:
+        Configuration().todo_start_tag = args['<tag>']
+
+    elif args['todo.stop']:
+        Configuration().todo_stop_tag = args['<tag>']
+
+    elif args['autocomplete']:
+        autocomplete()
+    else:
+        pass
+
+
 def main():
     global RAFFAELLO
     args = docopt.docopt(__doc__)
@@ -596,7 +621,7 @@ def main():
             tasks = get_tasks(lambda x: x.tid == tid)
 
             if not tasks:
-                err("Could not find tasks with id {tid}".format(tid=tid))
+                LOGGER.error("Could not find tasks with id {tid}".format(tid=tid))
                 return
             else:
                 task = tasks[0]
@@ -609,6 +634,10 @@ def main():
         return
 
     if args['see']:
+        if args['config']:
+            info(Configuration())
+            return
+
         return do_report(args)
 
     if args['config']:
