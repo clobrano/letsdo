@@ -40,7 +40,7 @@ $ export LETSDO_COLOR=1
 $ lets see
 ```
 
-Now, you can **edit** the current task's name or starting time, **cancel** it or **stop** it. Once stopped, the task is saved in your **history**, that by default is located under your HOME directory in a hidden file called .letsdo-data.
+Now, you can **edit** the current task's name or starting time, **cancel** it or **stop** it. Once stopped, the task is saved in your **history**, that by default is located under your HOME directory in a file called 'letsdo-data'.
 
 Don't you like the default location, let's have a look at the **config** sub-command.
 **data.directory** is the preferred location for both history and current task's data. You can share your work using a file sharing service.

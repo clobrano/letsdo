@@ -13,7 +13,7 @@ _lets()
 
     [ ! -f $HOME/.letsdo ] && echo "Could not find letsdo" && return 0
     eval $(parse_yaml $HOME/.letsdo "letsdo_")
-    eval datafile=$letsdo_DATADIR/.letsdo-data
+    eval datafile=$letsdo_DATADIR/letsdo-data
 
     if [ -f "$datafile" ]; then
         cxts=`grep -oE '(@[a-zA-Z0-9\-\_]+)' "$datafile" | uniq`

@@ -552,7 +552,7 @@ def guess_task_id_from_string(task_name):
 def do_config(args):
     '''Wrapper for configuration changes'''
     if args['data.directory']:
-        CONFIGURATION.data_dir = args['<fullpath>']
+        CONFIGURATION.data_directory = args['<fullpath>']
 
     elif args['todo.file']:
         CONFIGURATION.todo_file = args['<fullpath>']

@@ -9,43 +9,31 @@ from log import info, LOGGER
 class Configuration(object):
     '''Client customization class'''
     def __init__(self):
-        self.conf_file_path = os.path.expanduser(os.path.join('~', '.letsdo'))
+        self._data_directory = os.path.expanduser('~')
         self._todo_file = ''
         self._todo_start_tag = ''
         self._todo_stop_tag = ''
 
-        if os.path.exists(self.conf_file_path):
-            self.configuration = yaml.load(open(self.conf_file_path).read())
-
-            self.data_directory = self.__get_value('DATA_DIRECTORY')
-            if self.data_directory:
-                self.data_fullpath = os.path.join(self.data_directory,
-                                                  'letsdo-data')
-                self.task_fullpath = os.path.join(self.data_directory,
-                                                  'letsdo-task')
-            else:
-                info('letsdo data will be saved into HOME directory')
-                self.data_fullpath = os.path.expanduser(
-                    os.path.join('~', '.letsdo-data'))
-                self.task_fullpath = os.path.expanduser(
-                    os.path.join('~', '.letsdo-task'))
-
-            todo_file = self.__get_value('TODO_FILE')
-            if todo_file:
-                self.todo_file = os.path.expanduser(todo_file)
-
-                if self.__get_value('TODO_START_TAG'):
-                    self.todo_start_tag = self.__get_value('TODO_START_TAG')
-
-                if self.__get_value('TODO_STOP_TAG'):
-                    self.todo_stop_tag = self.__get_value('TODO_STOP_TAG')
-
+        self.conf_file_path = os.path.join(os.path.expanduser('~'), '.letsdo')
+        if not os.path.exists(self.conf_file_path):
+            LOGGER.debug('could not find config file "%s".', self.conf_file_path)
+            self.__save()
         else:
-            LOGGER.debug('Config file not found. Using defaults')
-            self.data_fullpath = os.path.expanduser(
-                os.path.join('~', '.letsdo-data'))
-            self.task_fullpath = os.path.expanduser(
-                os.path.join('~', '.letsdo-task'))
+            self.configuration = yaml.load(open(self.conf_file_path).read())
+            self.data_directory = os.path.expanduser(self.__get_value('DATA_DIRECTORY'))
+            self.todo_file = os.path.expanduser(self.__get_value('TODO_FILE'))
+
+        if not self.data_directory or not os.path.exists(self.data_directory):
+            LOGGER.fatal("could not save task data in %s", self.data_directory)
+        else:
+            self.data_fullpath = os.path.join(self.data_directory, 'letsdo-data')
+            self.task_fullpath = os.path.join(self.data_directory, 'letsdo-task')
+
+        if not self.todo_file or os.path.exists(self.todo_file):
+            LOGGER.debug("could not find todo file '%s'", self.todo_file)
+        else:
+            self.todo_start_tag = self.__get_value('TODO_START_TAG')
+            self.todo_stop_tag = self.__get_value('TODO_STOP_TAG')
 
     def __get_value(self, key):
         try:
@@ -87,7 +75,7 @@ class Configuration(object):
     @todo_file.setter
     def todo_file(self, fullpath):
         if not fullpath or not os.path.exists(fullpath):
-            LOGGER.error('file "%s" does not exists', fullpath)
+            LOGGER.debug('file "%s" does not exist', fullpath)
         else:
             self._todo_file = fullpath
             self.__save()
