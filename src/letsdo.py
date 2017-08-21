@@ -31,6 +31,8 @@ from log import info, LOGGER, RAFFAELLO
 from configuration import Configuration, autocomplete
 from timetoolkit import str2datetime, strfdelta
 
+CONFIGURATION = Configuration()
+
 
 def paint(msg):
     '''Colorize message'''
@@ -73,7 +75,7 @@ class Task(object):
 
     @staticmethod
     def __is_running():
-        exists = os.path.exists(Configuration().task_fullpath)
+        exists = os.path.exists(CONFIGURATION.task_fullpath)
         LOGGER.debug('Is a task running? {}'.format(exists))
         return exists
 
@@ -81,7 +83,7 @@ class Task(object):
     def get_running():
         '''Check whether a task is running'''
         if Task.__is_running():
-            with open(Configuration().task_fullpath, 'r') as cfile:
+            with open(CONFIGURATION.task_fullpath, 'r') as cfile:
                 data = json.load(cfile)
                 return Task(data['name'], data['start'])
         return None
@@ -117,14 +119,14 @@ class Task(object):
                               stop_time=stop_time_str)
 
         try:
-            with open(Configuration().data_fullpath, mode='a') as cfile:
+            with open(CONFIGURATION.data_fullpath, mode='a') as cfile:
                 cfile.writelines(report_line)
         except IOError as error:
             LOGGER.error('Could not save report: ' + error.message)
             return False
 
         # Delete current task data to mark it as stopped
-        os.remove(Configuration().task_fullpath)
+        os.remove(CONFIGURATION.task_fullpath)
 
         hours, minutes = work_time_str.split(':')
         info('Stopped \'{name}\' after {h}h {m}m of work'.format(
@@ -137,9 +139,9 @@ class Task(object):
         '''Interrupt task without saving it in history'''
         task = Task.get_running()
         if task:
-            with open(Configuration().task_fullpath, 'r') as cfile:
+            with open(CONFIGURATION.task_fullpath, 'r') as cfile:
                 content = cfile.read()
-            os.remove(Configuration().task_fullpath)
+            os.remove(CONFIGURATION.task_fullpath)
             info('Cancelled task')
             info(content)
 
@@ -178,7 +180,7 @@ class Task(object):
 
     def __create(self):
         try:
-            with open(Configuration().task_fullpath, 'w') as cfile:
+            with open(CONFIGURATION.task_fullpath, 'w') as cfile:
                 json_data = '''{
     "name": %s,
     "start": %s
@@ -288,14 +290,14 @@ def get_todos():
     '''Get Tasks from todo list'''
     tasks = []
 
-    if not Configuration().todo_fullpath or \
-       not os.path.exists(Configuration().todo_fullpath):
+    if not CONFIGURATION.todo_file or \
+       not os.path.exists(CONFIGURATION.todo_file):
         return tasks
 
     try:
-        with open(Configuration().todo_fullpath, 'r') as cfile:
-            todo_start_tag = Configuration().todo_start_tag
-            todo_stop_tag = Configuration().todo_stop_tag
+        with open(CONFIGURATION.todo_file, 'r') as cfile:
+            todo_start_tag = CONFIGURATION.todo_start_tag
+            todo_stop_tag = CONFIGURATION.todo_stop_tag
 
             got_stop_tag = lambda line: todo_stop_tag and todo_stop_tag in line.lower()
             got_empty_line = lambda line: len(line.strip()) == 0
@@ -344,7 +346,7 @@ def get_tasks(condition=None, todos=[]):
     tid = len(tasks)
     uids = dict()
     try:
-        with open(Configuration().data_fullpath) as cfile:
+        with open(CONFIGURATION.data_fullpath) as cfile:
             for line in reversed(cfile.readlines()):
                 fields = line.strip().split(',')
                 if not fields[1]:
@@ -373,7 +375,8 @@ def get_tasks(condition=None, todos=[]):
                 tasks.append(task)
 
         return list(filter(condition, tasks))
-    except IOError:
+    except IOError as error:
+        LOGGER.debug("could not get tasks' history: %s", error)
         return []
 
 
@@ -549,16 +552,16 @@ def guess_task_id_from_string(task_name):
 def do_config(args):
     '''Wrapper for configuration changes'''
     if args['data.directory']:
-        Configuration().data_dir = args['<fullpath>']
+        CONFIGURATION.data_dir = args['<fullpath>']
 
     elif args['todo.file']:
-        Configuration().todo_fullpath = args['<fullpath>']
+        CONFIGURATION.todo_file = args['<fullpath>']
 
     elif args['todo.start']:
-        Configuration().todo_start_tag = args['<tag>']
+        CONFIGURATION.todo_start_tag = args['<tag>']
 
     elif args['todo.stop']:
-        Configuration().todo_stop_tag = args['<tag>']
+        CONFIGURATION.todo_stop_tag = args['<tag>']
 
     elif args['autocomplete']:
         autocomplete()
@@ -602,7 +605,7 @@ def main():
             return
         edit_command = '{editor} {filename}'\
                        .format(editor=os.getenv('EDITOR'),
-                               filename=Configuration().task_fullpath)
+                               filename=CONFIGURATION.task_fullpath)
         os.system(edit_command)
         return
 
@@ -635,7 +638,7 @@ def main():
 
     if args['see']:
         if args['config']:
-            info(Configuration())
+            info(CONFIGURATION)
             return
 
         return do_report(args)
