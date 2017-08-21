@@ -29,11 +29,11 @@ class Configuration(object):
             self.data_fullpath = os.path.join(self.data_directory, 'letsdo-data')
             self.task_fullpath = os.path.join(self.data_directory, 'letsdo-task')
 
-        if not self.todo_file or os.path.exists(self.todo_file):
+        if not self.todo_file or not os.path.exists(self.todo_file):
             LOGGER.debug("could not find todo file '%s'", self.todo_file)
-        else:
-            self.todo_start_tag = self.__get_value('TODO_START_TAG')
-            self.todo_stop_tag = self.__get_value('TODO_STOP_TAG')
+
+        self.todo_start_tag = self.__get_value('TODO_START_TAG')
+        self.todo_stop_tag = self.__get_value('TODO_STOP_TAG')
 
     def __get_value(self, key):
         try:
@@ -63,9 +63,10 @@ class Configuration(object):
     def data_directory(self, directory):
         if not directory or not os.path.exists(directory):
             LOGGER.error('directory "%s" does not exists', directory)
-        else:
-            self._data_directory = directory
-            self.__save()
+            return
+
+        self._data_directory = directory
+        self.__save()
 
     @property
     def todo_file(self):
@@ -74,11 +75,17 @@ class Configuration(object):
 
     @todo_file.setter
     def todo_file(self, fullpath):
-        if not fullpath or not os.path.exists(fullpath):
+        if not fullpath:
+            LOGGER.error("Todo file path '%s' is invalid", fullpath)
+            return
+
+        fullpath = os.path.expanduser(fullpath)
+        if not os.path.exists(fullpath):
             LOGGER.debug('file "%s" does not exist', fullpath)
-        else:
-            self._todo_file = fullpath
-            self.__save()
+            return
+
+        self._todo_file = fullpath
+        self.__save()
 
     @property
     def todo_start_tag(self):

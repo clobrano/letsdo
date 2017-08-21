@@ -10,8 +10,8 @@ Usage:
     lets edit
     lets config data.directory <fullpath>
     lets config todo.file      <fullpath>
-    lets config todo.start     <tag>
-    lets config todo.stop      <tag>
+    lets config todo.start_tag <tag>
+    lets config todo.stop_tag  <tag>
     lets config autocomplete
 
 options:
@@ -557,10 +557,10 @@ def do_config(args):
     elif args['todo.file']:
         CONFIGURATION.todo_file = args['<fullpath>']
 
-    elif args['todo.start']:
+    elif args['todo.start_tag']:
         CONFIGURATION.todo_start_tag = args['<tag>']
 
-    elif args['todo.stop']:
+    elif args['todo.stop_tag']:
         CONFIGURATION.todo_stop_tag = args['<tag>']
 
     elif args['autocomplete']:
