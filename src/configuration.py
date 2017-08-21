@@ -143,15 +143,16 @@ def autocomplete():
 
     root = os.path.abspath(os.path.dirname(__file__))
     completion = os.path.join(root, 'letsdo_scripts', 'letsdo_completion')
+    if not os.path.exists(completion):
+        # probably a snap application.
+        LOGGER.warning("could not find completion file")
+        return
 
     info(message)
 
     resp = input()
     if resp.lower() == 'y':
-        completionfile = os.path.join(
-            os.path.expanduser(
-                '~', ), '.letsdo_completion')
-        with open(completionfile, 'w') as cfile:
+        with open(completion, 'w') as cfile:
             cfile.writelines(open(completion).read())
     else:
         print(
