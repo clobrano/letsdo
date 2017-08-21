@@ -16,12 +16,12 @@ class Configuration(object):
 
         self.conf_file_path = os.path.join(os.path.expanduser('~'), '.letsdo')
         if not os.path.exists(self.conf_file_path):
-            LOGGER.debug('could not find config file "%s".', self.conf_file_path)
+            LOGGER.debug('creating config file "%s".', self.conf_file_path)
             self.__save()
-        else:
-            self.configuration = yaml.load(open(self.conf_file_path).read())
-            self.data_directory = os.path.expanduser(self.__get_value('DATA_DIRECTORY'))
-            self.todo_file = os.path.expanduser(self.__get_value('TODO_FILE'))
+
+        self.configuration = yaml.load(open(self.conf_file_path).read())
+        self.data_directory = os.path.expanduser(self.__get_value('DATA_DIRECTORY'))
+        self.todo_file = os.path.expanduser(self.__get_value('TODO_FILE'))
 
         if not self.data_directory or not os.path.exists(self.data_directory):
             LOGGER.fatal("could not save task data in %s", self.data_directory)

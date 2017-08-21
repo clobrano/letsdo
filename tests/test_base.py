@@ -16,9 +16,8 @@ class TestLetsdo(unittest.TestCase):
 
     def setUp(self):
         test_configuration = \
-'''DATADIR: ~/
-TODO_FULLPATH: ~/footodo.txt
-TODO_FULLPATH: ''
+'''DATA_DIRECTORY: ~/
+TODO_FILE: ~/footodo.txt
 TODO_START_TAG: ''
 TODO_STOP_TAG: ''
 '''
