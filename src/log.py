@@ -29,16 +29,16 @@ if 'LETSDO_DEBUG' in os.environ:
 else:
     LEVEL = logging.INFO
 
-logging.basicConfig(level=LEVEL, format='%(message)s')
+logging.basicConfig(level=LEVEL, format='%(levelname)s %(funcName)s: %(message)s')
 LOGGER = logging.getLogger(__name__)
 
 
 def info(msg):
     '''Info level logging'''
     if RAFFAELLO:
-        LOGGER.info(RAFFAELLO.paint(msg))
+        print(RAFFAELLO.paint(msg))
     else:
-        LOGGER.info(msg)
+        print(msg)
 
 
 def err(msg):
