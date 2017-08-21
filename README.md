@@ -1,3 +1,4 @@
+[![Snap Status](https://build.snapcraft.io/badge/clobrano/letsdo.svg)](https://build.snapcraft.io/user/clobrano/letsdo)
 [![PyPI version](https://badge.fury.io/py/letsdo.svg)](https://badge.fury.io/py/letsdo)
 [![Build Status](https://travis-ci.org/clobrano/letsdo.svg?branch=master)](https://travis-ci.org/clobrano/letsdo)
 # Letsdo, the CLI time-tracker
