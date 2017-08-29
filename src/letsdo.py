@@ -15,9 +15,9 @@ Usage:
     lets config autocomplete
 
 options:
-    --ascii           Print report table in ASCII characters
+    -a, --ascii       Print report table in ASCII characters
     -t, --time=<time> Change the start/stop time of the task on the fly
-    --no-color        Disable colorizer (depends on raffaello python package)
+    -n, --no-color    Disable colorizer (depends on raffaello python package)
 '''
 
 import os
@@ -574,6 +574,7 @@ def main():
     args = docopt.docopt(__doc__)
 
     if args['--no-color']:
+        LOGGER.debug("disabling color")
         RAFFAELLO = None
 
     if args['do']:
