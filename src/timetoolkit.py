@@ -51,8 +51,9 @@ def strfdelta(tdelta, fmt='{H:2}h {M:02}m', inputtype='timedelta'):
 
 
 def format_h_m(string):
-    h, m = string.split(':')[0:2]
-    return '{0}h {1}m'.format(h, m)
+    """Converts time string from format HH:MM to HHh MMm"""
+    hours, minutes = string.split(':')[0:2]
+    return '{0}h {1}m'.format(hours, minutes)
 
 
 def str2datetime(string):
