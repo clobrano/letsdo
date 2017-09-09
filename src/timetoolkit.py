@@ -53,59 +53,58 @@ def strfdelta(tdelta, fmt='{H:2}h {M:02}m', inputtype='timedelta'):
 def format_h_m(string):
     h, m = string.split(':')[0:2]
     return '{0}h {1}m'.format(h, m)
-    #return ':'.join(string.split(':')[0:2])
 
 
 def str2datetime(string):
-    m = re.findall('\d{4}-\d{2}-\d{2} \d{2}:\d{2}', string)
+    m = re.findall(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}', string)
     if len(m) != 0:
         string = m[0]
         return datetime.datetime.strptime(string, '%Y-%m-%d %H:%M')
 
-    m = re.findall('\d{4}-\d{2}-\d{2} \d{2}.\d{2}', string)
+    m = re.findall(r'\d{4}-\d{2}-\d{2} \d{2}.\d{2}', string)
     if len(m) != 0:
         string = m[0]
         return datetime.datetime.strptime(string, '%Y-%m-%d %H.%M')
 
-    m = re.findall('\d{4}/\d{2}/\d{2} \d{2}:\d{2}', string)
+    m = re.findall(r'\d{4}/\d{2}/\d{2} \d{2}:\d{2}', string)
     if len(m) != 0:
         string = m[0]
         return datetime.datetime.strptime(string, '%Y/%m/%d %H:%M')
 
-    m = re.findall('\d{4}/\d{2}/\d{2} \d{2}.\d{2}', string)
+    m = re.findall(r'\d{4}/\d{2}/\d{2} \d{2}.\d{2}', string)
     if len(m) != 0:
         string = m[0]
         return datetime.datetime.strptime(string, '%Y/%m/%d %H.%M')
 
-    m = re.findall('\d{4}-\d{2}-\d{2}', string)
+    m = re.findall(r'\d{4}-\d{2}-\d{2}', string)
     if len(m) != 0:
         string = m[0]
         now_str = datetime.datetime.now().strftime('%H:%M')
         return datetime.datetime.strptime(string + ' ' + now_str,
                                           '%Y-%m-%d %H:%M')
 
-    m = re.findall('\d{4}/\d{2}/\d{2}', string)
+    m = re.findall(r'\d{4}/\d{2}/\d{2}', string)
     if len(m) != 0:
         string = m[0]
         now_str = datetime.datetime.now().strftime('%H:%M')
         return datetime.datetime.strptime(string + ' ' + now_str,
                                           '%Y/%m/%d %H:%M')
 
-    m = re.findall('\d{2}-\d{2} \d{2}:\d{2}', string)
+    m = re.findall(r'\d{2}-\d{2} \d{2}:\d{2}', string)
     if len(m) != 0:
         string = m[0]
         year_str = datetime.datetime.today().strftime('%Y')
         return datetime.datetime.strptime(year_str + '-' + string,
                                           '%Y-%m-%d %H:%M')
 
-    m = re.findall('\d{2}-\d{2} \d{2}.\d{2}', string)
+    m = re.findall(r'\d{2}-\d{2} \d{2}.\d{2}', string)
     if len(m) != 0:
         string = m[0]
         year_str = datetime.datetime.today().strftime('%Y')
         return datetime.datetime.strptime(year_str + '-' + string,
                                           '%Y-%m-%d %H:%M')
 
-    m = re.findall('\d{2}-\d{2}', string)
+    m = re.findall(r'\d{2}-\d{2}', string)
     if len(m) != 0:
         string = m[0]
         year_str = datetime.datetime.today().strftime('%Y')
@@ -113,28 +112,28 @@ def str2datetime(string):
         return datetime.datetime.strptime(
             year_str + '-' + string + ' ' + now_str, '%Y-%m-%d %H:%M')
 
-    m = re.findall('\d{2}:\d{2}', string)
+    m = re.findall(r'\d{2}:\d{2}', string)
     if len(m) != 0:
         string = m[0]
         today_str = datetime.datetime.today().strftime('%Y-%m-%d')
         return datetime.datetime.strptime(today_str + ' ' + string,
                                           '%Y-%m-%d %H:%M')
 
-    m = re.findall('\d:\d{2}', string)
+    m = re.findall(r'\d:\d{2}', string)
     if len(m) != 0:
         string = m[0]
         today_str = datetime.datetime.today().strftime('%Y-%m-%d')
         return datetime.datetime.strptime(today_str + ' ' + string,
                                           '%Y-%m-%d %H:%M')
 
-    m = re.findall('\d{2}.\d{2}', string)
+    m = re.findall(r'\d{2}.\d{2}', string)
     if len(m) != 0:
         string = m[0]
         today_str = datetime.datetime.today().strftime('%Y-%m-%d')
         return datetime.datetime.strptime(today_str + ' ' + string,
                                           '%Y-%m-%d %H.%M')
 
-    m = re.findall('\d.\d{2}', string)
+    m = re.findall(r'\d.\d{2}', string)
     if len(m) != 0:
         string = m[0]
         today_str = datetime.datetime.today().strftime('%Y-%m-%d')

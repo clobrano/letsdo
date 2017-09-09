@@ -76,7 +76,7 @@ class Configuration(object):
     @todo_file.setter
     def todo_file(self, fullpath):
         if not fullpath:
-            LOGGER.error("Todo file path '%s' is invalid", fullpath)
+            LOGGER.debug("Todo file path '%s' is invalid", fullpath)
             return
 
         fullpath = os.path.expanduser(fullpath)

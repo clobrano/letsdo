@@ -101,7 +101,7 @@ class Task(object):
             stop_time = str2datetime(stop_time_str)
             if stop_time < task.start_time:
                 LOGGER.warn('Given stop time (%s) is more recent than start time (%s)'
-                     % (stop_time, task.start_time))
+                            % (stop_time, task.start_time))
                 return False
             date = stop_time.strftime('%Y-%m-%d')
         else:
@@ -245,6 +245,7 @@ class Task(object):
 
 def work_on(task_id=0, start_time_str=None):
     '''Start given task id'''
+    task = group_task_by(tasks,
     tasks = get_tasks(condition=lambda x: x.tid == task_id)
     tasks = group_task_by(tasks, group='name')
     if not tasks:
