@@ -76,7 +76,6 @@ class Task(object):
     @staticmethod
     def __is_running():
         exists = os.path.exists(CONFIGURATION.task_fullpath)
-        LOGGER.debug('Is a task running? {}'.format(exists))
         return exists
 
     @staticmethod
@@ -100,8 +99,8 @@ class Task(object):
         if stop_time_str:
             stop_time = str2datetime(stop_time_str)
             if stop_time < task.start_time:
-                LOGGER.warn('Given stop time (%s) is more recent than start time (%s)'
-                            % (stop_time, task.start_time))
+                LOGGER.warn('Given stop time (%s) is more recent than start time (%s)',
+                            stop_time, task.start_time)
                 return False
             date = stop_time.strftime('%Y-%m-%d')
         else:
@@ -122,7 +121,7 @@ class Task(object):
             with open(CONFIGURATION.data_fullpath, mode='a') as cfile:
                 cfile.writelines(report_line)
         except IOError as error:
-            LOGGER.error('Could not save report: ' + error.message)
+            LOGGER.error('Could not save report: %s', error)
             return False
 
         # Delete current task data to mark it as stopped
@@ -191,7 +190,7 @@ class Task(object):
                 info(json_data)
                 return True
         except IOError as error:
-            LOGGER.error('Could not save task data: ' + error.message)
+            LOGGER.error('Could not save task data: %s', error)
             return False
 
     def __parse_name(self, name):
@@ -248,9 +247,8 @@ def work_on(task_id=0, start_time_str=None):
     tasks = get_tasks(condition=lambda x: x.tid == task_id)
     tasks = group_task_by(tasks, group='name')
     if not tasks:
-        LOGGER.error("Could not find any task with ID '{id}'".format(id=task_id))
+        LOGGER.error("could not find task ID '%s'", task_id)
     else:
-        assert(len(tasks) == 1)
         task = tasks[0]
         start_time = None
         if start_time_str:
@@ -280,7 +278,6 @@ def sanitize(text):
     has_link = md_link.search(text)
     if has_link:
         link_name = md_link.findall(text)
-        assert(len(link_name) == 1)
         text = re.sub(r'\[(.*)\]\(.*\)', link_name[0], text)
 
     return text
@@ -327,7 +324,7 @@ def get_todos():
                     for lineno, line in enumerate(cfile.readlines())
                 ]
     except(TypeError, AttributeError, IOError) as error:
-        LOGGER.error("could not get todo list: {}".format(error))
+        LOGGER.error("could not get todo list: %s", error)
     return tasks
 
 
@@ -400,16 +397,15 @@ def group_task_by(tasks, group=None):
     if group == 'date':
         task_map = {}
         for task in tasks:
-            print(task)
             date = task.last_end_date
             if date in task_map.keys():
                 task_map[date].append(task)
             else:
                 task_map[date] = [task]
         return task_map
-    else:
-        LOGGER.warn('Could not group tasks by: ' + group)
-        return tasks
+
+    LOGGER.warn('Could not group tasks by: %s', group)
+    return tasks
 
 
 def report_task(tasks, cfilter=None, title=None,
@@ -624,7 +620,7 @@ def main():
             tasks = get_tasks(lambda x: x.tid == tid)
 
             if not tasks:
-                LOGGER.error("Could not find tasks with id {tid}".format(tid=tid))
+                LOGGER.error("could not find tasks id %s", tid)
                 return
             else:
                 task = tasks[0]
