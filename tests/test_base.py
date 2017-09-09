@@ -5,12 +5,12 @@ import unittest
 import os
 from time import sleep
 from datetime import datetime, timedelta
-from letsdo.src.letsdo import Task
-from letsdo.src.letsdo import Configuration
-from letsdo.src.letsdo import work_on
-from letsdo.src.letsdo import str2datetime
-from letsdo.src.letsdo import group_task_by
-from letsdo.src.letsdo import get_tasks
+from ..src.letsdo import Task
+from ..src.letsdo import Configuration
+from ..src.letsdo import work_on
+from ..src.letsdo import str2datetime
+from ..src.letsdo import group_task_by
+from ..src.letsdo import get_tasks
 
 
 class TestLetsdo(unittest.TestCase):
@@ -159,11 +159,6 @@ TODO_STOP_TAG: ''
         '''test get_tags'''
         task = Task('project with +some +tags')
         self.assertEqual(task.tags, ['+some', '+tags'])
-
-    def test_create_unnamed_task(self):
-        '''test create_unnamed_task'''
-        with self.assertRaises(TypeError):
-            Task(name=None)
 
     def test_create_named_task(self):
         '''test create_named_task'''
