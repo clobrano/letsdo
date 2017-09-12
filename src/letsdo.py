@@ -397,7 +397,6 @@ def group_task_by(tasks, group=None):
     if group == 'date':
         task_map = {}
         for task in tasks:
-            print(task)
             date = task.last_end_date
             if date in task_map.keys():
                 task_map[date].append(task)
@@ -479,8 +478,7 @@ def do_report(args):
 
         names = [t.name for t in todos]
 
-        in_todo_list = lambda x: x.name in names
-        tasks = get_tasks(in_todo_list, todos=todos)
+        tasks = get_tasks(lambda x: x.name in names, todos=todos)
         tasks = group_task_by(tasks, 'name')
         report_task(tasks, todos=True, ascii=args['--ascii'])
         return
