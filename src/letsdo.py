@@ -340,9 +340,8 @@ def get_tasks(condition=None, todos=[]):
         # Skip todos loading
         tasks = []
 
-    tid = len(tasks)
-    uids = dict()
     try:
+        uids = dict()
         with open(CONFIGURATION.data_fullpath) as cfile:
             for line in reversed(cfile.readlines()):
                 fields = line.strip().split(',')
@@ -363,11 +362,8 @@ def get_tasks(condition=None, todos=[]):
                                     .format(len(fields), fields))
 
                 # Tasks with same UID share the same Task ID as well
-                # (task ID is easier to use that UID that's a hash)
-                if task.uid not in uids:
-                    tid += 1
-                    uids[task.uid] = tid
-
+                # Integer IDs are easier to use than hash IDs
+                uids[task.uid] = uids.get(task.uid, len(uids) + 1)
                 task.tid = uids[task.uid]
                 tasks.append(task)
 
