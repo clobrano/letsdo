@@ -15,9 +15,9 @@ Usage:
     lets config autocomplete
 
 options:
-    --ascii           Print report table in ASCII characters
+    -a, --ascii       Print report table in ASCII characters
     -t, --time=<time> Change the start/stop time of the task on the fly
-    --no-color        Disable colorizer (depends on raffaello python package)
+    -n, --no-color    Disable colorizer (depends on raffaello python package)
 '''
 
 import os
@@ -35,14 +35,15 @@ CONFIGURATION = Configuration()
 
 
 def paint(msg):
-    '''Colorize message'''
+    '''Returns a colorized copy of the input message'''
     if msg and RAFFAELLO:
         return RAFFAELLO.paint(str(msg))
+
     return msg
 
 
 class Task(object):
-    '''Class representing a running task'''
+    '''A running task object'''
     def __init__(self, name, start_str=None, end_str=None, tid=None):
         self.context = None
         self.tags = None
@@ -76,6 +77,7 @@ class Task(object):
     @staticmethod
     def __is_running():
         exists = os.path.exists(CONFIGURATION.task_fullpath)
+        LOGGER.debug('Is a task running? {}'.format(exists))
         return exists
 
     @staticmethod
@@ -328,17 +330,13 @@ def get_todos():
     return tasks
 
 
-def get_tasks(condition=None, todos=[]):
-    '''Get all tasks by condition'''
-    # Some todos might have been logged yet and some other don't.
-    # Pass todo list to avoid duplication (but looking for a better solution)
+def get_tasks(condition=None, todos=None):
+    '''Get all tasks that meet the condition'''
+
     if todos:
         tasks = todos
-    elif todos == []:
-        tasks = get_todos()
     else:
-        # Skip todos loading
-        tasks = []
+        tasks = get_todos()
 
     try:
         uids = dict()
@@ -348,18 +346,18 @@ def get_tasks(condition=None, todos=[]):
                 if not fields[1]:
                     continue
 
-                # Take care of old history format with worked_time
-                if len(fields) == 5:
-                    task = Task(name=sanitize(fields[1]),
-                                start_str=fields[3],
-                                end_str=fields[4])
-                elif len(fields) == 4:
-                    task = Task(name=sanitize(fields[1]),
-                                start_str=fields[2],
-                                end_str=fields[3])
-                else:
-                    raise Exception("History unexpected fields ({}: {})"
-                                    .format(len(fields), fields))
+                fields_n = len(fields)
+                name, start_str, end_str = fields[1:4]
+
+                # Take care of old history format with 5 fields
+                if fields_n == 5:
+                    start_str, end_str = fields[3:5]
+                elif fields_n != 4:
+                    raise Exception("History unexpected fields: {}: {}"
+                                    .format(fields_n, fields))
+
+                name = sanitize(name)
+                task = Task(name=name, start_str=start_str, end_str=end_str)
 
                 # Tasks with same UID share the same Task ID as well
                 # Integer IDs are easier to use than hash IDs
@@ -369,8 +367,8 @@ def get_tasks(condition=None, todos=[]):
 
         return list(filter(condition, tasks))
     except IOError as error:
-        LOGGER.debug("could not get tasks' history: %s", error)
-        return []
+        LOGGER.debug("could not get tasks history: %s", error)
+        return list()
 
 
 def group_task_by(tasks, group=None):
@@ -474,8 +472,7 @@ def do_report(args):
 
         names = [t.name for t in todos]
 
-        in_todo_list = lambda x: x.name in names
-        tasks = get_tasks(in_todo_list, todos=todos)
+        tasks = get_tasks(lambda x: x.name in names, todos=todos)
         tasks = group_task_by(tasks, 'name')
         report_task(tasks, todos=True, ascii=args['--ascii'])
         return
@@ -490,7 +487,7 @@ def do_report(args):
 
     if args['--day-by-day']:
         by_end_date = lambda x: not pattern or (pattern in str(x.last_end_date) or pattern in str(x.name))
-        task_map = group_task_by(get_tasks(by_end_date, todos=None), 'date')
+        task_map = group_task_by(get_tasks(by_end_date, todos=list()), 'date')
 
         for key in sorted(task_map.keys()):
             if not key:
@@ -566,6 +563,7 @@ def main():
     args = docopt.docopt(__doc__)
 
     if args['--no-color']:
+        LOGGER.debug("disabling color")
         RAFFAELLO = None
 
     if args['do']:
@@ -576,7 +574,7 @@ def main():
                 return
 
             if name == ['last']:
-                last_task = get_tasks(todos=None)[0]
+                last_task = get_tasks(todos=list())[0]
                 Task(name=last_task.name, start_str=args['--time']).start()
                 return
 
