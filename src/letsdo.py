@@ -330,13 +330,10 @@ def get_todos():
     return tasks
 
 
-def get_tasks(condition=None, todos=None):
+def get_tasks(condition=None, todos=list()):
     '''Get all tasks that meet the condition'''
 
-    if todos:
-        tasks = todos
-    else:
-        tasks = get_todos()
+    tasks = todos
 
     try:
         uids = dict()
@@ -500,6 +497,7 @@ def do_report(args):
 
             report_task(sorted_by_time)
         return
+
     elif args['all'] or pattern:
         by_name_or_end_date = lambda x: not pattern or \
             (pattern in str(x.last_end_date) or pattern in x.name)
