@@ -35,15 +35,14 @@ CONFIGURATION = Configuration()
 
 
 def paint(msg):
-    '''Returns a colorized copy of the input message'''
+    '''Colorize message'''
     if msg and RAFFAELLO:
         return RAFFAELLO.paint(str(msg))
-
     return msg
 
 
 class Task(object):
-    '''A running task object'''
+    '''Class representing a running task'''
     def __init__(self, name, start_str=None, end_str=None, tid=None):
         self.context = None
         self.tags = None
@@ -330,42 +329,52 @@ def get_todos():
     return tasks
 
 
-def get_tasks(condition=None, todos=list()):
-    '''Get all tasks that meet the condition'''
+def get_tasks(condition=None, todos=[]):
+    '''Get all tasks by condition'''
+    # Some todos might have been logged yet and some other don't.
+    # Pass todo list to avoid duplication (but looking for a better solution)
+    if todos:
+        tasks = todos
+    elif todos == []:
+        tasks = get_todos()
+    else:
+        # Skip todos loading
+        tasks = []
 
-    tasks = todos
-
+    tid = len(tasks)
+    uids = dict()
     try:
-        uids = dict()
         with open(CONFIGURATION.data_fullpath) as cfile:
             for line in reversed(cfile.readlines()):
                 fields = line.strip().split(',')
                 if not fields[1]:
                     continue
 
-                fields_n = len(fields)
-                name, start_str, end_str = fields[1:4]
-
-                # Take care of old history format with 5 fields
-                if fields_n == 5:
-                    start_str, end_str = fields[3:5]
-                elif fields_n != 4:
-                    raise Exception("History unexpected fields: {}: {}"
-                                    .format(fields_n, fields))
-
-                name = sanitize(name)
-                task = Task(name=name, start_str=start_str, end_str=end_str)
+                # Take care of old history format with worked_time
+                if len(fields) == 5:
+                    task = Task(name=sanitize(fields[1]),
+                                start_str=fields[3],
+                                end_str=fields[4])
+                elif len(fields) == 4:
+                    task = Task(name=sanitize(fields[1]),
+                                start_str=fields[2],
+                                end_str=fields[3])
+                else:
+                    raise Exception("History unexpected fields ({}: {})"
+                                    .format(len(fields), fields))
 
                 # Tasks with same UID share the same Task ID as well
                 # Integer IDs are easier to use than hash IDs
-                uids[task.uid] = uids.get(task.uid, len(uids) + 1)
+                if task.uid not in uids:
+                    tid += 1
+                    uids[task.uid] = tid
                 task.tid = uids[task.uid]
                 tasks.append(task)
 
         return list(filter(condition, tasks))
     except IOError as error:
-        LOGGER.debug("could not get tasks history: %s", error)
-        return list()
+        LOGGER.debug("could not get tasks' history: %s", error)
+        return []
 
 
 def group_task_by(tasks, group=None):
@@ -484,7 +493,7 @@ def do_report(args):
 
     if args['--day-by-day']:
         by_end_date = lambda x: not pattern or (pattern in str(x.last_end_date) or pattern in str(x.name))
-        task_map = group_task_by(get_tasks(by_end_date, todos=list()), 'date')
+        task_map = group_task_by(get_tasks(by_end_date, todos=None), 'date')
 
         for key in sorted(task_map.keys()):
             if not key:
@@ -572,7 +581,7 @@ def main():
                 return
 
             if name == ['last']:
-                last_task = get_tasks(todos=list())[0]
+                last_task = get_tasks(todos=None)[0]
                 Task(name=last_task.name, start_str=args['--time']).start()
                 return
 
@@ -626,7 +635,7 @@ def main():
 
     if args['see']:
         if args['config']:
-            info(CONFIGURATION)
+            print(CONFIGURATION)
             return
 
         return do_report(args)
