@@ -43,7 +43,5 @@ setup(name='letsdo',
       url='https://github.com/clobrano/letsdo',
       version=__version__,
       classifiers=[
-           "Development Status :: 4 - Beta",
-           "Topic :: Utilities",
-      ]
-     )
+          "Development Status :: 4 - Beta",
+          "Topic :: Utilities", ])
