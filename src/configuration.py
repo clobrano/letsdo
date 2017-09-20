@@ -152,8 +152,13 @@ def autocomplete():
 
     resp = input()
     if resp.lower() == 'y':
-        with open(completion, 'w') as cfile:
+        home_completion = os.path.join(os.path.expanduser('~'), '.letsdo_completion')
+        with open(home_completion, 'w') as cfile:
             cfile.writelines(open(completion).read())
+            if os.path.exists(os.path.join(home_completion)):
+                print('completion file installed')
+            else:
+                print('completion file installation failed: file not found')
     else:
         print(
             '--- CUT HERE ----------------------------------------------------'
