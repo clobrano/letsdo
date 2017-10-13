@@ -25,9 +25,9 @@ Usage:
     lets config autocomplete
 ```
 
-First of all, we do not want to waste time typing too much. **Letsdo** is the name of the package and you can use it as well as CLI, **but** all the interface is designed to be as verbose as possible so, you are encouraged to use **lets** instead.
+First of all, we do not want to waste time typing too much. **Letsdo** is the name of the package and you can use it as well as CLI, **but** all the interface is designed to be as informal as possible so, you are encouraged to use **lets** instead.
 
-Said that, when you do not know what to do, use **lets see**, this command shows the current status of your task, whether you're doing nothing or not
+Said that, when you do not know what to do, use **lets see**, this command shows the current status of your task, whether you're doing something or not
 
 ```
 $ lets see
