@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    lets see    [todo|all|today|yesterday|config] [--detailed|--day-by-day] [--ascii] [<pattern>] [--no-color]
+    lets see    [todo|all|today|yesterday|config] [--detailed|--day-by-day] [--ascii| --dot-list] [<pattern>] [--no-color]
     lets do     [--time=<time>] [<name>...] [--no-color]
     lets stop   [--time=<time>] [--no-color]
     lets goto   [<newtask>...] [--no-color]
@@ -525,6 +525,12 @@ def do_report(args):
         # Otherwise show detailed report ordered
         # by time
         tasks.reverse()
+
+    if args['--dot-list']:
+        print(paint('\n{}'.format(pattern)))
+        for task in tasks:
+            print(paint(' ● {}'.format(task.name)))
+        return
 
     report_task(tasks, detailed=args['--detailed'], ascii=args['--ascii'])
 
