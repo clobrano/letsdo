@@ -27,9 +27,9 @@ import json
 from datetime import datetime, timedelta
 import docopt
 from terminaltables import SingleTable, AsciiTable
-from log import info, LOGGER, RAFFAELLO
-from configuration import Configuration, autocomplete
-from timetoolkit import str2datetime, strfdelta
+from src.log import info, LOGGER, RAFFAELLO
+from src.configuration import Configuration, autocomplete
+from src.timetoolkit import str2datetime, strfdelta
 
 CONFIGURATION = Configuration()
 
@@ -54,10 +54,7 @@ class Task(object):
         # time or a date + time,
         # otherwise the task starts now.
         # See std2datetime for available formats.
-        if start_str:
-            self.start_time = str2datetime(start_str.strip())
-        else:
-            self.start_time = datetime.now()
+        self.start_time = start_str
 
         if end_str:
             self.end_time = str2datetime(end_str.strip())
@@ -65,6 +62,17 @@ class Task(object):
         else:
             self.end_time = None
             self.work_time = timedelta()
+
+    @property
+    def start_time(self):
+        return self._start_time
+
+    @start_time.setter
+    def start_time(self, value):
+        if value:
+            self._start_time = str2datetime(value.strip())
+        else:
+            self._start_time = datetime.now()
 
     @property
     def last_end_date(self):
