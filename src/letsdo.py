@@ -27,9 +27,9 @@ import json
 from datetime import datetime, timedelta
 import docopt
 from terminaltables import SingleTable, AsciiTable
-from src.log import info, LOGGER, RAFFAELLO
-from src.configuration import Configuration, autocomplete
-from src.timetoolkit import str2datetime, strfdelta
+from log import info, LOGGER, RAFFAELLO
+from configuration import Configuration, autocomplete
+from timetoolkit import str2datetime, strfdelta
 
 CONFIGURATION = Configuration()
 
