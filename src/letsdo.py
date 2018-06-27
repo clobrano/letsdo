@@ -422,11 +422,11 @@ def report_task(tasks, cfilter=None, title=None,
     tot_work_time = timedelta()
 
     if detailed:
-        table_data = [['ID', 'Date', 'Interval', 'Tracked', 'Description']]
+        table_data = [['ID', 'Description', 'Work time', 'Interval', 'Last update']]
     elif todos:
-        table_data = [['ID', 'Tracked', 'Description']]
+        table_data = [['ID', 'Description', 'Work time']]
     else:
-        table_data = [['ID', 'Last time', 'Tracked', 'Description']]
+        table_data = [['ID', 'Description', 'Work time', 'Last update']]
 
     for task in tasks:
         tot_work_time += task.work_time
@@ -443,19 +443,19 @@ def report_task(tasks, cfilter=None, title=None,
                        format(begin=task.start_time.strftime('%H:%M'),
                               end=task.end_time.strftime('%H:%M'))
             row = [paint(task.tid),
-                   paint(last_time),
-                   paint(interval),
+                   paint(task.name),
                    paint(time),
-                   paint(task.name)]
+                   paint(interval),
+                   paint(last_time)]
         elif todos:
             row = [paint(task.tid),
-                   paint(time),
-                   paint(task.name)]
+                   paint(task.name),
+                   paint(time)]
         else:
             row = [paint(task.tid),
-                   paint(last_time),
+                   paint(task.name),
                    paint(time),
-                   paint(task.name)]
+                   paint(last_time)]
 
         table_data.append(row)
 

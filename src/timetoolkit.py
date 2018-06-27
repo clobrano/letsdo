@@ -60,8 +60,8 @@ def str2datetime(string):
     if string == 'today':
         return datetime.now()
 
-    if string == 'yesterday':
-        return = datetime.now() - timedelta(1)
+    #if string == 'yesterday':
+    #    return = datetime.now() - timedelta(1)
 
     m = re.findall(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}', string)
     if len(m) != 0:
