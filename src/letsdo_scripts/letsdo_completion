@@ -5,7 +5,7 @@ _lets()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    cmds="--help --no-color --time --detailed --day-by-day --ascii"
+    cmds="--help --no-color --time --detailed --day-by-day --ascii today yesterday"
     if [[ ${cur} == -* ]] ; then
         COMPREPLY=( $(compgen -W "${cmds}" -- ${cur}) )
         return 0

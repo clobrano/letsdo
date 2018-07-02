@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import re
 from string import Formatter
+import parsedatetime as pdt
 
 def strfdelta(tdelta, fmt='{H:2}h {M:02}m', inputtype='timedelta'):
     """Convert a datetime.timedelta object or a regular number to a custom-
@@ -57,9 +58,6 @@ def format_h_m(string):
 
 
 def str2datetime(string):
-    if string == 'today':
-        return datetime.now()
-
     #if string == 'yesterday':
     #    return = datetime.now() - timedelta(1)
 
@@ -146,6 +144,11 @@ def str2datetime(string):
         today_str = datetime.today().strftime('%Y-%m-%d')
         return datetime.strptime(today_str + ' ' + string,
                                           '%Y-%m-%d %H.%M')
+
+    cal = pdt.Calendar()
+    res, ok = cal.parseDT(string, datetime.now())
+    if ok:
+        return res
 
     raise ValueError('Date format not recognized: %s' % string)
 
