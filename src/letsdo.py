@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    lets see    [--time=<time>] [todo|all|today|yesterday|config] [--detailed|--day-by-day] [--ascii| --dot-list] [<pattern>] [--no-color]
+    lets see    [todo|all|config] [--detailed|--day-by-day] [--ascii| --dot-list] [--no-color] [<pattern>]
     lets do     [--time=<time>] [<name>...] [--no-color]
     lets stop   [--time=<time>] [--no-color]
     lets goto   [<newtask>...] [--no-color]
@@ -499,28 +499,23 @@ def do_report(args):
         report_task(tasks, todos=True, ascii=args['--ascii'])
         return
 
-    if args['today']:
-        pattern = datetime.strftime(datetime.today(), '%Y-%m-%d')
-
-    elif args['yesterday']:
-        yesterday = datetime.today() - timedelta(1)
-        # keep only the part with YYYY-MM-DD
-        pattern = str(yesterday).split()[0]
-    elif args['--time']:
-        if 'last year' in  args['--time']:
-            format = "%Y"
-        elif 'last month' in args['--time'] or is_a_month(args['--time']):
+    if pattern:
+        if 'last year' in  pattern:
+                format = "%Y"
+        elif 'last month' in pattern or is_a_month(pattern):
             format = "%Y-%m"
-        elif 'last week' in args['--time']:
+        elif 'last week' in pattern:
             LOGGER.warn("sorry, last week view is not supported yet. Showing the first day of last week :(")
             format = "%Y-%m-%d"
         else:
             format = "%Y-%m-%d"
+
         try:
-            pattern = datetime.strftime(str2datetime(args['--time']), format)
+            pattern = datetime.strftime(str2datetime(pattern), format)
         except ValueError as err:
-            LOGGER.error('could not recognize the time string: %s', args['--time'])
-            return
+            LOGGER.debug('input "%s" does not seem a date', pattern)
+            pattern = args['<pattern>']
+
 
     if args['--day-by-day']:
         by_end_date = lambda x: not pattern or (pattern in str(x.last_end_date) or pattern in str(x.name))
