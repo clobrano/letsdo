@@ -9,17 +9,11 @@ try:
     if 'LETSDO_COLOR' not in os.environ:
         RAFFAELLO = None
     else:
-        from raffaello import Raffaello, parse_request
+        from raffaello import Raffaello
+        from raffaello import parse_string_request
 
-        REQUEST = r'''
-\+[\w\-_]+=>color197_bold
-\@[\w\-_]+=>color046
-\#[\w\-_]+=>color202_bold
-\d+[ms]=>cyan_bold
-\d+h\s=>cyan_bold
-\d{2,4}-\d{2}-\d{2}=>cyan_bold
-'''
-        RAFFAELLO = Raffaello(parse_request(REQUEST))
+        REQUEST = r'''\+[\w\-_]+=>color197_bold \@[\w\-_]+=>color046 \#[\w\-_]+=>color202_bold \d+[ms]=>cyan_bold \d+h\s=>cyan_bold \d{2,4}-\d{2}-\d{2}=>cyan_bold'''
+        RAFFAELLO = Raffaello(parse_string_request(REQUEST))
 except ImportError as error:
     print('could not colorize output: {}'.format(error))
     RAFFAELLO = None
