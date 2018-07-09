@@ -58,9 +58,11 @@ class Task(object):
         if end_str:
             self.end_time = str2datetime(end_str.strip())
             self.work_time = self.end_time - self.start_time
+            self.week_no = self.end_time.strftime('%V')
         else:
             self.end_time = None
             self.work_time = timedelta()
+            self.week_no = None
 
     @property
     def start_time(self):
@@ -499,14 +501,15 @@ def do_report(args):
         report_task(tasks, todos=True, ascii=args['--ascii'])
         return
 
+    last_week_check = False
     if pattern:
         if 'last year' in  pattern:
-                format = "%Y"
+            format = "%Y"
         elif 'last month' in pattern or is_a_month(pattern):
             format = "%Y-%m"
         elif 'last week' in pattern:
-            LOGGER.warn("sorry, last week view is not supported yet. Showing the first day of last week :(")
-            format = "%Y-%m-%d"
+            format = "%V"
+            last_week_check = True
         else:
             format = "%Y-%m-%d"
 
@@ -516,6 +519,13 @@ def do_report(args):
             LOGGER.debug('input "%s" does not seem a date', pattern)
             pattern = args['<pattern>']
 
+
+        if last_week_check:
+            tasks = get_tasks(lambda x: x.week_no==pattern and
+                              x.end_time.strftime('%Y') == datetime.now().strftime('%Y'))
+            tasks = group_task_by(tasks, 'name')
+            report_task(tasks, ascii=args['--ascii'])
+            return
 
     if args['--day-by-day']:
         by_end_date = lambda x: not pattern or (pattern in str(x.last_end_date) or pattern in str(x.name))
