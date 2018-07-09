@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    lets see    [todo|all|config] [--detailed|--day-by-day] [--ascii| --dot-list] [--no-color] [<pattern>]
+    lets see    [todo|all|config] [--detailed|--day-by-day] [--ascii| --dot-list] [--no-color] [<pattern>...]
     lets do     [--time=<time>] [<name>...] [--no-color]
     lets stop   [--time=<time>] [--no-color]
     lets goto   [<newtask>...] [--no-color]
@@ -670,6 +670,8 @@ def main():
             print(CONFIGURATION)
             return
 
+        if args['<pattern>']:
+            args['<pattern>'] = ' '.join(args['<pattern>'])
         return do_report(args)
 
     if args['config']:
