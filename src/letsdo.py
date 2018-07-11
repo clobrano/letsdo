@@ -433,7 +433,7 @@ def report_task(tasks, cfilter=None, title=None,
         tot_work_time += task.work_time
 
         if task.last_end_date:
-            last_time = task.last_end_date
+            last_time = task.last_end_date + ' w' + task.end_time.strftime('%V')
         else:
             last_time = ''
 
@@ -505,11 +505,11 @@ def do_report(args):
     if pattern:
         if 'last year' in  pattern:
             format = "%Y"
-        elif 'last month' in pattern or is_a_month(pattern):
-            format = "%Y-%m"
-        elif 'last week' in pattern:
+        elif 'week' in pattern:
             format = "%V"
             last_week_check = True
+        elif 'last month' in pattern or is_a_month(pattern):
+            format = "%Y-%m"
         else:
             format = "%Y-%m-%d"
 
