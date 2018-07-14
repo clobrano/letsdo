@@ -475,7 +475,7 @@ def report_task(tasks, cfilter=None, title=None,
         info('Total work time: {time}'.format(time=strfdelta(tot_work_time)))
 
 
-def is_a_month(string):
+def __is_a_month(string):
     months = [ 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
     if string.lower() in months:
         return True
@@ -486,8 +486,20 @@ def is_a_month(string):
 
     return False
 
-def __is_time_query():
-    pass
+
+def __get_time_format_from_query(query):
+    if 'last year' in  query:
+        format = "%Y"
+    elif 'week' in query:
+        format = "%V"
+        week_check = True
+    elif 'month' in query or __is_a_month(query):
+        format = "%Y-%m"
+    else:
+        format = "%Y-%m-%d"
+
+    return format
+
 
 def do_report(args):
     '''Wrap show reports'''
@@ -506,17 +518,8 @@ def do_report(args):
         report_task(tasks, todos=True, ascii=args['--ascii'])
         return
 
-    last_week_check = False
     if query:
-        if 'last year' in  query:
-            format = "%Y"
-        elif 'week' in query:
-            format = "%V"
-            week_check = True
-        elif 'month' in query or is_a_month(query):
-            format = "%Y-%m"
-        else:
-            format = "%Y-%m-%d"
+        format = __get_time_format_from_query(query)
 
         try:
             query = datetime.strftime(str2datetime(query), format)
@@ -525,7 +528,7 @@ def do_report(args):
             query = args['<query>']
 
 
-        if week_check:
+        if format == "%V":
             tasks = get_tasks(lambda x: x.week_no==query and
                               x.end_time.strftime('%Y') == datetime.now().strftime('%Y'))
             tasks = group_task_by(tasks, 'name')
