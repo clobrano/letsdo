@@ -503,13 +503,9 @@ def guess_task_id_from_string(task_name):
     '''Get task ID from task name'''
     guess_id = 0
 
-    if len(task_name) == 1:
-        task_name = task_name[0]
-        try:
-            guess_id = int(task_name)
-        except ValueError:
-            return False
-    else:
+    try:
+        guess_id = int(task_name)
+    except ValueError:
         return False
 
     return guess_id
@@ -535,25 +531,24 @@ def main():
         RAFFAELLO = None
 
     if args['do']:
+        if Task.get_running():
+            info("Another task is already running")
+            return
+
         if args['<name>']:
-            name = args['<name>']
-            if Task.get_running():
-                info("Another task is already running")
-                return
+            name = ' '.join(args['<name>'])
+            tid = None
 
-            if name == ['last']:
-                last_task = get_tasks()[0]
-                Task(name=last_task.name, start_str=args['--time']).start()
-                return
+            if name == 'last':
+                tid = 1
+            else:
+                tid = guess_task_id_from_string(name)
 
-            # Check whether the given task name is actually a task id
-            tid = guess_task_id_from_string(name)
-            if tid is not False:
+            if tid:
                 work_on(task_id=tid, start_time_str=args['--time'])
-                return
+            else:
+                Task(name, start_str=args['--time']).start()
 
-            new_task_name = ' '.join(args['<name>'])
-            Task(new_task_name, start_str=args['--time']).start()
             return
 
     if args['edit']:
@@ -561,6 +556,7 @@ def main():
         if not task:
             info('No task running')
             return
+
         edit_command = '{editor} {filename}'\
                        .format(editor=os.getenv('EDITOR'),
                                filename=CONFIGURATION.task_fullpath)
@@ -576,22 +572,20 @@ def main():
         return
 
     if args['goto']:
-        name = args['<newtask>']
+        name = ' '.join(args['<newtask>'])
+
         tid = guess_task_id_from_string(name)
-        if tid is not False:
+        if tid:
             tasks = get_tasks(lambda x: x.tid == tid)
 
             if not tasks:
                 LOGGER.error("could not find tasks id %s", tid)
                 return
-            else:
-                task = tasks[0]
-                new_task_name = task.name
-        else:
-            new_task_name = ' '.join(name)
+
+            name = tasks[0].name
 
         Task.stop()
-        Task(new_task_name).start()
+        Task(name).start()
         return
 
     if args['see']:
