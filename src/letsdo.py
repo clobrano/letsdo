@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    lets see    [todo|all|config] [--detailed|--day-by-day] [--ascii| --dot-list] [--no-color] [<pattern>...]
-    lets do     [--time=<time>] [<name>...] [--no-color]
+    lets see     [<query>...] [todo|all|config] [--detailed|--day-by-day] [--ascii| --dot-list] [--no-color]
+    lets do     [<name>...] [--time=<time>] [--no-color]
     lets stop   [--time=<time>] [--no-color]
     lets goto   [<newtask>...] [--no-color]
     lets cancel [--no-color]
@@ -479,14 +479,19 @@ def is_a_month(string):
     months = [ 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
     if string.lower() in months:
         return True
+
     for month in months:
         if month in string.lower():
             return True
+
     return False
+
+def __is_time_query():
+    pass
 
 def do_report(args):
     '''Wrap show reports'''
-    pattern = args['<pattern>']
+    query = args['<query>']
 
     if args['todo']:
         todos = get_todos()
@@ -502,33 +507,33 @@ def do_report(args):
         return
 
     last_week_check = False
-    if pattern:
-        if 'last year' in  pattern:
+    if query:
+        if 'last year' in  query:
             format = "%Y"
-        elif 'week' in pattern:
+        elif 'week' in query:
             format = "%V"
-            last_week_check = True
-        elif 'last month' in pattern or is_a_month(pattern):
+            week_check = True
+        elif 'month' in query or is_a_month(query):
             format = "%Y-%m"
         else:
             format = "%Y-%m-%d"
 
         try:
-            pattern = datetime.strftime(str2datetime(pattern), format)
+            query = datetime.strftime(str2datetime(query), format)
         except ValueError as err:
-            LOGGER.debug('input "%s" does not seem a date', pattern)
-            pattern = args['<pattern>']
+            LOGGER.debug('input "%s" does not seem a date', query)
+            query = args['<query>']
 
 
-        if last_week_check:
-            tasks = get_tasks(lambda x: x.week_no==pattern and
+        if week_check:
+            tasks = get_tasks(lambda x: x.week_no==query and
                               x.end_time.strftime('%Y') == datetime.now().strftime('%Y'))
             tasks = group_task_by(tasks, 'name')
             report_task(tasks, ascii=args['--ascii'])
             return
 
     if args['--day-by-day']:
-        by_end_date = lambda x: not pattern or (pattern in str(x.last_end_date) or pattern in str(x.name))
+        by_end_date = lambda x: not query or (query in str(x.last_end_date) or query in str(x.name))
         task_map = group_task_by(get_tasks(by_end_date, todos=None), 'date')
 
         for key in sorted(task_map.keys()):
@@ -543,9 +548,9 @@ def do_report(args):
             report_task(sorted_by_time)
         return
 
-    elif args['all'] or pattern:
-        by_name_or_end_date = lambda x: not pattern or \
-            (pattern in str(x.last_end_date) or pattern in x.name)
+    elif args['all'] or query:
+        by_name_or_end_date = lambda x: not query or \
+            (query in str(x.last_end_date) or query in x.name)
 
         tasks = get_tasks(by_name_or_end_date)
 
@@ -563,7 +568,7 @@ def do_report(args):
         tasks.reverse()
 
     if args['--dot-list']:
-        print(paint('\n{}'.format(pattern)))
+        print(paint('\n{}'.format(query)))
         for task in tasks:
             print(paint(' ● {}'.format(task.name)))
         return
@@ -680,8 +685,9 @@ def main():
             print(CONFIGURATION)
             return
 
-        if args['<pattern>']:
-            args['<pattern>'] = ' '.join(args['<pattern>'])
+        if args['<query>']:
+            args['<query>'] = ' '.join(args['<query>'])
+
         return do_report(args)
 
     if args['config']:
