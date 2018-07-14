@@ -162,11 +162,8 @@ class Task(object):
             now = datetime.now()
             time = str(now - task.start_time).split('.')[0]
             hours, minutes, seconds = time.split(':')
-            info('Working on \'{name}\' for {h}h {m}m {s}s'
-                 .format(name=task.name,
-                         h=hours,
-                         m=minutes,
-                         s=seconds))
+            info('Working on \'{}\' for {}h {}m {}s'
+                 .format(task.name, hours, minutes, seconds))
             return True
         info('No task running')
         return False
@@ -217,17 +214,16 @@ class Task(object):
             self.tags = matches
 
     def __repr__(self):
+        start_str = 'None'
+        end_str = 'None'
+        work_str = 'in progress'
+
         if self.start_time:
             start_str = '%s' % self.start_time.strftime('%H:%M')
-        else:
-            start_str = 'None'
 
         if self.end_time:
             end_str = '%s' % self.end_time.strftime('%H:%M')
             work_str = '%s' % str(self.work_time).split('.')[0]
-        else:
-            end_str = 'None'
-            work_str = 'in progress'
 
         if self.tid is not None:
             return '[%d:%s] - %s| %s (%s -> %s) - %s' % (self.tid,
