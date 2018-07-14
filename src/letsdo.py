@@ -2,16 +2,13 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    lets see     [<query>...] [todo|all|config] [--detailed|--day-by-day] [--ascii| --dot-list] [--no-color]
+    lets see     [<query>...] [all|config] [--detailed|--day-by-day] [--ascii| --dot-list] [--no-color]
     lets do     [<name>...] [--time=<time>] [--no-color]
     lets stop   [--time=<time>] [--no-color]
     lets goto   [<newtask>...] [--no-color]
     lets cancel [--no-color]
     lets edit
     lets config data.directory <fullpath>
-    lets config todo.file      <fullpath>
-    lets config todo.start_tag <tag>
-    lets config todo.stop_tag  <tag>
     lets config autocomplete
 
 options:
@@ -289,62 +286,9 @@ def sanitize(text):
     return text
 
 
-def get_todos():
-    '''Get Tasks from todo list'''
-    tasks = []
-
-    if not CONFIGURATION.todo_file or \
-       not os.path.exists(CONFIGURATION.todo_file):
-        return tasks
-
-    try:
-        with open(CONFIGURATION.todo_file, 'r') as cfile:
-            todo_start_tag = CONFIGURATION.todo_start_tag
-            todo_stop_tag = CONFIGURATION.todo_stop_tag
-
-            got_stop_tag = lambda line: todo_stop_tag and todo_stop_tag in line.lower()
-            got_empty_line = lambda line: len(line.strip()) == 0
-
-            if todo_start_tag:
-                reading = False
-                tid = 0
-                for line in cfile.readlines():
-                    line = line.rstrip()
-
-                    if todo_start_tag in line.lower():
-                        reading = True
-                        continue
-
-                    if reading and \
-                       (got_stop_tag(line) or got_empty_line(line)):
-                        reading = False
-                        break
-
-                    if reading:
-                        line = sanitize(line)
-                        tid += 1
-                        tasks.append(Task(name=line, tid=tid))
-            else:
-                tasks = [
-                    Task(name=sanitize(line), tid=lineno + 1)
-                    for lineno, line in enumerate(cfile.readlines())
-                ]
-    except(TypeError, AttributeError, IOError) as error:
-        LOGGER.error("could not get todo list: %s", error)
-    return tasks
-
-
-def get_tasks(condition=None, todos=[]):
+def get_tasks(condition=None):
     '''Get all tasks by condition'''
-    # Some todos might have been logged yet and some other don't.
-    # Pass todo list to avoid duplication (but looking for a better solution)
-    if todos:
-        tasks = todos
-    elif todos == []:
-        tasks = get_todos()
-    else:
-        # Skip todos loading
-        tasks = []
+    tasks = []
 
     tid = len(tasks)
     uids = dict()
@@ -413,15 +357,12 @@ def group_task_by(tasks, group=None):
     return tasks
 
 
-def report_task(tasks, cfilter=None, title=None,
-                detailed=False, todos=False, ascii=False):
+def report_task(tasks, cfilter=None, title=None, detailed=False, ascii=False):
     '''Visual task report'''
     tot_work_time = timedelta()
 
     if detailed:
         table_data = [['ID', 'Description', 'Work time', 'Interval', 'Last update']]
-    elif todos:
-        table_data = [['ID', 'Description', 'Work time']]
     else:
         table_data = [['ID', 'Description', 'Work time', 'Last update']]
 
@@ -444,10 +385,6 @@ def report_task(tasks, cfilter=None, title=None,
                    paint(time),
                    paint(interval),
                    paint(last_time)]
-        elif todos:
-            row = [paint(task.tid),
-                   paint(task.name),
-                   paint(time)]
         else:
             row = [paint(task.tid),
                    paint(task.name),
@@ -501,19 +438,6 @@ def do_report(args):
     '''Wrap show reports'''
     query = args['<query>']
 
-    if args['todo']:
-        todos = get_todos()
-        if not todos:
-            LOGGER.error('Could not find any Todos')
-            return
-
-        names = [t.name for t in todos]
-
-        tasks = get_tasks(lambda x: x.name in names, todos=todos)
-        tasks = group_task_by(tasks, 'name')
-        report_task(tasks, todos=True, ascii=args['--ascii'])
-        return
-
     if query:
         format = __get_time_format_from_query(query)
 
@@ -533,7 +457,7 @@ def do_report(args):
 
     if args['--day-by-day']:
         by_end_date = lambda x: not query or (query in str(x.last_end_date) or query in str(x.name))
-        task_map = group_task_by(get_tasks(by_end_date, todos=None), 'date')
+        task_map = group_task_by(get_tasks(by_end_date), 'date')
 
         for key in sorted(task_map.keys()):
             if not key:
@@ -596,15 +520,6 @@ def do_config(args):
     if args['data.directory']:
         CONFIGURATION.data_directory = args['<fullpath>']
 
-    elif args['todo.file']:
-        CONFIGURATION.todo_file = args['<fullpath>']
-
-    elif args['todo.start_tag']:
-        CONFIGURATION.todo_start_tag = args['<tag>']
-
-    elif args['todo.stop_tag']:
-        CONFIGURATION.todo_stop_tag = args['<tag>']
-
     elif args['autocomplete']:
         autocomplete()
     else:
@@ -627,7 +542,7 @@ def main():
                 return
 
             if name == ['last']:
-                last_task = get_tasks(todos=None)[0]
+                last_task = get_tasks()[0]
                 Task(name=last_task.name, start_str=args['--time']).start()
                 return
 
