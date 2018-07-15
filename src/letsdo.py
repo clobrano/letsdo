@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    lets see     [<query>...] [all|config] [--detailed|--day-by-day] [--ascii| --dot-list] [--no-color]
-    lets do     [<name>...] [--time=<time>] [--no-color]
-    lets stop   [--time=<time>] [--no-color]
-    lets goto   [<newtask>...] [--no-color]
+    lets see    [all|config] [--detailed|--day-by-day] [--ascii| --dot-list] [<query>...]
+    lets do     [--time=<time>] [<name>...]
+    lets stop   [--time=<time>]
+    lets goto   [<newtask>...]
     lets cancel [--no-color]
     lets edit
-    lets config data.directory <fullpath>
+    lets config data.dirctory <fullpath>
     lets config autocomplete
 
 options:
