@@ -6,7 +6,7 @@ Usage:
     lets do     [--time=<time>] [<name>...]
     lets stop   [--time=<time>]
     lets goto   [<newtask>...]
-    lets cancel [--no-color]
+    lets cancel
     lets edit
     lets config data.dirctory <fullpath>
     lets config autocomplete
@@ -14,7 +14,6 @@ Usage:
 options:
     -a, --ascii       Print report table in ASCII characters
     -t, --time=<time> Change the start/stop time of the task on the fly
-    -n, --no-color    Disable colorizer (depends on raffaello python package)
 '''
 
 import os
@@ -525,10 +524,6 @@ def do_config(args):
 def main():
     global RAFFAELLO
     args = docopt.docopt(__doc__)
-
-    if args['--no-color']:
-        LOGGER.debug("disabling color")
-        RAFFAELLO = None
 
     if args['do']:
         if Task.get_running():
