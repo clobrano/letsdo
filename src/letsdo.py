@@ -29,7 +29,7 @@ from timetoolkit import str2datetime, strfdelta
 
 CONFIGURATION = Configuration()
 
-def paint(msg):
+def _p(msg):
     '''Colorize message'''
     if msg and RAFFAELLO:
         return RAFFAELLO.paint(str(msg))
@@ -289,7 +289,7 @@ def get_tasks(condition=None):
     '''Get all tasks by condition'''
     tasks = []
 
-    tid = len(tasks)
+    tid = 0
     uids = dict()
     try:
         with open(CONFIGURATION.data_fullpath) as cfile:
@@ -319,9 +319,10 @@ def get_tasks(condition=None):
                 task.tid = uids[task.uid]
                 tasks.append(task)
 
-        return list(filter(condition, tasks))
+        conditioned = filter(condition, tasks)
+        return list(conditioned)
     except IOError as error:
-        LOGGER.debug("could not get tasks' history: %s", error)
+        LOGGER.error("could not get tasks' history: %s", error)
         return []
 
 
@@ -356,55 +357,43 @@ def group_task_by(tasks, group=None):
     return tasks
 
 
-def report_task(tasks, cfilter=None, title=None, detailed=False, ascii=False):
-    '''Visual task report'''
-    tot_work_time = timedelta()
+def report_task(tasks, title=None, detailed=False, ascii=False):
+    '''Display table with tasks data'''
 
+    table_data = [['ID', 'Description', 'Work time', 'Last update']]
     if detailed:
         table_data = [['ID', 'Description', 'Work time', 'Interval', 'Last update']]
-    else:
-        table_data = [['ID', 'Description', 'Work time', 'Last update']]
 
+    tot_work_time = timedelta()
     for task in tasks:
         tot_work_time += task.work_time
 
+        last_time = ''
         if task.last_end_date:
             last_time = task.last_end_date + ' w' + task.end_time.strftime('%V')
-        else:
-            last_time = ''
 
         time = strfdelta(task.work_time, fmt='{H:2}h {M:02}m')
 
         if detailed:
-            interval = '{begin} -> {end}'.\
-                       format(begin=task.start_time.strftime('%H:%M'),
-                              end=task.end_time.strftime('%H:%M'))
-            row = [paint(task.tid),
-                   paint(task.name),
-                   paint(time),
-                   paint(interval),
-                   paint(last_time)]
+            begin = task.start_time.strftime('%H:%M')
+            end = task.end_time.strftime('%H:%M')
+            interval = '{} -> {}'.format(begin, end)
+
+            row = [_p(task.tid), _p(task.name), _p(time), _p(interval), _p(last_time)]
         else:
-            row = [paint(task.tid),
-                   paint(task.name),
-                   paint(time),
-                   paint(last_time)]
+            row = [_p(task.tid), _p(task.name), _p(time), _p(last_time)]
 
         table_data.append(row)
 
+    title = ' showing: %s ' % title
     if ascii:
-        table = AsciiTable(table_data)
+        table = AsciiTable(table_data, title)
     else:
-        table = SingleTable(table_data)
+        table = SingleTable(table_data, title)
 
     info('')
     print(table.table)
-    info('')
-    if cfilter:
-        info('{filter}: Total work time: {time}'.format(
-            filter=cfilter, time=strfdelta(tot_work_time)))
-    else:
-        info('Total work time: {time}'.format(time=strfdelta(tot_work_time)))
+    info('Total work time: {time}'.format(time=strfdelta(tot_work_time)))
 
 
 def __is_a_month(string):
@@ -420,6 +409,11 @@ def __is_a_month(string):
 
 
 def __get_time_format_from_query(query):
+    format = "%Y-%m-%d"
+
+    if not query:
+        return format
+
     if 'last year' in  query:
         format = "%Y"
     elif 'week' in query:
@@ -427,75 +421,64 @@ def __get_time_format_from_query(query):
         week_check = True
     elif 'month' in query or __is_a_month(query):
         format = "%Y-%m"
-    else:
-        format = "%Y-%m-%d"
 
     return format
 
+def __get_task_condition_from_query(query):
+    format = __get_time_format_from_query(query)
+    try:
+        query = datetime.strftime(str2datetime(query), format)
+    except:
+        LOGGER.debug("query '%s' does not seems a date", query)
+
+    if format == "%V":
+        condition = lambda x: x.week_no==query and x.end_time.strftime('%Y') == datetime.now().strftime('%Y')
+    else:
+        condition = lambda x: not query or (query in str(x.last_end_date) or query in x.name)
+
+    return condition
 
 def do_report(args):
     '''Wrap show reports'''
     query = args['<query>']
 
-    if query:
-        format = __get_time_format_from_query(query)
+    if not args['all'] and not query:
+        Task.status()
+        return
 
-        try:
-            query = datetime.strftime(str2datetime(query), format)
-        except ValueError as err:
-            LOGGER.debug('input "%s" does not seem a date', query)
-            query = args['<query>']
+    condition = __get_task_condition_from_query(query)
+    tasks = get_tasks(condition)
 
-
-        if format == "%V":
-            tasks = get_tasks(lambda x: x.week_no==query and
-                              x.end_time.strftime('%Y') == datetime.now().strftime('%Y'))
-            tasks = group_task_by(tasks, 'name')
-            report_task(tasks, ascii=args['--ascii'])
-            return
+    if args['--detailed']:
+        tasks.reverse()
+        report_task(tasks, title=query, detailed=True, ascii=args['--ascii'])
+        return
 
     if args['--day-by-day']:
-        by_end_date = lambda x: not query or (query in str(x.last_end_date) or query in str(x.name))
-        task_map = group_task_by(get_tasks(by_end_date), 'date')
+        task_map = group_task_by(tasks, 'date')
 
         for key in sorted(task_map.keys()):
             if not key:
                 continue
 
             task = group_task_by(task_map[key], 'name')
-            sorted_by_time = sorted(task,
-                                    key=lambda x: x.work_time,
-                                    reverse=True)
+            sorted_by_time = sorted(task, key=lambda x: x.work_time, reverse=True)
 
             report_task(sorted_by_time)
         return
 
-    elif args['all'] or query:
-        by_name_or_end_date = lambda x: not query or \
-            (query in str(x.last_end_date) or query in x.name)
-
-        tasks = get_tasks(by_name_or_end_date)
-
-    else:
-        # Just see if there is something running
-        Task.status()
-        return
-
-    # By default show Task grouped by name
-    if not args['--detailed']:
-        tasks = group_task_by(tasks, 'name')
-    else:
-        # Otherwise show detailed report ordered
-        # by time
-        tasks.reverse()
-
+    tasks = group_task_by(tasks, 'name')
     if args['--dot-list']:
-        print(paint('\n{}'.format(query)))
+        if format == "%V":
+            print(_p('\nweek {}'.format(query)))
+        else:
+            print(_p('\n{}'.format(query)))
+
         for task in tasks:
-            print(paint(' ● {}'.format(task.name)))
+            print(_p(' ● {}'.format(task.name)))
         return
 
-    report_task(tasks, detailed=args['--detailed'], ascii=args['--ascii'])
+    report_task(tasks, title=query,detailed=args['--detailed'], ascii=args['--ascii'])
 
 
 def guess_task_id_from_string(task_name):
