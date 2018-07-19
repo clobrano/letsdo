@@ -478,6 +478,11 @@ def do_report(args):
             print(_p(' ● {}'.format(task.name)))
         return
 
+    running = Task.get_running()
+    if running:
+        running.tid = 'R'
+        running.work_time = datetime.now() - running.start_time
+        tasks.insert(0, running)
     report_task(tasks, title=query,detailed=args['--detailed'], ascii=args['--ascii'])
 
 
