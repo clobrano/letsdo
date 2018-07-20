@@ -443,12 +443,11 @@ def __get_task_condition_from_query(query):
 
 def do_report(args):
     '''Wrap show reports'''
+
+    if not args['all'] and not args['<query>']:
+        args['<query>'] = 'today'
+
     query = args['<query>']
-
-    if not args['all'] and not query:
-        Task.status()
-        return
-
     condition = __get_task_condition_from_query(query)
     tasks = get_tasks(condition)
 
@@ -482,7 +481,7 @@ def do_report(args):
         return
 
     running = Task.get_running()
-    if running:
+    if running and (not query or query.lower() == 'today' or query.lower() == 'now' or query in running.name):
         running.tid = 'R'
         running.work_time = datetime.now() - running.start_time
         running.end_time = running.start_time
