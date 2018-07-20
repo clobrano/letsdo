@@ -370,7 +370,10 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
 
         last_time = ''
         if task.last_end_date:
-            last_time = task.last_end_date + ' w' + task.end_time.strftime('%V')
+            if task.tid != 'R':
+                last_time = task.last_end_date + ' w' + task.end_time.strftime('%V')
+            else:
+                last_time = task.start_time.strftime('%H:%M')
 
         time = strfdelta(task.work_time, fmt='{H:2}h {M:02}m')
 
@@ -482,6 +485,7 @@ def do_report(args):
     if running:
         running.tid = 'R'
         running.work_time = datetime.now() - running.start_time
+        running.end_time = running.start_time
         tasks.insert(0, running)
     report_task(tasks, title=query,detailed=args['--detailed'], ascii=args['--ascii'])
 
