@@ -8,7 +8,7 @@ Usage:
     lets goto   [<newtask>...]
     lets cancel
     lets edit
-    lets config data.dirctory <fullpath>
+    lets config data.directory <fullpath>
     lets config autocomplete
 
 options:
@@ -439,7 +439,7 @@ def __get_task_condition_from_query(query):
     else:
         condition = lambda x: not query or (query in str(x.last_end_date) or query in x.name)
 
-    return condition
+    return condition, query, format
 
 def do_report(args):
     '''Wrap show reports'''
@@ -448,12 +448,19 @@ def do_report(args):
         args['<query>'] = 'today'
 
     query = args['<query>']
-    condition = __get_task_condition_from_query(query)
+
+    condition, date, format = __get_task_condition_from_query(query)
+
+    if format == "%V":
+        title = 'week {}'.format(date)
+    else:
+        title = '{}'.format(date)
+
     tasks = get_tasks(condition)
 
     if args['--detailed']:
         tasks.reverse()
-        report_task(tasks, title=query, detailed=True, ascii=args['--ascii'])
+        report_task(tasks, title=title, detailed=True, ascii=args['--ascii'])
         return
 
     if args['--day-by-day']:
@@ -471,22 +478,21 @@ def do_report(args):
 
     tasks = group_task_by(tasks, 'name')
     if args['--dot-list']:
-        if format == "%V":
-            print(_p('\nweek {}'.format(query)))
-        else:
-            print(_p('\n{}'.format(query)))
+        print(_p('\n{}'.format(title)))
 
         for task in tasks:
             print(_p(' ● {}'.format(task.name)))
         return
 
     running = Task.get_running()
-    if running and (not query or query.lower() == 'today' or query.lower() == 'now' or query in running.name):
+    current_running = ['today', 'now', 'this week', 'this month']
+    if running and (not query or query.lower() in current_running or query in running.name):
         running.tid = 'R'
         running.work_time = datetime.now() - running.start_time
         running.end_time = running.start_time
         tasks.insert(0, running)
-    report_task(tasks, title=query,detailed=args['--detailed'], ascii=args['--ascii'])
+
+    report_task(tasks, title=title,detailed=args['--detailed'], ascii=args['--ascii'])
 
 
 def guess_task_id_from_string(task_name):

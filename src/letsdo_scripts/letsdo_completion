@@ -5,7 +5,7 @@ _lets()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    cmds="--help --no-color --time --detailed --day-by-day --ascii today yesterday"
+    cmds="--help --time --detailed --day-by-day --dot-list --ascii"
     if [[ ${cur} == -* ]] ; then
         COMPREPLY=( $(compgen -W "${cmds}" -- ${cur}) )
         return 0
@@ -29,7 +29,7 @@ _lets()
         fi
     fi
 
-    cmds="see do edit stop goto cancel config"
+    cmds="see do edit stop goto cancel config last next previous today yesterday week month year"
     if [[ ${cur} == * ]] ; then
         COMPREPLY=( $(compgen -W "${cmds}" -- ${cur}) )
         return 0
