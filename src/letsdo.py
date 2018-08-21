@@ -75,7 +75,7 @@ class Task(object):
     def last_end_date(self):
         ''' The last day when this Task was active'''
         if self.end_time:
-            return self.end_time.strftime('%Y-%m-%d')
+            return self.end_time.strftime('%y.%m.%d')
         return None
 
     @staticmethod
@@ -373,7 +373,7 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
             if task.tid != 'R':
                 last_time = task.last_end_date + ' w' + task.end_time.strftime('%V')
             else:
-                last_time = task.start_time.strftime('%H:%M')
+                last_time = task.start_time.strftime('%y.%m.%d %H:%M')
 
         time = strfdelta(task.work_time, fmt='{H:2}h {M:02}m')
 
