@@ -363,6 +363,7 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
     table_data = [['ID', 'Description', 'Work time', 'Last update']]
     if detailed:
         table_data = [['ID', 'Description', 'Work time', 'Interval', 'Last update']]
+        tasks = sorted(tasks, key=lambda x: x.end_time, reverse= True)
 
     tot_work_time = timedelta()
     for task in tasks:
@@ -381,6 +382,7 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
             begin = task.start_time.strftime('%H:%M')
             end = task.end_time.strftime('%H:%M')
             interval = '{} -> {}'.format(begin, end)
+
 
             row = [_p(task.tid), _p(task.name), _p(time), _p(interval), _p(last_time)]
         else:
