@@ -562,7 +562,6 @@ def main():
         return
 
     if args['stop']:
-        print(args)
         Task.stop(' '.join(args['<time>']))
         return
 
