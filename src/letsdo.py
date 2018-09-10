@@ -4,7 +4,7 @@
 Usage:
     lets see    [all|config] [--detailed|--day-by-day] [--ascii| --dot-list] [<query>...]
     lets do     [--time=<time>] [<name>...]
-    lets stop   [--time=<time>]
+    lets stop   [<time>...]
     lets goto   [<newtask>...]
     lets cancel
     lets edit
@@ -562,7 +562,8 @@ def main():
         return
 
     if args['stop']:
-        Task.stop(args['--time'])
+        print(args)
+        Task.stop(' '.join(args['<time>']))
         return
 
     if args['goto']:
