@@ -6,6 +6,7 @@ Usage:
     lets do     [--time=<time>] [<name>...]
     lets stop   [<time>...]
     lets goto   [<newtask>...]
+    lets track  [<name>...]
     lets cancel
     lets edit
     lets config data.directory <fullpath>
@@ -134,8 +135,6 @@ class Task(object):
         os.remove(CONFIGURATION.task_fullpath)
 
         hours, minutes = work_time_str.split(':')
-        info('Stopped \'{name}\' after {h}h {m}m of work'.format(
-            name=task.name, h=hours, m=minutes))
 
         return True
 
@@ -189,8 +188,6 @@ class Task(object):
 }
 ''' % (json.dumps(self.name), json.dumps(str(self.start_time)))
                 cfile.write(json_data)
-                info('Started task:')
-                info(json_data)
                 return True
         except IOError as error:
             LOGGER.error('Could not save task data: %s', error)
@@ -543,6 +540,24 @@ def main():
             else:
                 Task(name, start_str=args['--time']).start()
 
+            task = Task.get_running()
+            info("task '%s' started" % task.name)
+
+            return
+
+    if args['track']:
+        if Task.get_running():
+            info("Another task is already running")
+            return
+
+        if args['<name>']:
+            name = ' '.join(args['<name>'])
+            tid = None
+
+            Task(name, start_str=args['--time']).start()
+            Task.stop()
+            info("added task '%s' to today's list" % name)
+
             return
 
     if args['edit']:
@@ -562,7 +577,10 @@ def main():
         return
 
     if args['stop']:
+        task = Task.get_running()
         Task.stop(' '.join(args['<time>']))
+
+        info("stopped task '%s'" % task.name)
         return
 
     if args['goto']:
