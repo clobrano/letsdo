@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 '''
 Usage:
-    lets see    [all|config] [--detailed|--day-by-day] [--ascii| --dot-list] [<query>...]
-    lets do     [--time=<time>] [<name>...]
-    lets stop   [<time>...]
-    lets goto   [<newtask>...]
-    lets track  [<name>...]
-    lets cancel
+    lets do     <name>... [--time=<time>]
+    lets see    [all|config] [--detailed|--day-by-day] [--ascii| --dot-list] [-p|--project] [<query>...]
     lets edit
+    lets cancel
+    lets stop   [<time>...]
+    lets goto   <newtask>...
+    lets track  <name>...
     lets config data.directory <fullpath>
     lets config autocomplete
 
@@ -100,7 +100,7 @@ class Task(object):
         task = Task.get_running()
         if not task:
             info('No task running')
-            return
+            return None
 
         # Get strings for the task report
         if stop_time_str:
@@ -108,7 +108,7 @@ class Task(object):
             if stop_time < task.start_time:
                 LOGGER.warn('Given stop time (%s) is more recent than start time (%s)',
                             stop_time, task.start_time)
-                return False
+                return None
             date = stop_time.strftime('%Y-%m-%d')
         else:
             stop_time = datetime.now()
@@ -129,14 +129,13 @@ class Task(object):
                 cfile.writelines(report_line)
         except IOError as error:
             LOGGER.error('Could not save report: %s', error)
-            return False
+            return None
 
         # Delete current task data to mark it as stopped
         os.remove(CONFIGURATION.task_fullpath)
 
         hours, minutes = work_time_str.split(':')
-
-        return True
+        return (hours, minutes)
 
     @staticmethod
     def cancel():
@@ -146,8 +145,8 @@ class Task(object):
             with open(CONFIGURATION.task_fullpath, 'r') as cfile:
                 content = cfile.read()
             os.remove(CONFIGURATION.task_fullpath)
-            info('Cancelled task')
-            info(content)
+            return content
+        return None
 
     @staticmethod
     def status():
@@ -546,19 +545,20 @@ def main():
             return
 
     if args['track']:
-        if Task.get_running():
-            info("Another task is already running")
-            return
+        name = ' '.join(args['<name>'])
+        tid = None
 
-        if args['<name>']:
-            name = ' '.join(args['<name>'])
-            tid = None
+        task = Task.get_running()
+        if task:
+            Task.cancel()
 
-            Task(name, start_str=args['--time']).start()
-            Task.stop()
-            info("added task '%s' to today's list" % name)
+        Task(name, start_str=args['--time']).start()
+        Task.stop()
+        info("added task '%s' to today's list" % name)
 
-            return
+        task.start()
+
+        return
 
     if args['edit']:
         task = Task.get_running()
@@ -573,14 +573,16 @@ def main():
         return
 
     if args['cancel']:
-        Task.cancel()
+        content = Task.cancel()
+        info('Cancelled task')
+        info(content)
         return
 
     if args['stop']:
         task = Task.get_running()
-        Task.stop(' '.join(args['<time>']))
+        work_time = Task.stop(' '.join(args['<time>']))
 
-        info("stopped task '%s'" % task.name)
+        info("stopped task '%s' after %s hours, %s minutes" % (task.name, work_time[0], work_time[1]))
         return
 
     if args['goto']:
