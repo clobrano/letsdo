@@ -20,7 +20,7 @@ except ImportError as error:
 if 'LETSDO_DEBUG' in os.environ:
     LEVEL = logging.DEBUG
 else:
-    LEVEL = logging.DEBUG
+    LEVEL = logging.INFO
 
 logging.basicConfig(level=LEVEL, format='%(levelname)s %(funcName)s: %(message)s')
 LOGGER = logging.getLogger(__name__)
