@@ -556,7 +556,8 @@ def main():
         Task.stop()
         info("added task '%s' to today's list" % name)
 
-        task.start()
+        if task:
+            task.start()
 
         return
 
