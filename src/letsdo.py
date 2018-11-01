@@ -581,8 +581,11 @@ def main():
 
     if args['stop']:
         task = Task.get_running()
-        work_time = Task.stop(' '.join(args['<time>']))
+        if not task:
+            info('no task running')
+            return
 
+        work_time = Task.stop(' '.join(args['<time>']))
         info("stopped task '%s' after %s hours, %s minutes" % (task.name, work_time[0], work_time[1]))
         return
 
