@@ -605,7 +605,7 @@ def main():
         task = Task.get_running()
         if task:
             work_time = Task.stop()
-            info("stopped task '%s' after %s hours, %s minutes" % (task.name, work_time[1], work_time[1]))
+            info("stopped task '%s' after %s hours, %s minutes" % (task.name, work_time[0], work_time[1]))
 
         Task(name).start()
         info("task '%s' started" % name)
