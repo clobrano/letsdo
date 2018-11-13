@@ -479,7 +479,7 @@ def do_report(args):
         print(_p('\n{}'.format(title)))
 
         for task in tasks:
-            print(_p(' ● {}'.format(task.name)))
+            print(_p(' ● %s - %s' % (task.name, task.work_time)))
         return
 
     running = Task.get_running()
