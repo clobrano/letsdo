@@ -540,7 +540,7 @@ def main():
                 Task(name, start_str=args['--time']).start()
 
             task = Task.get_running()
-            info("task '%s' started" % task.name)
+            info("task '%s' started at %s" % (task.name, task.start_time))
 
             return
 
@@ -607,8 +607,9 @@ def main():
             work_time = Task.stop()
             info("stopped task '%s' after %s hours, %s minutes" % (task.name, work_time[0], work_time[1]))
 
-        Task(name).start()
-        info("task '%s' started" % name)
+        task = Task(name)
+        task.start()
+        info("Task '%s' started at %s" % (task.name, task.start_time))
         return
 
     if args['see']:
