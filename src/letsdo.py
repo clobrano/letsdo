@@ -15,6 +15,17 @@ Usage:
 options:
     -a, --ascii       Print report table in ASCII characters
     -t, --time=<time> Change the start/stop time of the task on the fly
+
+examples:
+    lets see            # show today's activities
+    lets see yesterday  # show yesterday's activities
+    lets see 2018-07    # show 2018 July's activities
+    lets see +project   # show activities with +project tag (+project is autocompleted with TAB)
+    lets see something  # show activities whose description has he word 'something'
+    lets see this week
+    lets see last month
+    lets see 2019
+    ...
 '''
 
 import os
