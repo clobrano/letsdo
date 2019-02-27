@@ -391,10 +391,12 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
         table = AsciiTable(table_data, title)
     else:
         table = SingleTable(table_data, title)
+        table.outer_border = False
+        table.inner_column_border = False
 
     info('')
     print(table.table)
-    info('Total work time: {time}'.format(time=strfdelta(tot_work_time)))
+    info('\nTotal work time: {time}'.format(time=strfdelta(tot_work_time)))
 
 
 def __is_a_month(string):
@@ -479,7 +481,7 @@ def do_report(args):
         print(_p('\n{}'.format(title)))
 
         for task in tasks:
-            print(_p(' ● %s' % task.name))
+            print(_p(' ● (%s) %s' % (task.tid, task.name)))
         return
 
     running = Task.get_running()
