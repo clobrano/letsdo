@@ -20,6 +20,7 @@ examples:
     lets see            # show today's activities
     lets see yesterday  # show yesterday's activities
     lets see 2018-07    # show 2018 July's activities
+    lets see last July  # same as above (if we're still in 2019)
     lets see +project   # show activities with +project tag (+project is autocompleted with TAB)
     lets see something  # show activities whose description has he word 'something'
     lets see this week
