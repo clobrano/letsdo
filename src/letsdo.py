@@ -386,6 +386,10 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
 
         table_data.append(row)
 
+    if len(tasks) == 0:
+        info('Nothing to show for %s' % title)
+        return
+
     title = ' showing: %s ' % title
     if ascii:
         table = AsciiTable(table_data, title)
