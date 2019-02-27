@@ -9,8 +9,8 @@ Usage:
     lets stop   [<time>...]
     lets goto   <newtask>...
     lets track  <name>...
-    lets config data.directory <fullpath>
-    lets config autocomplete
+    lets config
+    lets autocomplete
 
 options:
     -a, --ascii       Print report table in ASCII characters
@@ -36,7 +36,7 @@ import json
 from datetime import datetime, timedelta
 import docopt
 from terminaltables import SingleTable, AsciiTable
-from log import info, LOGGER, RAFFAELLO
+from log import LOGGER, RAFFAELLO
 from configuration import Configuration, autocomplete
 from timetoolkit import str2datetime, strfdelta
 
@@ -44,7 +44,7 @@ CONFIGURATION = Configuration()
 
 def _p(msg):
     '''Colorize message'''
-    if msg and RAFFAELLO:
+    if msg and CONFIGURATION.color_enabled and RAFFAELLO:
         return RAFFAELLO.paint(str(msg))
     return msg
 
@@ -111,7 +111,7 @@ class Task(object):
         '''Stop task'''
         task = Task.get_running()
         if not task:
-            info('No task running')
+            print('No task running')
             return None
 
         # Get strings for the task report
@@ -168,10 +168,10 @@ class Task(object):
             now = datetime.now()
             time = str(now - task.start_time).split('.')[0]
             hours, minutes, seconds = time.split(':')
-            info('Working on \'{}\' for {}h {}m {}s'
-                 .format(task.name, hours, minutes, seconds))
+            print(_p('Working on \'{}\' for {}h {}m {}s'
+                 .format(task.name, hours, minutes, seconds)))
             return True
-        info('No task running')
+        print('No task running')
         return False
 
     def start(self):
@@ -398,7 +398,7 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
         table_data.append(row)
 
     if len(tasks) == 0:
-        info('Nothing to show for %s' % title)
+        print(_p('Nothing to show for %s' % title))
         return
 
     title = ' showing: %s ' % title
@@ -409,9 +409,9 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
         table.outer_border = False
         table.inner_column_border = False
 
-    info('')
+    print('')
     print(table.table)
-    info('\nTotal work time: {time}'.format(time=strfdelta(tot_work_time)))
+    print(_p('\nTotal work time: {time}'.format(time=strfdelta(tot_work_time))))
 
 
 def __is_a_month(string):
@@ -522,24 +522,17 @@ def guess_task_id_from_string(task_name):
     return guess_id
 
 
-def do_config(args):
-    '''Wrapper for configuration changes'''
-    if args['data.directory']:
-        CONFIGURATION.data_directory = args['<fullpath>']
-
-    elif args['autocomplete']:
-        autocomplete()
-    else:
-        pass
-
-
 def main():
     global RAFFAELLO
     args = docopt.docopt(__doc__)
 
+    if args['autocomplete']:
+        autocomplete()
+        return
+
     if args['do']:
         if Task.get_running():
-            info("Another task is already running")
+            print("Another task is already running")
             return
 
         if args['<name>']:
@@ -557,7 +550,7 @@ def main():
                 Task(name, start_str=args['--time']).start()
 
             task = Task.get_running()
-            info("task '%s' started at %s" % (task.name, task.start_time))
+            print(_p("task '%s' started at %s" % (task.name, task.start_time)))
 
             return
 
@@ -571,7 +564,7 @@ def main():
 
         Task(name, start_str=args['--time']).start()
         Task.stop()
-        info("added task '%s' to today's list" % name)
+        print(_p("added task '%s' to today's list" % name))
 
         if task:
             task.start()
@@ -581,7 +574,7 @@ def main():
     if args['edit']:
         task = Task.get_running()
         if not task:
-            info('No task running')
+            print('No task running')
             return
 
         edit_command = '{editor} {filename}'\
@@ -590,20 +583,27 @@ def main():
         os.system(edit_command)
         return
 
+    if args['config']:
+        edit_command = '{editor} {filename}'\
+                       .format(editor=os.getenv('EDITOR'),
+                               filename=os.path.join(os.path.expanduser('~'), '.letsdo'))
+        os.system(edit_command)
+        return
+
     if args['cancel']:
         content = Task.cancel()
-        info('Cancelled task')
-        info(content)
+        print('Cancelled task')
+        print(_p(content))
         return
 
     if args['stop']:
         task = Task.get_running()
         if not task:
-            info('no task running')
+            print('no task running')
             return
 
         work_time = Task.stop(' '.join(args['<time>']))
-        info("stopped task '%s' after %s hours, %s minutes" % (task.name, work_time[0], work_time[1]))
+        print(_p("stopped task '%s' after %s hours, %s minutes" % (task.name, work_time[0], work_time[1])))
         return
 
     if args['goto']:
@@ -622,26 +622,18 @@ def main():
         task = Task.get_running()
         if task:
             work_time = Task.stop()
-            info("stopped task '%s' after %s hours, %s minutes" % (task.name, work_time[0], work_time[1]))
+            print(_p("stopped task '%s' after %s hours, %s minutes" % (task.name, work_time[0], work_time[1])))
 
         task = Task(name)
         task.start()
-        info("Task '%s' started at %s" % (task.name, task.start_time))
+        print(_p("Task '%s' started at %s" % (task.name, task.start_time)))
         return
 
     if args['see']:
-        if args['config']:
-            print(CONFIGURATION)
-            return
-
         if args['<query>']:
             args['<query>'] = ' '.join(args['<query>'])
 
         return do_report(args)
-
-    if args['config']:
-        do_config(args)
-        return
 
     # Default, if a task is running show it
     if Task.get_running():

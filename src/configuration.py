@@ -10,6 +10,7 @@ class Configuration(object):
     '''Client customization class'''
     def __init__(self):
         self._data_directory = os.path.expanduser('~')
+        self._color_enabled = True
 
         self.conf_file_path = os.path.join(os.path.expanduser('~'), '.letsdo')
         if not os.path.exists(self.conf_file_path):
@@ -17,7 +18,8 @@ class Configuration(object):
             self.__save()
 
         self.configuration = yaml.load(open(self.conf_file_path).read())
-        self.data_directory = os.path.expanduser(self.__get_value('DATA_DIRECTORY'))
+        self.data_directory = os.path.expanduser(self.__get_value('DATA_DIRECTORY', None))
+        self.color_enabled = self.__get_value('COLOR_ENABLED', False)
 
         if not self.data_directory or not os.path.exists(self.data_directory):
             LOGGER.fatal("could not save task data in %s", self.data_directory)
@@ -25,19 +27,18 @@ class Configuration(object):
             self.data_fullpath = os.path.join(self.data_directory, 'letsdo-data')
             self.task_fullpath = os.path.join(self.data_directory, 'letsdo-task')
 
-    def __get_value(self, key):
+    def __get_value(self, key, default):
         try:
             value = self.configuration[key]
-            if value:
-                value = os.path.expanduser(value)
         except KeyError as error:
             LOGGER.debug('could not find key "%s": %s"',
                          key, error)
-            return None
+            return default
         return value
 
     def __save(self):
-        data = {"DATA_DIRECTORY": self.data_directory}
+        data = {"COLOR_ENABLED": self.color_enabled},
+                "DATA_DIRECTORY": self.data_directory}
         with open(self.conf_file_path, 'w') as cfile:
             yaml.dump(data, cfile, default_flow_style=False)
 
@@ -53,6 +54,15 @@ class Configuration(object):
             return
 
         self._data_directory = directory
+        self.__save()
+
+    @property
+    def color_enabled(self):
+        return self._color_enabled
+
+    @color_enabled.setter
+    def color_enabled(self, enabled):
+        self._color_enabled = enabled
         self.__save()
 
     def __repr__(self):
@@ -78,7 +88,7 @@ def autocomplete():
 
     Letsdo can copy the script in your $HOME for you if you replay with "Y" at
     this message, otherwise the letsdo_completion file will be printed out here
-    and it is up to you to copy and save it as said above.
+    and it is up to you to copy and save it as said above. 
 
     Do you want Letsdo to copy the script in your $HOME directory? [Y/n]
     '''
