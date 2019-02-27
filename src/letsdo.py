@@ -390,7 +390,6 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
             end = task.end_time.strftime('%H:%M')
             interval = '{} -> {}'.format(begin, end)
 
-
             row = [_p(task.tid), _p(task.name), _p(time), _p(interval), _p(last_time)]
         else:
             row = [_p(task.tid), _p(task.name), _p(time), _p(last_time)]
