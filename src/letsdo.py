@@ -402,6 +402,7 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
         return
 
     title = ' showing: %s ' % title
+    table_data.append(['-', 'TOTAL TIME', _p(strfdelta(tot_work_time)), '-'])
     if ascii:
         table = AsciiTable(table_data, title)
     else:
@@ -411,7 +412,6 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
 
     info('')
     print(table.table)
-    info('\nTotal work time: {time}'.format(time=strfdelta(tot_work_time)))
 
 
 def __is_a_month(string):
