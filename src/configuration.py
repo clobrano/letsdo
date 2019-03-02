@@ -37,7 +37,7 @@ class Configuration(object):
         return value
 
     def __save(self):
-        data = {"COLOR_ENABLED": self.color_enabled}, "DATA_DIRECTORY": self.data_directory}
+        data = {"COLOR_ENABLED": self.color_enabled, "DATA_DIRECTORY": self.data_directory}
         with open(self.conf_file_path, 'w') as cfile:
             yaml.dump(data, cfile, default_flow_style=False)
 
