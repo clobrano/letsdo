@@ -17,7 +17,7 @@ class Configuration(object):
             LOGGER.debug('creating config file "%s".', self.conf_file_path)
             self.__save()
 
-        self.configuration = yaml.load(open(self.conf_file_path).read())
+        self.configuration = yaml.safe_load(open(self.conf_file_path).read())
         self.data_directory = os.path.expanduser(self.__get_value('DATA_DIRECTORY', None))
         self.color_enabled = self.__get_value('COLOR_ENABLED', False)
 
