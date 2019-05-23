@@ -550,7 +550,8 @@ def main():
                 Task(name, start_str=args['--time']).start()
 
             task = Task.get_running()
-            print(_p("task '%s' started at %s" % (task.name, task.start_time)))
+            start_time_str = task.start_time.strftime('%Y-%m-%d %H:%M')
+            print(_p("Task [%s] started at %s" % (task.name, start_time_str)))
 
             return
 
