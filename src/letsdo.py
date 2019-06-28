@@ -386,14 +386,23 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
 
         time = strfdelta(task.work_time, fmt='{H:2}h {M:02}m')
 
+        # smart break message at boundaries
+        task_name = task.name
+        if len(task.name) > 53:
+            word_break = task_name.find(" ", 45)
+            if word_break == -1:
+                word_break = 45
+            task_name = task_name[:word_break] + "\n ⤷" + task_name[word_break:]
+
+
         if detailed:
             begin = task.start_time.strftime('%H:%M')
             end = task.end_time.strftime('%H:%M')
             interval = '{} -> {}'.format(begin, end)
 
-            row = [_p(task.tid), _p(task.name), _p(time), _p(interval), _p(last_time)]
+            row = [_p(task.tid), _p(task_name), _p(time), _p(interval), _p(last_time)]
         else:
-            row = [_p(task.tid), _p(task.name), _p(time), _p(last_time)]
+            row = [_p(task.tid), _p(task_name), _p(time), _p(last_time)]
 
         table_data.append(row)
 
