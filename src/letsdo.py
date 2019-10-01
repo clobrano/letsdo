@@ -368,9 +368,9 @@ def group_task_by(tasks, group=None):
 def report_task(tasks, title=None, detailed=False, ascii=False):
     '''Display table with tasks data'''
 
-    table_data = [['ID', 'Description', 'Work time', 'Last update']]
+    table_data = [['ID', 'Last update', 'Work time', 'Description']]
     if detailed:
-        table_data = [['ID', 'Description', 'Work time', 'Interval', 'Last update']]
+        table_data = [['ID', 'Last update', 'Work time', 'Interval', 'Description']]
         tasks = sorted(tasks, key=lambda x: x.end_time, reverse= True)
 
     tot_work_time = timedelta()
@@ -400,9 +400,9 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
             end = task.end_time.strftime('%H:%M')
             interval = '{} -> {}'.format(begin, end)
 
-            row = [_p(task.tid), _p(task_name), _p(time), _p(interval), _p(last_time)]
+            row = [_p(task.tid), _p(last_time), _p(time), _p(interval), _p(task_name)]
         else:
-            row = [_p(task.tid), _p(task_name), _p(time), _p(last_time)]
+            row = [_p(task.tid), _p(last_time), _p(time), _p(task_name)]
 
         table_data.append(row)
 
