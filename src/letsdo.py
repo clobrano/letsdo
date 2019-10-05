@@ -368,9 +368,9 @@ def group_task_by(tasks, group=None):
 def report_task(tasks, title=None, detailed=False, ascii=False):
     '''Display table with tasks data'''
 
-    table_data = [['ID', 'Description', 'Work time', 'Last update']]
+    table_data = [['ID', 'Last update', 'Work time', 'Description']]
     if detailed:
-        table_data = [['ID', 'Description', 'Work time', 'Interval', 'Last update']]
+        table_data = [['ID', 'Last update', 'Work time', 'Interval', 'Description']]
         tasks = sorted(tasks, key=lambda x: x.end_time, reverse= True)
 
     tot_work_time = timedelta()
@@ -400,9 +400,9 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
             end = task.end_time.strftime('%H:%M')
             interval = '{} -> {}'.format(begin, end)
 
-            row = [_p(task.tid), _p(task_name), _p(time), _p(interval), _p(last_time)]
+            row = [_p(task.tid), _p(last_time), _p(time), _p(interval), _p(task_name)]
         else:
-            row = [_p(task.tid), _p(task_name), _p(time), _p(last_time)]
+            row = [_p(task.tid), _p(last_time), _p(time), _p(task_name)]
 
         table_data.append(row)
 
@@ -410,14 +410,28 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
         print(_p('Nothing to show for %s' % title))
         return
 
-    title = ' showing: %s ' % title
-    table_data.append(['-', 'TOTAL TIME', _p(strfdelta(tot_work_time, fmt='{D:2}d {H:2}h {M:02}m')), '-'])
+    if title:
+        title = ' %s ' % title
+
+    if len(tasks) > 1:
+        recap = 'activities,'
+    else:
+        recap = 'activity,'
+    table_data.append([len(tasks), recap, 'total time:', _p(strfdelta(tot_work_time, fmt='{D:2}d {H:2}h {M:02}m'))])
+
     if ascii:
         table = AsciiTable(table_data, title)
     else:
         table = SingleTable(table_data, title)
-        table.outer_border = False
-        table.inner_column_border = False
+
+    table.outer_border = True
+    table.inner_column_border = False
+    table.inner_heading_row_border = True
+    table.inner_footing_row_border = True
+    table.justify_columns[0] = 'right'
+    table.justify_columns[1] = 'center'
+    table.justify_columns[2] = 'center'
+    table.justify_columns[3] = 'left'
 
     print('')
     print(table.table)
