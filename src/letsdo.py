@@ -411,7 +411,7 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
         return
 
     title = ' showing: %s ' % title
-    table_data.append(['-', 'TOTAL TIME', _p(strfdelta(tot_work_time)), '-'])
+    table_data.append(['-', 'TOTAL TIME', _p(strfdelta(tot_work_time, fmt='{D:2}d {H:2}h {M:02}m')), '-'])
     if ascii:
         table = AsciiTable(table_data, title)
     else:
