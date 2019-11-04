@@ -377,6 +377,7 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
     for task in tasks:
         tot_work_time += task.work_time
 
+    for task in tasks:
         last_time = ''
         if task.last_end_date:
             if task.tid != 'R':
@@ -384,7 +385,10 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
             else:
                 last_time = task.start_time.strftime('%Y-%m-%d %H:%M')
 
-        time = strfdelta(task.work_time, fmt='{H:2}h {M:02}m')
+        time = '{} (%{})'.format(
+            strfdelta(task.work_time, fmt='{H:2}h {M:02}m'),
+            int((task.work_time/tot_work_time) * 100)
+        )
 
         # smart break message at boundaries
         task_name = task.name
