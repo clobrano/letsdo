@@ -406,7 +406,7 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
             else:
                 last_time = task.start_time.strftime("%Y-%m-%d %H:%M")
 
-        time = "{} (%{})".format(
+        time = "{} (%{:2d})".format(
             strfdelta(task.work_time, fmt="{H:2}h {M:02}m"),
             int((task.work_time / tot_work_time) * 100),
         )
@@ -461,7 +461,7 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
     table.inner_footing_row_border = True
     table.justify_columns[0] = "right"
     table.justify_columns[1] = "center"
-    table.justify_columns[2] = "center"
+    table.justify_columns[2] = "right"
     table.justify_columns[3] = "left"
 
     print("")
