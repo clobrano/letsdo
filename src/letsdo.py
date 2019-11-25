@@ -120,7 +120,7 @@ class Task(object):
         if stop_time_str:
             stop_time = str2datetime(stop_time_str)
             if stop_time < task.start_time:
-                LOGGER.warn(
+                LOGGER.warning(
                     "Given stop time (%s) is more recent than start time (%s)",
                     stop_time,
                     task.start_time,
@@ -194,7 +194,7 @@ class Task(object):
             LOGGER.error("Could not create new task")
             return False
 
-        LOGGER.warn("Another task is running")
+        LOGGER.warning("Another task is running")
         return True
 
     def __hash(self):
@@ -382,7 +382,7 @@ def group_task_by(tasks, group=None):
                 task_map[date] = [task]
         return task_map
 
-    LOGGER.warn("Could not group tasks by: %s", group)
+    LOGGER.warning("Could not group tasks by: %s", group)
     return tasks
 
 
