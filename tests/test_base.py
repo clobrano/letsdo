@@ -19,9 +19,6 @@ class TestLetsdo(unittest.TestCase):
     def setUp(self):
         test_configuration = \
 '''DATA_DIRECTORY: ~/
-TODO_FILE: ~/footodo.txt
-TODO_START_TAG: ''
-TODO_STOP_TAG: ''
 '''
         self.test_conf_file = os.path.expanduser(os.path.join('~', '.letsdo'))
         self.user_conf_bak = os.path.expanduser(os.path.join('~', '.letsdo.bak'))

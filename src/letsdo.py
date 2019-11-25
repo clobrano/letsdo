@@ -40,12 +40,10 @@ from log import LOGGER, RAFFAELLO
 from configuration import Configuration, autocomplete
 from timetoolkit import str2datetime, strfdelta
 
-CONFIGURATION = Configuration()
-
 
 def _p(msg):
     """Colorize message"""
-    if msg and CONFIGURATION.color_enabled and RAFFAELLO:
+    if msg and Configuration().color_enabled and RAFFAELLO:
         return RAFFAELLO.paint(str(msg))
     return msg
 
@@ -95,7 +93,7 @@ class Task(object):
 
     @staticmethod
     def __is_running():
-        exists = os.path.exists(CONFIGURATION.task_fullpath)
+        exists = os.path.exists(Configuration().task_fullpath)
         LOGGER.debug("Is a task running? {}".format(exists))
         return exists
 
@@ -103,7 +101,7 @@ class Task(object):
     def get_running():
         """Check whether a task is running"""
         if Task.__is_running():
-            with open(CONFIGURATION.task_fullpath, "r") as cfile:
+            with open(Configuration().task_fullpath, "r") as cfile:
                 data = json.load(cfile)
                 return Task(data["name"], data["start"])
         return None
@@ -143,14 +141,14 @@ class Task(object):
         )
 
         try:
-            with open(CONFIGURATION.data_fullpath, mode="a") as cfile:
+            with open(Configuration().data_fullpath, mode="a") as cfile:
                 cfile.writelines(report_line)
         except IOError as error:
             LOGGER.error("Could not save report: %s", error)
             return None
 
         # Delete current task data to mark it as stopped
-        os.remove(CONFIGURATION.task_fullpath)
+        os.remove(Configuration().task_fullpath)
 
         hours, minutes = work_time_str.split(":")
         return (hours, minutes)
@@ -160,9 +158,9 @@ class Task(object):
         """Interrupt task without saving it in history"""
         task = Task.get_running()
         if task:
-            with open(CONFIGURATION.task_fullpath, "r") as cfile:
+            with open(Configuration().task_fullpath, "r") as cfile:
                 content = cfile.read()
-            os.remove(CONFIGURATION.task_fullpath)
+            os.remove(Configuration().task_fullpath)
             return content
         return None
 
@@ -203,7 +201,7 @@ class Task(object):
 
     def __create(self):
         try:
-            with open(CONFIGURATION.task_fullpath, "w") as cfile:
+            with open(Configuration().task_fullpath, "w") as cfile:
                 json_data = """{
     "name": %s,
     "start": %s
@@ -317,7 +315,7 @@ def get_tasks(condition=None):
     tid = 0
     uids = dict()
     try:
-        with open(CONFIGURATION.data_fullpath) as cfile:
+        with open(Configuration().data_fullpath) as cfile:
             for line in reversed(cfile.readlines()):
                 fields = line.strip().split(",")
                 if not fields[1]:
@@ -657,7 +655,7 @@ def main():
             return
 
         edit_command = "{editor} {filename}".format(
-            editor=os.getenv("EDITOR"), filename=CONFIGURATION.task_fullpath
+            editor=os.getenv("EDITOR"), filename=Configuration().task_fullpath
         )
         os.system(edit_command)
         return
