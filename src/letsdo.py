@@ -406,9 +406,12 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
             else:
                 last_time = task.start_time.strftime("%Y-%m-%d %H:%M")
 
+        perc = 0
+        if tot_work_time > timedelta(0):
+            perc = int((task.work_time / tot_work_time) * 100)
+
         time = "{} (%{:2d})".format(
-            strfdelta(task.work_time, fmt="{H:2}h {M:02}m"),
-            int((task.work_time / tot_work_time) * 100),
+            strfdelta(task.work_time, fmt="{H:2}h {M:02}m"), perc
         )
 
         # smart break message at boundaries
