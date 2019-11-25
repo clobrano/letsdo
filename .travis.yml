@@ -3,6 +3,6 @@ python:
     - "3.6.8"
 install:
     - pip3 install -r requirements.txt
-    - pip3 install -U pytest
+    - pip3 install -e .
 script:
-    - pytest -v
+    - python3 -m pytest
