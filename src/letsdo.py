@@ -408,7 +408,7 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
         if tot_work_time > timedelta(0):
             perc = int((task.work_time / tot_work_time) * 100)
 
-        time = "{} (%{:2d})".format(
+        time = "{} {:2d}%".format(
             strfdelta(task.work_time, fmt="{H:2}h {M:02}m"), perc
         )
 
@@ -626,8 +626,8 @@ def main():
                 Task(name, start_str=args["--time"]).start()
 
             task = Task.get_running()
-            start_time_str = task.start_time.strftime("%Y-%m-%d %H:%M")
-            print(_p("Task [%s] started at %s" % (task.name, start_time_str)))
+            start_time_str = task.start_time.strftime("%H:%M")
+            print(_p("%s: started task \n ⤷  %s\n\n" % (start_time_str, task.name)))
 
             return
 
@@ -681,10 +681,11 @@ def main():
             return
 
         work_time = Task.stop(" ".join(args["<time>"]))
+        now = datetime.now().strftime("%H:%M")
         print(
             _p(
-                "stopped task '%s' after %s hours, %s minutes"
-                % (task.name, work_time[0], work_time[1])
+                "%s: stopped task: \n ⤷ %s\n\nafter %s hours, %s minutes\n\n"
+                % (now, task.name, work_time[0], work_time[1])
             )
         )
         return
@@ -714,7 +715,7 @@ def main():
 
         task = Task(name)
         task.start()
-        start_time_str = task.start_time.strftime("%Y-%m-%d %H:%M")
+        start_time_str = task.start_time.strftime("%H:%M")
         print(_p("Task [%s] started at %s" % (task.name, start_time_str)))
         return
 
