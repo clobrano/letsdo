@@ -9,7 +9,7 @@ try:
     from raffaello import Raffaello
     from raffaello import parse_string_request
 
-    REQUEST = r'''\+[\w\-_]+=>color197_bold \@[\w\-_]+=>color046 \#[\w\-_]+=>color202_bold \d+[ms]=>cyan_bold \d+h\s=>cyan_bold \d{2,4}-\d{2}-\d{2}=>cyan_bold \d{2,4}.\d{2}.\d{2}=>cyan_bold w\d{2}=>cyan_bold \d{2}:\d{2}=>cyan_bold'''
+    REQUEST = r'''\+[\w\-_]+=>color197 \@[\w\-_]+=>color046 \#[\w\-_]+=>color202 \d+[dms]=>color011 \d+h\s=>color011 \d{2,4}-\d{2}-\d{2}=>color011 \d{2,4}.\d{2}.\d{2}=>color011 w\d{2}=>color011 \d{2}:\d{2}=>color011'''
     RAFFAELLO = Raffaello(parse_string_request(REQUEST))
 except ImportError as error:
     RAFFAELLO = None
