@@ -400,7 +400,7 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
         last_time = ""
         if task.last_end_date:
             if task.tid != "R":
-                last_time = task.last_end_date + " w" + task.end_time.strftime("%V")
+                last_time = task.end_time.strftime("%d-%m-%Y w%V")
             else:
                 last_time = task.start_time.strftime("%Y-%m-%d %H:%M")
 
