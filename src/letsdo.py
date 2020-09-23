@@ -609,7 +609,7 @@ def main():
     if args["do"]:
         if Task.get_running():
             print("Another task is already running")
-            return
+            return 1
 
         if args["<name>"]:
             name = " ".join(args["<name>"])
@@ -629,7 +629,7 @@ def main():
             start_time_str = task.start_time.strftime("%H:%M")
             print(_p("%s: started task \n ⤷  %s\n\n" % (start_time_str, task.name)))
 
-            return
+            return 0
 
     if args["track"]:
         name = " ".join(args["<name>"])
@@ -646,7 +646,7 @@ def main():
         if task:
             task.start()
 
-        return
+        return 0
 
     if args["edit"]:
         task = Task.get_running()
@@ -658,7 +658,7 @@ def main():
             editor=os.getenv("EDITOR"), filename=Configuration().task_fullpath
         )
         os.system(edit_command)
-        return
+        return 0
 
     if args["config"]:
         edit_command = "{editor} {filename}".format(
@@ -666,19 +666,19 @@ def main():
             filename=os.path.join(os.path.expanduser("~"), ".letsdo"),
         )
         os.system(edit_command)
-        return
+        return 0
 
     if args["cancel"]:
         content = Task.cancel()
         print("Cancelled task")
         print(_p(content))
-        return
+        return 0
 
     if args["stop"]:
         task = Task.get_running()
         if not task:
             print("no task running")
-            return
+            return 0
 
         work_time = Task.stop(" ".join(args["<time>"]))
         now = datetime.now().strftime("%H:%M")
@@ -688,7 +688,7 @@ def main():
                 % (now, task.name, work_time[0], work_time[1])
             )
         )
-        return
+        return 0
 
     if args["goto"]:
         name = " ".join(args["<newtask>"])
@@ -699,7 +699,7 @@ def main():
 
             if not tasks:
                 LOGGER.error("could not find tasks id %s", tid)
-                return
+                return 1
 
             name = tasks[0].name
 
@@ -717,7 +717,7 @@ def main():
         task.start()
         start_time_str = task.start_time.strftime("%H:%M")
         print(_p("Task [%s] started at %s" % (task.name, start_time_str)))
-        return
+        return 0
 
     if args["see"]:
         if args["<query>"]:
@@ -728,7 +728,7 @@ def main():
     # Default, if a task is running show it
     if Task.get_running():
         Task.status()
-        return
+        return 0
 
     # Default do_report
     if not args["<name>"]:
