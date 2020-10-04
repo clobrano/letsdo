@@ -6,7 +6,7 @@ Setuptool configuration for letsdo
 import os
 from setuptools import setup, find_packages
 
-__version__ = '0.6.3'
+__version__ = '0.7.0'
 
 # Utility function to read the README file.
 # Used for the long_description.  It's nice, because now 1) we have a top level
@@ -33,7 +33,7 @@ setup(name='letsdo',
       description='Time tracker for Command Line',
       entry_points={'console_scripts': ['lets=letsdo:main', 'letsdo=letsdo:main']},
       include_package_data=True,
-      install_requires=['docopt', 'PyYaml', 'terminaltables', 'parsedatetime'],
+      install_requires=['docopt', 'PyYaml', 'terminaltables', 'parsedatetime', 'raffaello'],
       keywords=['productivity', 'GTD', 'time tracker'],
       license="MIT",
       long_description=long_description(),

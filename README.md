@@ -62,14 +62,6 @@ $ lets do +myproject write a good readme
 task '+myproject write a good readme' started at 2020-10-04 11:38:00
 ~~~
 
-With this configuration there isn't much difference between contexts, projects and other words, but if you're keen to install another package named **Raffaello**, you can then enable **colors**
-
-```
-$ pip install raffaello
-```
-
-![letsdo with colors](img/color.png)
-
 You can **edit** the current task's name or starting time, **cancel** it or **stop** it.
 
 ~~~sh
