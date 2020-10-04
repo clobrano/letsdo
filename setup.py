@@ -6,7 +6,7 @@ Setuptool configuration for letsdo
 import os
 from setuptools import setup, find_packages
 
-__version__ = '0.7.0'
+__version__ = '0.7.1'
 
 # Utility function to read the README file.
 # Used for the long_description.  It's nice, because now 1) we have a top level
@@ -43,5 +43,5 @@ setup(name='letsdo',
       url='https://github.com/clobrano/letsdo',
       version=__version__,
       classifiers=[
-          "Development Status :: 4 - Beta",
+          "Development Status :: 5 - Production/Stable",
           "Topic :: Utilities", ])
