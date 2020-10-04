@@ -1,4 +1,4 @@
-[![Snap Status](https://github.com/snapcore/snap-store-badges/blob/master/EN/%5BEN%5D-snap-store-black-uneditable%401x.png)](https://build.snapcraft.io/user/clobrano/letsdo)
+[![Snap Status](https://github.com/snapcore/snap-store-badges/blob/master/EN/%5BEN%5D-snap-store-black-uneditable%401x.png)](https://snapcraft.io/letsdo)
 [![PyPI version](https://badge.fury.io/py/letsdo.svg)](https://badge.fury.io/py/letsdo)
 [![Build Status](https://travis-ci.org/clobrano/letsdo.svg?branch=master)](https://travis-ci.org/clobrano/letsdo)
 # Letsdo, the CLI time-tracker
