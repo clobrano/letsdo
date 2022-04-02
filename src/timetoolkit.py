@@ -1,7 +1,8 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import re
 from string import Formatter
 import parsedatetime as pdt
+
 
 def strfdelta(tdelta, fmt='{H:2}h {M:02}m', inputtype='timedelta'):
     """Convert a datetime.timedelta object or a regular number to a custom-
@@ -100,14 +101,14 @@ def str2datetime(string):
         string = m[0]
         year_str = datetime.today().strftime('%Y')
         return datetime.strptime(year_str + '-' + string,
-                                          '%Y-%m-%d %H:%M')
+                                 '%Y-%m-%d %H:%M')
 
     m = re.findall(r'\d{2}-\d{2} \d{2}.\d{2}', string)
     if len(m) != 0:
         string = m[0]
         year_str = datetime.today().strftime('%Y')
         return datetime.strptime(year_str + '-' + string,
-                                          '%Y-%m-%d %H:%M')
+                                 '%Y-%m-%d %H:%M')
 
     m = re.findall(r'\d{2}-\d{2}', string)
     if len(m) != 0:
@@ -122,28 +123,28 @@ def str2datetime(string):
         string = m[0]
         today_str = datetime.today().strftime('%Y-%m-%d')
         return datetime.strptime(today_str + ' ' + string,
-                                          '%Y-%m-%d %H:%M')
+                                 '%Y-%m-%d %H:%M')
 
     m = re.findall(r'\d:\d{2}', string)
     if len(m) != 0:
         string = m[0]
         today_str = datetime.today().strftime('%Y-%m-%d')
         return datetime.strptime(today_str + ' ' + string,
-                                          '%Y-%m-%d %H:%M')
+                                 '%Y-%m-%d %H:%M')
 
     m = re.findall(r'\d{2}.\d{2}', string)
     if len(m) != 0:
         string = m[0]
         today_str = datetime.today().strftime('%Y-%m-%d')
         return datetime.strptime(today_str + ' ' + string,
-                                          '%Y-%m-%d %H.%M')
+                                 '%Y-%m-%d %H.%M')
 
     m = re.findall(r'\d.\d{2}', string)
     if len(m) != 0:
         string = m[0]
         today_str = datetime.today().strftime('%Y-%m-%d')
         return datetime.strptime(today_str + ' ' + string,
-                                          '%Y-%m-%d %H.%M')
+                                 '%Y-%m-%d %H.%M')
 
     cal = pdt.Calendar()
     res, ok = cal.parseDT(string, datetime.now())
@@ -151,6 +152,3 @@ def str2datetime(string):
         return res
 
     raise ValueError('Date format not recognized: %s' % string)
-
-
-
