@@ -59,92 +59,67 @@ def format_h_m(string):
 
 
 def str2datetime(string):
-    #if string == 'yesterday':
+    # if string == 'yesterday':
     #    return = datetime.now() - timedelta(1)
 
-    m = re.findall(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}', string)
-    if len(m) != 0:
-        string = m[0]
-        return datetime.strptime(string, '%Y-%m-%d %H:%M')
+    supported_fulldates_fmt = (
+        (r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}', '%Y-%m-%d %H:%M'),
+        (r'\d{4}-\d{2}-\d{2} \d{2}.\d{2}', '%Y-%m-%d %H:%M'),
+        (r'\d{4}/\d{2}/\d{2} \d{2}:\d{2}', '%Y/%m/%d %H:%M'),
+        (r'\d{4}/\d{2}/\d{2} \d{2}.\d{2}', '%Y/%m/%d %H:%M'),
+        (r'\d{2}/\d{2}/\d{2} \d{2}:\d{2}', '%y/%m/%d %H:%M'),
+    )
 
-    m = re.findall(r'\d{4}-\d{2}-\d{2} \d{2}.\d{2}', string)
-    if len(m) != 0:
-        string = m[0]
-        return datetime.strptime(string, '%Y-%m-%d %H.%M')
+    for in_fmt, out_fmt in supported_fulldates_fmt:
+        m = re.findall(in_fmt, string)
+        if len(m) != 0:
+            string = m[0]
+            return datetime.strptime(string, out_fmt)
 
-    m = re.findall(r'\d{4}/\d{2}/\d{2} \d{2}:\d{2}', string)
-    if len(m) != 0:
-        string = m[0]
-        return datetime.strptime(string, '%Y/%m/%d %H:%M')
+    # short year fmt: MM-DD HH:MM
+    supported_short_year_fulldate_fmt = (
+        (r'\d{2}-\d{2} \d{2}:\d{2}', '%Y-%m-%d %H:%M'),
+        (r'\d{2}-\d{2} \d{2}.\d{2}', '%Y-%m-%d %H:%M'),
+        (r'\d{2}/\d{2} \d{2}:\d{2}', '%Y/%m/%d %H:%M'),
+        (r'\d{2}/\d{2} \d{2}.\d{2}', '%Y/%m/%d %H:%M')
+    )
+    for in_fmt, out_fmt in supported_short_year_fulldate_fmt:
+        m = re.findall(in_fmt, string)
+        if len(m) != 0:
+            string = m[0]
+            year_str = datetime.today().strftime('%Y')
+            return datetime.strptime(year_str + '-' + string,
+                                     out_fmt)
 
-    m = re.findall(r'\d{4}/\d{2}/\d{2} \d{2}.\d{2}', string)
-    if len(m) != 0:
-        string = m[0]
-        return datetime.strptime(string, '%Y/%m/%d %H.%M')
+    # year only dates
+    supported_year_only_date_fmt = (
+        (r'\d{4}-\d{2}-\d{2}', '%Y-%m-%d %H:%M'),
+        (r'\d{4}/\d{2}/\d{2}', '%Y/%m/%d %H:%M'),
+        (r'\d{2}-\d{2}-\d{2}', '%y-%m-%d %H:%M'),
+        (r'\d{2}/\d{2}/\d{2}', '%y/%m/%d %H:%M'),
+    )
+    for in_fmt, out_fmt in supported_year_only_date_fmt:
+        m = re.findall(in_fmt, string)
+        if len(m) != 0:
+            string = m[0]
+            now_str = datetime.now().strftime('%H:%M')
+            return datetime.strptime(string + ' ' + now_str,
+                                     out_fmt)
 
-    m = re.findall(r'\d{4}-\d{2}-\d{2}', string)
-    if len(m) != 0:
-        string = m[0]
-        now_str = datetime.now().strftime('%H:%M')
-        return datetime.strptime(string + ' ' + now_str,
-                                          '%Y-%m-%d %H:%M')
-
-    m = re.findall(r'\d{4}/\d{2}/\d{2}', string)
-    if len(m) != 0:
-        string = m[0]
-        now_str = datetime.now().strftime('%H:%M')
-        return datetime.strptime(string + ' ' + now_str,
-                                          '%Y/%m/%d %H:%M')
-
-    m = re.findall(r'\d{2}-\d{2} \d{2}:\d{2}', string)
-    if len(m) != 0:
-        string = m[0]
-        year_str = datetime.today().strftime('%Y')
-        return datetime.strptime(year_str + '-' + string,
-                                 '%Y-%m-%d %H:%M')
-
-    m = re.findall(r'\d{2}-\d{2} \d{2}.\d{2}', string)
-    if len(m) != 0:
-        string = m[0]
-        year_str = datetime.today().strftime('%Y')
-        return datetime.strptime(year_str + '-' + string,
-                                 '%Y-%m-%d %H:%M')
-
-    m = re.findall(r'\d{2}-\d{2}', string)
-    if len(m) != 0:
-        string = m[0]
-        year_str = datetime.today().strftime('%Y')
-        now_str = datetime.now().strftime('%H:%M')
-        return datetime.strptime(
-            year_str + '-' + string + ' ' + now_str, '%Y-%m-%d %H:%M')
-
-    m = re.findall(r'\d{2}:\d{2}', string)
-    if len(m) != 0:
-        string = m[0]
-        today_str = datetime.today().strftime('%Y-%m-%d')
-        return datetime.strptime(today_str + ' ' + string,
-                                 '%Y-%m-%d %H:%M')
-
-    m = re.findall(r'\d:\d{2}', string)
-    if len(m) != 0:
-        string = m[0]
-        today_str = datetime.today().strftime('%Y-%m-%d')
-        return datetime.strptime(today_str + ' ' + string,
-                                 '%Y-%m-%d %H:%M')
-
-    m = re.findall(r'\d{2}.\d{2}', string)
-    if len(m) != 0:
-        string = m[0]
-        today_str = datetime.today().strftime('%Y-%m-%d')
-        return datetime.strptime(today_str + ' ' + string,
-                                 '%Y-%m-%d %H.%M')
-
-    m = re.findall(r'\d.\d{2}', string)
-    if len(m) != 0:
-        string = m[0]
-        today_str = datetime.today().strftime('%Y-%m-%d')
-        return datetime.strptime(today_str + ' ' + string,
-                                 '%Y-%m-%d %H.%M')
+    # hour only dates
+    supported_hour_only_date_fmt = (
+        (r'\d{2}:\d{2}', '%Y-%m-%d %H:%M'),
+        (r'\d{2}.\d{2}', '%Y-%m-%d %H.%M'),
+        (r'\d:\d{2}', '%Y-%m-%d %H:%M'),
+        (r'\d.\d{2}', '%Y-%m-%d %H.%M'),
+    )
+    for in_fmt, out_fmt in supported_hour_only_date_fmt:
+        m = re.findall(in_fmt, string)
+        if len(m) != 0:
+            string = m[0]
+            today_str = datetime.today().strftime('%Y-%m-%d')
+            return datetime.strptime(today_str + ' ' + string,
+                                     out_fmt)
 
     cal = pdt.Calendar()
     res, ok = cal.parseDT(string, datetime.now())
