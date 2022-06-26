@@ -219,6 +219,12 @@ class TestLetsdo(unittest.TestCase):
         Task('foo task').start()
         self.assertTrue(Task.status())
 
+    def test_cancel_running_task(self):
+        Task('foo task').start()
+        content = Task.cancel()
+        self.assertFalse(os.path.exists(self.conf.task_fullpath))
+        self.assertIn("foo task", content)
+
 
 if __name__ == '__main__':
     unittest.main()
