@@ -225,6 +225,25 @@ class TestLetsdo(unittest.TestCase):
         self.assertFalse(os.path.exists(self.conf.task_fullpath))
         self.assertIn("foo task", content)
 
+    def test_task_representation(self):
+        task = Task("task description",
+                    start_str="2022-06-05 11:34",
+                    end_str="2022-06-05 12:34")
+        representation = f"{task}"
+        self.assertIn(
+            "- 2022-06-05| 1:00:00 (11:34 -> 12:34) - task description",
+            representation)
+
+    def test_task_representation_with_tid(self):
+        task = Task("task description",
+                    start_str="2022-06-05 11:34",
+                    end_str="2022-06-05 12:34", tid=123)
+        representation = f"{task}"
+        self.assertIn("[123:", representation)  # head of the massage
+        self.assertIn(
+            "- 2022-06-05| 1:00:00 (11:34 -> 12:34) - task description",
+            representation)
+
 
 if __name__ == '__main__':
     unittest.main()
