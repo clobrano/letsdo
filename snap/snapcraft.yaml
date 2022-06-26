@@ -33,6 +33,4 @@ parts:
       rm -r $SNAPCRAFT_PART_INSTALL/usr/lib/python3.9/distutils
       cp -r /usr/lib/python3.9/distutils/ $SNAPCRAFT_PART_INSTALL/usr/lib/python3.9/
       snapcraftctl build
-    python-version: python3
-    
 
