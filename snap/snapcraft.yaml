@@ -19,10 +19,20 @@ apps:
 
 parts:
   lets:
-    # See 'snapcraft plugins'
-    source: https://github.com/clobrano/letsdo.git
     plugin: python
+    requirements:
+      - requirements.txt
+    source: https://github.com/clobrano/letsdo.git
+    stage-packages:
+      - python3.9-venv
+    build-packages:
+      - python3.9-venv
+    build-environment:
+      - SNAPCRAFT_PYTHON_INTERPRETER: python3.9
+    override-build: |
+      rm -r $SNAPCRAFT_PART_INSTALL/usr/lib/python3.9/distutils
+      cp -r /usr/lib/python3.9/distutils/ $SNAPCRAFT_PART_INSTALL/usr/lib/python3.9/
+      snapcraftctl build
     python-version: python3
-    requirements: requirements.txt
-
+    
 
