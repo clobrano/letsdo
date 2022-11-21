@@ -681,6 +681,8 @@ def main():
             return 0
 
         work_time = Task.stop(" ".join(args["<time>"]))
+        if not work_time:
+            return 1
         now = datetime.now().strftime("%H:%M")
         print(
             _p(
