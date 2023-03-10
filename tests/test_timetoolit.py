@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vi: set ft=python :
 from datetime import datetime
-from src.timetoolkit import format_h_m, strfdelta, str2datetime
+from ..src.timetoolkit import format_h_m, strfdelta, str2datetime
 
 
 def test_str2datetime():
@@ -16,10 +16,10 @@ def test_str2datetime():
     assert datetime(2022, 4, 2, nw.hour, nw.minute) == str2datetime("2022/04/02")
     assert datetime(2022, 4, 2, nw.hour, nw.minute) == str2datetime("22-04-02")
     assert datetime(2022, 4, 2, nw.hour, nw.minute) == str2datetime("22/04/02")
-    assert datetime(nw.year, nw.month, nw.day, 10 , 12) == str2datetime("10:12")
-    assert datetime(nw.year, nw.month, nw.day, 10 , 12) == str2datetime("10.12")
-    assert datetime(nw.year, nw.month, nw.day, 1 , 12) == str2datetime("1:12")
-    assert datetime(nw.year, nw.month, nw.day, 1 , 12) == str2datetime("1.12")
+    assert datetime(nw.year, nw.month, nw.day, 10, 12) == str2datetime("10:12")
+    assert datetime(nw.year, nw.month, nw.day, 10, 12) == str2datetime("10.12")
+    assert datetime(nw.year, nw.month, nw.day, 1, 12) == str2datetime("1:12")
+    assert datetime(nw.year, nw.month, nw.day, 1, 12) == str2datetime("1.12")
 
 
 def test_format_h_m():
