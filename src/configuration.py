@@ -1,42 +1,120 @@
 """
-This module manages user customization
+This module keeps the classes and function that manage user customization
 """
-from typing import Dict
-from os.path import expanduser, join
+import os
 import yaml
-
-CONFIG_FILE_NAME: str = ".letsdo"
-CONFIG_COLOR_ENABLED_DEFAULT: bool = True
-CONFIG_DATA_DIRECTORY_DEFAULT: str = "~"
-CONFIG_DATA_FILENAME: str = "letsdo-data"
-CONFIG_TASK_FILENAME: str = "letsdo-task"
+from .log import info, LOGGER
 
 
-def load(home: str = "~") -> Dict[str, str]:
+class Configuration(object):
+    """Client customization class"""
+
+    def __init__(self):
+        self._data_directory = os.path.expanduser("~")
+        self._color_enabled = True
+
+        self.conf_file_path = os.path.join(os.path.expanduser("~"), ".letsdo")
+        if not os.path.exists(self.conf_file_path):
+            LOGGER.debug('creating config file "%s".', self.conf_file_path)
+            self.__save()
+
+        self.configuration = yaml.safe_load(open(self.conf_file_path).read())
+        self.data_directory = os.path.expanduser(
+            self.__get_value("DATA_DIRECTORY", None)
+        )
+        self.color_enabled = self.__get_value("COLOR_ENABLED", False)
+
+        if not self.data_directory or not os.path.exists(self.data_directory):
+            LOGGER.fatal("could not save task data in %s", self.data_directory)
+        else:
+            self.data_fullpath = os.path.join(self.data_directory, "letsdo-data")
+            self.task_fullpath = os.path.join(self.data_directory, "letsdo-task")
+
+    def __get_value(self, key, default):
+        try:
+            value = self.configuration[key]
+        except KeyError as error:
+            LOGGER.debug('could not find key "%s": %s"', key, error)
+            return default
+        return value
+
+    def __save(self):
+        data = {
+            "COLOR_ENABLED": self.color_enabled,
+            "DATA_DIRECTORY": self.data_directory,
+        }
+        with open(self.conf_file_path, "w") as cfile:
+            yaml.dump(data, cfile, default_flow_style=False)
+
+    @property
+    def data_directory(self):
+        """returns data directory path"""
+        return self._data_directory
+
+    @data_directory.setter
+    def data_directory(self, directory):
+        if not directory or not os.path.exists(directory):
+            LOGGER.error('directory "%s" does not exists', directory)
+            return
+
+        self._data_directory = directory
+        self.__save()
+
+    @property
+    def color_enabled(self):
+        return self._color_enabled
+
+    @color_enabled.setter
+    def color_enabled(self, enabled):
+        self._color_enabled = enabled
+        self.__save()
+
+    def __repr__(self):
+        return "DATA_DIRECTORY: %s\n" % (self.data_directory)
+
+
+def autocomplete():
+    """Setup autocomplete"""
+    message = """
+    Letsdo CLI is able to suggest:
+    - command line flags
+    - contexts already used (words starting by @ in the task name)
+    - tags already used (words starting by + in the task name)
+
+    To enable this feature do either of the following:
+        - put letsdo_completion file under /etc/bash_completion.d/ for
+            system-wide autocompletion
+    or:
+        - put letsdo_completion file in your home directory and "source" it in
+            your .bashrc
+        e.g.
+            source /full/path/to/letsdo_completion
+
+    Letsdo can copy the script in your $HOME for you if you replay with "Y" at
+    this message, otherwise the letsdo_completion file will be printed out here
+    and it is up to you to copy and save it as said above. 
+
+    Do you want Letsdo to copy the script in your $HOME directory? [Y/n]
     """
-    Load configuration data from user HOME directory
-    """
 
-    conf_file_path = join(expanduser(home), CONFIG_FILE_NAME)
-    config = yaml.safe_load(open(conf_file_path).read())
+    root = os.path.abspath(os.path.dirname(__file__))
+    completion = os.path.join(root, "letsdo_scripts", "letsdo_completion")
+    if not os.path.exists(completion):
+        # probably a snap application.
+        LOGGER.warning("could not find completion file")
+        return
 
-    config["COLOR_ENABLED"] = config.get(
-            "COLOR_ENABLED", CONFIG_COLOR_ENABLED_DEFAULT)
+    info(message)
 
-    config["DATA_DIRECTORY"] = config.get(
-            "DATA_DIRECTORY", CONFIG_DATA_DIRECTORY_DEFAULT)
-    return config
-
-
-def save(data: Dict[str, str], home: str = "~") -> None:
-    conf_file_path = join(expanduser(home), CONFIG_FILE_NAME)
-    with open(conf_file_path, "w") as f:
-        yaml.dump(data, f, default_flow_style=False)
-
-
-def data_fullpath(data: Dict[str, str]) -> str:
-    return join(data["DATA_DIRECTORY"], CONFIG_DATA_FILENAME)
-
-
-def task_fullpath(data: Dict[str, str]) -> str:
-    return join(data["DATA_DIRECTORY"], CONFIG_TASK_FILENAME)
+    resp = input()
+    if resp.lower() == "y":
+        home_completion = os.path.join(os.path.expanduser("~"), ".letsdo_completion")
+        with open(home_completion, "w") as cfile:
+            cfile.writelines(open(completion).read())
+            if os.path.exists(os.path.join(home_completion)):
+                print("completion file installed")
+            else:
+                print("completion file installation failed: file not found")
+    else:
+        print("--- CUT HERE ----------------------------------------------------")
+        print(open(completion).read())

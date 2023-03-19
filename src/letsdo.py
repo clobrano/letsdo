@@ -36,9 +36,9 @@ import json
 from datetime import datetime, timedelta
 import docopt
 from terminaltables import SingleTable, AsciiTable
-from log import LOGGER, RAFFAELLO
-from configuration import Configuration, autocomplete
-from timetoolkit import str2datetime, strfdelta
+from .log import LOGGER, RAFFAELLO
+from .configuration import Configuration, autocomplete
+from .timetoolkit import str2datetime, strfdelta
 
 
 def _p(msg):
@@ -86,7 +86,7 @@ class Task(object):
 
     @property
     def last_end_date(self):
-        """ The last day when this Task was active"""
+        """The last day when this Task was active"""
         if self.end_time:
             return self.end_time.strftime("%Y-%m-%d")
         return None
@@ -408,9 +408,7 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
         if tot_work_time > timedelta(0):
             perc = int((task.work_time / tot_work_time) * 100)
 
-        time = "{} {:2d}%".format(
-            strfdelta(task.work_time, fmt="{H:2}h {M:02}m"), perc
-        )
+        time = "{} {:2d}%".format(strfdelta(task.work_time, fmt="{H:2}h {M:02}m"), perc)
 
         # smart break message at boundaries
         task_name = task.name

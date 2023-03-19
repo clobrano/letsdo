@@ -4,7 +4,7 @@ from string import Formatter
 import parsedatetime as pdt
 
 
-def strfdelta(tdelta, fmt='{H:2}h {M:02}m', inputtype='timedelta'):
+def strfdelta(tdelta, fmt="{H:2}h {M:02}m", inputtype="timedelta"):
     """Convert a datetime.timedelta object or a regular number to a custom-
     formatted string, just like the stftime() method does for datetime.datetime
     objects.
@@ -28,23 +28,23 @@ def strfdelta(tdelta, fmt='{H:2}h {M:02}m', inputtype='timedelta'):
     """
 
     # Convert tdelta to integer seconds.
-    if inputtype == 'timedelta':
+    if inputtype == "timedelta":
         remainder = int(tdelta.total_seconds())
-    elif inputtype in ['s', 'seconds']:
+    elif inputtype in ["s", "seconds"]:
         remainder = int(tdelta)
-    elif inputtype in ['m', 'minutes']:
+    elif inputtype in ["m", "minutes"]:
         remainder = int(tdelta) * 60
-    elif inputtype in ['h', 'hours']:
+    elif inputtype in ["h", "hours"]:
         remainder = int(tdelta) * 3600
-    elif inputtype in ['d', 'days']:
+    elif inputtype in ["d", "days"]:
         remainder = int(tdelta) * 86400
-    elif inputtype in ['w', 'weeks']:
+    elif inputtype in ["w", "weeks"]:
         remainder = int(tdelta) * 604800
 
     f = Formatter()
     desired_fields = [field_tuple[1] for field_tuple in f.parse(fmt)]
-    possible_fields = ('W', 'D', 'H', 'M', 'S')
-    constants = {'W': 604800, 'D': 86400, 'H': 3600, 'M': 60, 'S': 1}
+    possible_fields = ("W", "D", "H", "M", "S")
+    constants = {"W": 604800, "D": 86400, "H": 3600, "M": 60, "S": 1}
     values = {}
     for field in possible_fields:
         if field in desired_fields and field in constants:
@@ -54,8 +54,8 @@ def strfdelta(tdelta, fmt='{H:2}h {M:02}m', inputtype='timedelta'):
 
 def format_h_m(string):
     """Converts time string from format HH:MM to HHh MMm"""
-    hours, minutes = string.split(':')[0:2]
-    return '{0}h {1}m'.format(hours, minutes)
+    hours, minutes = string.split(":")[0:2]
+    return "{0}h {1}m".format(hours, minutes)
 
 
 def str2datetime(string):
@@ -63,11 +63,15 @@ def str2datetime(string):
     #    return = datetime.now() - timedelta(1)
 
     supported_fulldates_fmt = (
-        (r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}', '%Y-%m-%d %H:%M'),
-        (r'\d{4}-\d{2}-\d{2} \d{2}.\d{2}', '%Y-%m-%d %H:%M'),
-        (r'\d{4}/\d{2}/\d{2} \d{2}:\d{2}', '%Y/%m/%d %H:%M'),
-        (r'\d{4}/\d{2}/\d{2} \d{2}.\d{2}', '%Y/%m/%d %H:%M'),
-        (r'\d{2}/\d{2}/\d{2} \d{2}:\d{2}', '%y/%m/%d %H:%M'),
+        (r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}", "%Y-%m-%d %H:%M"),
+        (r"\d{4}-\d{2}-\d{2} \d{2}.\d{2}", "%Y-%m-%d %H:%M"),
+        (r"\d{4}/\d{2}/\d{2} \d{2}:\d{2}", "%Y/%m/%d %H:%M"),
+        (r"\d{4}/\d{2}/\d{2} \d{2}.\d{2}", "%Y/%m/%d %H:%M"),
+        (r"\d{2}-\d{2}-\d{2} \d{2}:\d{2}", "%y-%m-%d %H:%M"),
+        (r"\d{2}-\d{2}-\d{2} \d{2}.\d{2}", "%y-%m-%d %H:%M"),
+        (r"\d{2}/\d{2}/\d{2} \d{2}:\d{2}", "%y/%m/%d %H:%M"),
+        (r"\d{2}/\d{2}/\d{2} \d{2}.\d{2}", "%y/%m/%d %H:%M"),
+        (r"\d{2}/\d{2}/\d{2} \d{2}:\d{2}", "%y/%m/%d %H:%M"),
     )
 
     for in_fmt, out_fmt in supported_fulldates_fmt:
@@ -78,52 +82,49 @@ def str2datetime(string):
 
     # short year fmt: MM-DD HH:MM
     supported_short_year_fulldate_fmt = (
-        (r'\d{2}-\d{2} \d{2}:\d{2}', '%Y-%m-%d %H:%M'),
-        (r'\d{2}-\d{2} \d{2}.\d{2}', '%Y-%m-%d %H:%M'),
-        (r'\d{2}/\d{2} \d{2}:\d{2}', '%Y/%m/%d %H:%M'),
-        (r'\d{2}/\d{2} \d{2}.\d{2}', '%Y/%m/%d %H:%M')
+        (r"\d{2}-\d{2} \d{2}:\d{2}", "%Y-%m-%d %H:%M"),
+        (r"\d{2}-\d{2} \d{2}.\d{2}", "%Y-%m-%d %H:%M"),
+        (r"\d{2}/\d{2} \d{2}:\d{2}", "%Y/%m/%d %H:%M"),
+        (r"\d{2}/\d{2} \d{2}.\d{2}", "%Y/%m/%d %H:%M"),
     )
     for in_fmt, out_fmt in supported_short_year_fulldate_fmt:
         m = re.findall(in_fmt, string)
         if len(m) != 0:
             string = m[0]
-            year_str = datetime.today().strftime('%Y')
-            return datetime.strptime(year_str + '-' + string,
-                                     out_fmt)
+            year_str = datetime.today().strftime("%Y")
+            return datetime.strptime(year_str + "-" + string, out_fmt)
 
     # year only dates
     supported_year_only_date_fmt = (
-        (r'\d{4}-\d{2}-\d{2}', '%Y-%m-%d %H:%M'),
-        (r'\d{4}/\d{2}/\d{2}', '%Y/%m/%d %H:%M'),
-        (r'\d{2}-\d{2}-\d{2}', '%y-%m-%d %H:%M'),
-        (r'\d{2}/\d{2}/\d{2}', '%y/%m/%d %H:%M'),
+        (r"\d{4}-\d{2}-\d{2}", "%Y-%m-%d %H:%M"),
+        (r"\d{4}/\d{2}/\d{2}", "%Y/%m/%d %H:%M"),
+        (r"\d{2}-\d{2}-\d{2}", "%y-%m-%d %H:%M"),
+        (r"\d{2}/\d{2}/\d{2}", "%y/%m/%d %H:%M"),
     )
     for in_fmt, out_fmt in supported_year_only_date_fmt:
         m = re.findall(in_fmt, string)
         if len(m) != 0:
             string = m[0]
-            now_str = datetime.now().strftime('%H:%M')
-            return datetime.strptime(string + ' ' + now_str,
-                                     out_fmt)
+            now_str = datetime.now().strftime("%H:%M")
+            return datetime.strptime(string + " " + now_str, out_fmt)
 
     # hour only dates
     supported_hour_only_date_fmt = (
-        (r'\d{2}:\d{2}', '%Y-%m-%d %H:%M'),
-        (r'\d{2}.\d{2}', '%Y-%m-%d %H.%M'),
-        (r'\d:\d{2}', '%Y-%m-%d %H:%M'),
-        (r'\d.\d{2}', '%Y-%m-%d %H.%M'),
+        (r"\d{2}:\d{2}", "%Y-%m-%d %H:%M"),
+        (r"\d{2}.\d{2}", "%Y-%m-%d %H.%M"),
+        (r"\d:\d{2}", "%Y-%m-%d %H:%M"),
+        (r"\d.\d{2}", "%Y-%m-%d %H.%M"),
     )
     for in_fmt, out_fmt in supported_hour_only_date_fmt:
         m = re.findall(in_fmt, string)
         if len(m) != 0:
             string = m[0]
-            today_str = datetime.today().strftime('%Y-%m-%d')
-            return datetime.strptime(today_str + ' ' + string,
-                                     out_fmt)
+            today_str = datetime.today().strftime("%Y-%m-%d")
+            return datetime.strptime(today_str + " " + string, out_fmt)
 
     cal = pdt.Calendar()
     res, ok = cal.parseDT(string, datetime.now())
     if ok:
         return res
 
-    raise ValueError('Date format not recognized: %s' % string)
+    raise ValueError("Date format not recognized: %s" % string)
