@@ -5,7 +5,7 @@ Setuptool configuration for letsdo
 """
 from setuptools import setup, find_packages
 
-__version__ = "0.7.2"
+__version__ = "0.7.3"
 
 with open("README.md", "r", encoding="UTF-8") as f:
     long_description = f.read()
@@ -36,8 +36,8 @@ setup(
     extras_require={
         "dev": ["pytest>=7.0", "twine>=4.0.2"],
     },
-    entry_points={"console_scripts": ["lets=letsdo:main", "letsdo=letsdo:main"]},
+    entry_points={"console_scripts": ["lets=cli:main"]},
     include_package_data=True,
     keywords=["productivity", "GTD", "time tracker"],
-    py_modules=["letsdo", "log", "configuration", "timetoolkit"],
+    py_modules=["cli", "handlers", "app", "log", "configuration", "timetoolkit"],
 )
