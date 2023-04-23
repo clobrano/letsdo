@@ -3,7 +3,7 @@ This module keeps the classes and function that manage user customization
 """
 import os
 import yaml
-from .log import info, LOGGER
+from log import info, LOGGER
 
 
 class Configuration(object):

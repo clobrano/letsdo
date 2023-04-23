@@ -1,44 +1,12 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Usage:
-    lets do     <name>... [--time=<time>]
-    lets see    [all|config] [--detailed|--day-by-day] [--ascii| --dot-list] [-p|--project] [<query>...]
-    lets edit
-    lets cancel
-    lets stop   [<time>...]
-    lets goto   <newtask>...
-    lets track  <name>...
-    lets config
-    lets autocomplete
-
-options:
-    -a, --ascii       Print report table in ASCII characters
-    -t, --time=<time> Change the start/stop time of the task on the fly
-
-examples:
-    lets see            # show today's activities
-    lets see yesterday  # show yesterday's activities
-    lets see 2018-07    # show 2018 July's activities
-    lets see last July  # same as above (if we're still in 2019)
-    lets see +project   # show activities with +project tag (+project is autocompleted with TAB)
-    lets see something  # show activities whose description has he word 'something'
-    lets see this week
-    lets see last month
-    lets see 2019
-    ...
-"""
-
 import os
 import hashlib
 import re
 import json
 from datetime import datetime, timedelta
-import docopt
 from terminaltables import SingleTable, AsciiTable
-from .log import LOGGER, RAFFAELLO
-from .configuration import Configuration, autocomplete
-from .timetoolkit import str2datetime, strfdelta
+from log import LOGGER, RAFFAELLO
+from configuration import Configuration
+from timetoolkit import str2datetime, strfdelta
 
 
 def _p(msg):
@@ -584,158 +552,18 @@ def do_report(args):
     report_task(tasks, title=title, detailed=args["--detailed"], ascii=args["--ascii"])
 
 
-def guess_task_id_from_string(task_name):
-    """Get task ID from task name"""
+def guess_task_id_from_string(task_name: str) -> (int, bool):
+    """
+    Get task ID from task name
+
+    Support for "task_name" being only the ID of an already
+    stored task (e.g. lets do 34)
+    """
     guess_id = 0
 
     try:
         guess_id = int(task_name)
     except ValueError:
-        return False
+        return guess_id, False
 
-    return guess_id
-
-
-def main():
-    global RAFFAELLO
-    args = docopt.docopt(__doc__)
-
-    if args["autocomplete"]:
-        autocomplete()
-        return
-
-    if args["do"]:
-        if Task.get_running():
-            print("Another task is already running")
-            return 1
-
-        if args["<name>"]:
-            name = " ".join(args["<name>"])
-            tid = None
-
-            if name == "last":
-                tid = 1
-            else:
-                tid = guess_task_id_from_string(name)
-
-            if tid:
-                work_on(task_id=tid, start_time_str=args["--time"])
-            else:
-                Task(name, start_str=args["--time"]).start()
-
-            task = Task.get_running()
-            start_time_str = task.start_time.strftime("%H:%M")
-            print(_p("%s: started task \n ⤷  %s\n\n" % (start_time_str, task.name)))
-
-            return 0
-
-    if args["track"]:
-        name = " ".join(args["<name>"])
-        tid = None
-
-        task = Task.get_running()
-        if task:
-            Task.cancel()
-
-        Task(name, start_str=args["--time"]).start()
-        Task.stop()
-        print(_p("added task '%s' to today's list" % name))
-
-        if task:
-            task.start()
-
-        return 0
-
-    if args["edit"]:
-        task = Task.get_running()
-        if not task:
-            print("No task running")
-            return
-
-        edit_command = "{editor} {filename}".format(
-            editor=os.getenv("EDITOR"), filename=Configuration().task_fullpath
-        )
-        os.system(edit_command)
-        return 0
-
-    if args["config"]:
-        edit_command = "{editor} {filename}".format(
-            editor=os.getenv("EDITOR"),
-            filename=os.path.join(os.path.expanduser("~"), ".letsdo"),
-        )
-        os.system(edit_command)
-        return 0
-
-    if args["cancel"]:
-        content = Task.cancel()
-        print("Cancelled task")
-        print(_p(content))
-        return 0
-
-    if args["stop"]:
-        task = Task.get_running()
-        if not task:
-            print("no task running")
-            return 0
-
-        work_time = Task.stop(" ".join(args["<time>"]))
-        if not work_time:
-            return 1
-        now = datetime.now().strftime("%H:%M")
-        print(
-            _p(
-                "%s: stopped task: \n ⤷ %s\n\nafter %s hours, %s minutes\n\n"
-                % (now, task.name, work_time[0], work_time[1])
-            )
-        )
-        return 0
-
-    if args["goto"]:
-        name = " ".join(args["<newtask>"])
-
-        tid = guess_task_id_from_string(name)
-        if tid:
-            tasks = get_tasks(lambda x: x.tid == tid)
-
-            if not tasks:
-                LOGGER.error("could not find tasks id %s", tid)
-                return 1
-
-            name = tasks[0].name
-
-        task = Task.get_running()
-        if task:
-            work_time = Task.stop()
-            print(
-                _p(
-                    "stopped task '%s' after %s hours, %s minutes"
-                    % (task.name, work_time[0], work_time[1])
-                )
-            )
-
-        task = Task(name)
-        task.start()
-        start_time_str = task.start_time.strftime("%H:%M")
-        print(_p("Task [%s] started at %s" % (task.name, start_time_str)))
-        return 0
-
-    if args["see"]:
-        if args["<query>"]:
-            args["<query>"] = " ".join(args["<query>"])
-
-        return do_report(args)
-
-    # Default, if a task is running show it
-    if Task.get_running():
-        Task.status()
-        return 0
-
-    # Default do_report
-    if not args["<name>"]:
-        args["<name>"] = ["unknown"]
-
-    return do_report(args)
-
-
-if __name__ == "__main__":
-    main()
+    return guess_id, True

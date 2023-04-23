@@ -4,13 +4,12 @@
 import unittest
 import os
 from time import sleep
-from datetime import datetime, timedelta
-from ..src.letsdo import Task
-from ..src.letsdo import Configuration
-from ..src.letsdo import work_on
-from ..src.letsdo import str2datetime
-from ..src.letsdo import group_task_by
-from ..src.letsdo import get_tasks
+from datetime import timedelta
+from app import Task
+from app import Configuration
+from app import work_on
+from app import group_task_by
+from app import get_tasks
 
 
 class TestLetsdo(unittest.TestCase):
