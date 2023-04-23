@@ -5,11 +5,11 @@ import unittest
 import os
 from time import sleep
 from datetime import timedelta
-from app import Task
-from app import Configuration
-from app import work_on
-from app import group_task_by
-from app import get_tasks
+from ..src.app import Task
+from ..src.app import Configuration
+from ..src.app import work_on
+from ..src.app import group_task_by
+from ..src.app import get_tasks
 
 
 class TestLetsdo(unittest.TestCase):
