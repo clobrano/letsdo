@@ -39,5 +39,13 @@ setup(
     entry_points={"console_scripts": ["lets=cli:main"]},
     include_package_data=True,
     keywords=["productivity", "GTD", "time tracker"],
-    py_modules=["cli", "handlers", "app", "log", "configuration", "timetoolkit"],
+    py_modules=[
+        "app",
+        "cli",
+        "configuration",
+        "handlers",
+        "log",
+        "tasks",
+        "timetoolkit",
+    ],
 )
