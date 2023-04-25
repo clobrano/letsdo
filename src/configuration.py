@@ -6,71 +6,28 @@ import yaml
 from log import info, LOGGER
 
 
-class Configuration(object):
-    """Client customization class"""
+def get_configuration(home="~"):
+    """Returns the Yaml configuration"""
+    file_path = os.path.join(os.path.expanduser(home), ".letsdo.yaml")
+    with open(file_path, "r", encoding="utf-8") as stream:
+        return yaml.safe_load(stream)
 
-    def __init__(self):
-        self._data_directory = os.path.expanduser("~")
-        self._color_enabled = True
 
-        self.conf_file_path = os.path.join(os.path.expanduser("~"), ".letsdo")
-        if not os.path.exists(self.conf_file_path):
-            LOGGER.debug('creating config file "%s".', self.conf_file_path)
-            self.__save()
+def create_default_configuration(home="~"):
+    default_config = {"color": True, "data_directory": f"{os.path.expanduser(home)}"}
+    file_path = os.path.join(os.path.expanduser(home), ".letsdo.yaml")
+    with open(file_path, "w") as f:
+        return yaml.dump(default_config, f)
 
-        self.configuration = yaml.safe_load(open(self.conf_file_path).read())
-        self.data_directory = os.path.expanduser(
-            self.__get_value("DATA_DIRECTORY", None)
-        )
-        self.color_enabled = self.__get_value("COLOR_ENABLED", False)
 
-        if not self.data_directory or not os.path.exists(self.data_directory):
-            LOGGER.fatal("could not save task data in %s", self.data_directory)
-        else:
-            self.data_fullpath = os.path.join(self.data_directory, "letsdo-data")
-            self.task_fullpath = os.path.join(self.data_directory, "letsdo-task")
+def get_task_file_path(home="~"):
+    """Return the running task data file path"""
+    return os.path.join(get_configuration(home)["data_directory"], "letsdo-task")
 
-    def __get_value(self, key, default):
-        try:
-            value = self.configuration[key]
-        except KeyError as error:
-            LOGGER.debug('could not find key "%s": %s"', key, error)
-            return default
-        return value
 
-    def __save(self):
-        data = {
-            "COLOR_ENABLED": self.color_enabled,
-            "DATA_DIRECTORY": self.data_directory,
-        }
-        with open(self.conf_file_path, "w") as cfile:
-            yaml.dump(data, cfile, default_flow_style=False)
-
-    @property
-    def data_directory(self):
-        """returns data directory path"""
-        return self._data_directory
-
-    @data_directory.setter
-    def data_directory(self, directory):
-        if not directory or not os.path.exists(directory):
-            LOGGER.error('directory "%s" does not exists', directory)
-            return
-
-        self._data_directory = directory
-        self.__save()
-
-    @property
-    def color_enabled(self):
-        return self._color_enabled
-
-    @color_enabled.setter
-    def color_enabled(self, enabled):
-        self._color_enabled = enabled
-        self.__save()
-
-    def __repr__(self):
-        return "DATA_DIRECTORY: %s\n" % (self.data_directory)
+def get_history_file_path(home="~"):
+    """Return task history file path"""
+    return os.path.join(get_configuration(home)["data_directory"], "letsdo-history")
 
 
 def autocomplete():

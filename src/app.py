@@ -3,13 +3,13 @@ from datetime import datetime, timedelta
 from terminaltables import SingleTable, AsciiTable
 from tasks import Task
 from log import LOGGER, RAFFAELLO
-from configuration import Configuration
+from configuration import get_configuration, get_history_file_path
 from timetoolkit import str2datetime, strfdelta
 
 
 def _p(msg):
     """Colorize message"""
-    if msg and Configuration().color_enabled and RAFFAELLO:
+    if msg and get_configuration()["color"] and RAFFAELLO:
         return RAFFAELLO.paint(str(msg))
     return msg
 
@@ -61,7 +61,7 @@ def get_tasks(condition=None):
     tid = 0
     uids = dict()
     try:
-        with open(Configuration().data_fullpath) as cfile:
+        with open(get_history_file_path()) as cfile:
             for line in reversed(cfile.readlines()):
                 fields = line.strip().split(",")
                 if not fields[1]:

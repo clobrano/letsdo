@@ -5,13 +5,13 @@ import hashlib
 from datetime import datetime, timedelta
 
 from log import LOGGER, RAFFAELLO
-from configuration import Configuration
+from configuration import get_configuration, get_task_file_path, get_history_file_path
 from timetoolkit import str2datetime
 
 
 def _p(msg):
     """Colorize message"""
-    if msg and Configuration().color_enabled and RAFFAELLO:
+    if msg and get_configuration()["color"] and RAFFAELLO:
         return RAFFAELLO.paint(str(msg))
     return msg
 
@@ -61,15 +61,17 @@ class Task(object):
 
     @staticmethod
     def __is_running():
-        exists = os.path.exists(Configuration().task_fullpath)
-        LOGGER.debug("Is a task running? {}".format(exists))
-        return exists
+        if os.path.exists(get_task_file_path()):
+            LOGGER.debug("a task is running")
+        else:
+            LOGGER.debug("no task running")
+        return os.path.exists(get_task_file_path())
 
     @staticmethod
     def get_running():
         """Check whether a task is running"""
         if Task.__is_running():
-            with open(Configuration().task_fullpath, "r") as cfile:
+            with open(get_task_file_path(), "r", encoding="utf-8") as cfile:
                 data = json.load(cfile)
                 return Task(data["name"], data["start"])
         return None
@@ -109,14 +111,14 @@ class Task(object):
         )
 
         try:
-            with open(Configuration().data_fullpath, mode="a") as cfile:
+            with open(get_history_file_path(), mode="a", encoding="utf-8") as cfile:
                 cfile.writelines(report_line)
         except IOError as error:
             LOGGER.error("Could not save report: %s", error)
             return None
 
         # Delete current task data to mark it as stopped
-        os.remove(Configuration().task_fullpath)
+        os.remove(get_task_file_path())
 
         hours, minutes = work_time_str.split(":")
         return (hours, minutes)
@@ -126,9 +128,9 @@ class Task(object):
         """Interrupt task without saving it in history"""
         task = Task.get_running()
         if task:
-            with open(Configuration().task_fullpath, "r") as cfile:
-                content = cfile.read()
-            os.remove(Configuration().task_fullpath)
+            with open(get_task_file_path(), "r", encoding="utf-8") as f:
+                content = f.read()
+            os.remove(get_task_file_path())
             return content
         return None
 
@@ -169,7 +171,7 @@ class Task(object):
 
     def __create(self):
         try:
-            with open(Configuration().task_fullpath, "w") as cfile:
+            with open(get_task_file_path(), "w") as cfile:
                 json_data = """{
     "name": %s,
     "start": %s

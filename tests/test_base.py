@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Tests for letsdo"""
-import unittest
 import os
+import unittest
+import tempfile
 from time import sleep
 from datetime import timedelta
-from ..src.app import Task
-from ..src.app import Configuration
+
+from ..src.tasks import Task
+from ..src.configuration import (
+    create_default_configuration,
+    get_configuration,
+    get_task_file_path,
+    get_history_file_path,
+)
 from ..src.app import work_on
 from ..src.app import group_task_by
 from ..src.app import get_tasks
@@ -16,33 +23,17 @@ class TestLetsdo(unittest.TestCase):
     """Test class"""
 
     def setUp(self):
-        test_configuration = """DATA_DIRECTORY: ~/
-"""
-        self.test_conf_file = os.path.expanduser(os.path.join("~", ".letsdo"))
-        self.user_conf_bak = os.path.expanduser(os.path.join("~", ".letsdo.bak"))
-
-        if os.path.exists(self.test_conf_file):
-            # Backup user configuration file
-            os.rename(self.test_conf_file, self.user_conf_bak)
-
-            # Create test configuration file
-            with open(self.test_conf_file, "w") as fconf:
-                fconf.write(test_configuration)
-
-        self.conf = Configuration()
-
-        if os.path.exists(self.conf.data_fullpath):
-            os.remove(self.conf.data_fullpath)
-        if os.path.exists(self.conf.task_fullpath):
-            os.remove(self.conf.task_fullpath)
+        self.config_file = os.path.join("~", ".letsdo.yaml")
+        create_default_configuration()
+        self.conf = get_configuration()
 
     def tearDown(self):
-        if os.path.exists(self.user_conf_bak):
-            os.rename(self.user_conf_bak, self.test_conf_file)
-        if os.path.exists(self.conf.data_fullpath):
-            os.remove(self.conf.data_fullpath)
-        if os.path.exists(self.conf.task_fullpath):
-            os.remove(self.conf.task_fullpath)
+        if os.path.exists(get_history_file_path()):
+            os.remove(get_history_file_path())
+        if os.path.exists(get_task_file_path()):
+            os.remove(get_task_file_path())
+        if os.path.exists(self.config_file):
+            os.remove(self.config_file)
 
     def test_group_task_by(self):
         """Test group_task_by"""
@@ -102,65 +93,68 @@ class TestLetsdo(unittest.TestCase):
 
     def test_get_non_running_task(self):
         """test get_non_running_task"""
-        if os.path.exists(self.conf.task_fullpath):
-            os.remove(self.conf.task_fullpath)
+        if os.path.exists(get_task_file_path()):
+            os.remove(get_task_file_path())
         task = Task.get_running()
         self.assertIsNone(task)
 
     def test_get_running_task(self):
         """test get_running_task"""
-        if not os.path.exists(self.conf.task_fullpath):
+        if not os.path.exists(get_task_file_path()):
             Task("foo task").start()
         task = Task.get_running()
         self.assertIsNotNone(task)
 
     def test_stop_non_running_task(self):
         """test stop_non_running_task"""
-        if os.path.exists(self.conf.task_fullpath):
-            os.remove(self.conf.task_fullpath)
-        if not os.path.exists(self.conf.data_fullpath):
-            with open(self.conf.data_fullpath, mode="w") as file:
+
+        if os.path.exists(get_task_file_path()):
+            os.remove(get_task_file_path())
+
+        if not os.path.exists(get_history_file_path()):
+            with open(get_history_file_path(), "w", encoding="utf-8") as file:
                 file.write("")
-        no_tasks = len(open(self.conf.data_fullpath).readlines())
+
+        no_tasks = len(open(get_history_file_path(), encoding="utf-8").readlines())
 
         Task.stop()
-        new_no_tasks = len(open(self.conf.data_fullpath).readlines())
+        new_no_tasks = len(open(get_history_file_path(), encoding="utf-8").readlines())
 
         self.assertEqual(no_tasks, new_no_tasks)
 
     def test_stop_running_task(self):
         """test stop_running_task"""
-        if not os.path.exists(self.conf.task_fullpath):
+        if not os.path.exists(get_task_file_path()):
             Task("foo task").start()
-        if not os.path.exists(self.conf.data_fullpath):
-            with open(self.conf.data_fullpath, mode="w") as fdata:
+        if not os.path.exists(get_history_file_path()):
+            with open(get_history_file_path(), "w", encoding="utf-8") as fdata:
                 fdata.write("")
-        no_tasks = len(open(self.conf.data_fullpath).readlines())
+        no_tasks = len(open(get_history_file_path(), encoding="utf-8").readlines())
 
         Task.stop()
-        new_no_tasks = len(open(self.conf.data_fullpath).readlines())
+        new_no_tasks = len(open(get_history_file_path(), encoding="utf-8").readlines())
 
-        self.assertFalse(os.path.exists(self.conf.task_fullpath))
+        self.assertFalse(os.path.exists(get_task_file_path()))
         self.assertEqual(no_tasks + 1, new_no_tasks)
 
     def test_start_task(self):
         """test start_task"""
-        if os.path.exists(self.conf.task_fullpath):
-            os.remove(self.conf.task_fullpath)
+        if os.path.exists(get_task_file_path()):
+            os.remove(get_task_file_path())
         Task("foo task").start()
-        self.assertTrue(os.path.exists(self.conf.task_fullpath))
+        self.assertTrue(os.path.exists(get_task_file_path()))
 
     def test_status_task(self):
         """test status_task"""
-        if os.path.exists(self.conf.task_fullpath):
-            os.remove(self.conf.task_fullpath)
+        if os.path.exists(get_task_file_path()):
+            os.remove(get_task_file_path())
         Task("foo task").start()
         self.assertTrue(Task.status())
 
     def test_cancel_running_task(self):
         Task("foo task").start()
         content = Task.cancel()
-        self.assertFalse(os.path.exists(self.conf.task_fullpath))
+        self.assertFalse(os.path.exists(get_task_file_path()))
         self.assertIn("foo task", content)
 
     def test_task_representation(self):
