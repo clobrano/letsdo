@@ -6,8 +6,12 @@ The Handler module provides a simple way to redirect incoming requests to specif
 
 import os
 from datetime import datetime
-from app import Task, guess_task_id_from_string, work_on, get_tasks
+
+from tasks import Task, start_task, stop_task, cancel_task
+from app import guess_task_id_from_string, work_on, get_tasks, store_task
 from configuration import autocomplete
+
+from history import CSVHistory
 
 
 def autocomplete_handler():
@@ -17,24 +21,25 @@ def autocomplete_handler():
 
 def start_task_handler(description: str, start_str: str) -> (bool, str):
     """handles a request to start a task"""
-    if not description:
-        return False, "task description is mandatory"
+    # if description == "last":
+    # tid, is_ok = 1, True
+    # else:
+    # tid, is_ok = guess_task_id_from_string(description)
 
-    if Task.get_running():
-        return False, "Another task is already running"
+    # if is_ok:
+    # work_on(task_id=tid, start_time_str=start_str)
+    # else:
+    if not start_str:
+        start_str = datetime.now().strftime("%H:%M")
 
-    if description == "last":
-        tid, is_ok = 1, True
-    else:
-        tid, is_ok = guess_task_id_from_string(description)
+    task = Task(description, start_str=start_str)
+    is_ok, new_task = start_task(task)
+    if not is_ok:
+        if not new_task:
+            return False, f"could not start task {task}"
+        return False, f"there is another task running: {task}"
 
-    if is_ok:
-        work_on(task_id=tid, start_time_str=start_str)
-    else:
-        Task(description, start_str=start_str).start()
-
-    task = Task.get_running()
-    return True, f"{task.start_time}: {task.name} started"
+    return True, f"{new_task} started"
 
 
 def edit_file_handler(filename) -> (bool, str):
@@ -50,23 +55,21 @@ def edit_file_handler(filename) -> (bool, str):
 
 def cancel_task_handler() -> (bool, str):
     """handles a request to cancel the current task"""
-    msg = Task.cancel()
-    if not msg:
-        return False, "No task running, nothing to do"
-    return True, f"cancelled task: {msg}"
+    task = cancel_task()
+    if task:
+        return True, f"task {task} cancelled"
+    return False, "No task running, nothing to do"
 
 
 def stop_task_handler(stop_time: str) -> (bool, str):
     """handles a request to stop the current task"""
-    task = Task.get_running()
+    task = stop_task(stop_time)
     if not task:
-        return False, "no task running, nothing to do"
-
-    work_time = Task.stop(stop_time)
-    if not work_time:
-        return False, "error: could not get stop time"
+        return False, "No task was running"
     now = datetime.now().strftime("%H:%M")
-    msg = f"{now}: stopped task: {task.name}, after {work_time[0]}hours, {work_time[1]} minutes"
+    msg = f"{now}: stopped task: {task.description}, after {task.work}"
+
+    store_task(task)
     return True, msg
 
 
@@ -82,3 +85,8 @@ def goto_task_handler(tid: int) -> (bool, str):
     if not is_ok:
         return False, msg
     return start_task_handler(task.name, now)
+
+
+def get_tasks_by_query(query: str = None) -> list[Task]:
+    """Get all tasks by condition"""
+    return CSVHistory().get_tasks_by_query(query)

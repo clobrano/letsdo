@@ -62,6 +62,11 @@ def str2datetime(string):
     # if string == 'yesterday':
     #    return = datetime.now() - timedelta(1)
 
+    if not string:
+        return datetime.now()
+
+    string = string.strip()
+
     supported_fulldates_fmt = (
         (r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}", "%Y-%m-%d %H:%M"),
         (r"\d{4}-\d{2}-\d{2} \d{2}.\d{2}", "%Y-%m-%d %H:%M"),
@@ -123,8 +128,8 @@ def str2datetime(string):
             return datetime.strptime(today_str + " " + string, out_fmt)
 
     cal = pdt.Calendar()
-    res, ok = cal.parseDT(string, datetime.now())
-    if ok:
+    res, is_ok = cal.parseDT(string, datetime.now())
+    if is_ok:
         return res
 
     raise ValueError("Date format not recognized: %s" % string)

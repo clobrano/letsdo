@@ -89,7 +89,9 @@ def main():
         if args["<query>"]:
             args["<query>"] = " ".join(args["<query>"])
 
-        do_report(args)
+        tasks = handlers.get_tasks_by_query(args["<query>"])
+        for t in tasks:
+            print(t)
 
     print(msg)
     if not is_ok:

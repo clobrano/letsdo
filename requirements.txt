@@ -3,3 +3,5 @@ pytest
 PyYaml
 terminaltables
 parsedatetime
+pandas
+dateparser
