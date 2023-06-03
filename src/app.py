@@ -14,6 +14,18 @@ def _p(msg):
     return msg
 
 
+FORMAT = "%Y-%m-%d %H:%M"
+
+
+def store_task(task: Task):
+    """
+    Store the Task in history
+    """
+    with open(get_history_file_path(), "a", encoding="utf-8") as file:
+        row = f"{task.uid},{task.start.strftime(FORMAT)},{task.stop.strftime(FORMAT)},{strfdelta(task.work)},{task.description}\n"
+        file.write(row)
+
+
 def work_on(task_id=0, start_time_str=None):
     """Start given task id"""
     tasks = get_tasks(condition=lambda x: x.tid == task_id)
