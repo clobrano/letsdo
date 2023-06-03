@@ -30,9 +30,18 @@ examples:
 
 import os
 import docopt
+
 import handlers
 from app import guess_task_id_from_string, do_report
-from configuration import Configuration
+from log import RAFFAELLO
+from configuration import get_configuration
+
+
+def _p(msg):
+    """Colorize message"""
+    if msg and get_configuration()["color"] and RAFFAELLO:
+        return RAFFAELLO.paint(str(msg))
+    return msg
 
 
 def main():
