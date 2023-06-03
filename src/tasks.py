@@ -45,7 +45,7 @@ class Task:
         if not self.start:
             self.start = str2datetime(self.start_str)
         if not self.stop:
-            self.stop = tr2datetime(self.stop_str)
+            self.stop = str2datetime(self.stop_str)
 
         if self.start > self.stop:
             msg = f"start ({self.start}) cannot be newer than stop ({self.stop}) in Task {self}"

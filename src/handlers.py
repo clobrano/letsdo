@@ -8,7 +8,7 @@ import os
 from datetime import datetime
 
 from tasks import Task, start_task, stop_task, cancel_task
-from app import guess_task_id_from_string, work_on, get_tasks, store_task
+from app import get_tasks, store_task
 from configuration import autocomplete
 
 from history import CSVHistory
@@ -21,14 +21,6 @@ def autocomplete_handler():
 
 def start_task_handler(description: str, start_str: str) -> (bool, str):
     """handles a request to start a task"""
-    # if description == "last":
-    # tid, is_ok = 1, True
-    # else:
-    # tid, is_ok = guess_task_id_from_string(description)
-
-    # if is_ok:
-    # work_on(task_id=tid, start_time_str=start_str)
-    # else:
     if not start_str:
         start_str = datetime.now().strftime("%H:%M")
 
@@ -57,7 +49,7 @@ def cancel_task_handler() -> (bool, str):
     """handles a request to cancel the current task"""
     task = cancel_task()
     if task:
-        return True, f"task {task} cancelled"
+        return True, f"task {task} canceled"
     return False, "No task running, nothing to do"
 
 

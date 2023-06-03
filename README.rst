@@ -82,7 +82,7 @@ or **stop** it.
    $ lets do foo
    task 'foo' started at 2020-10-04 12:30:00
    $ lets cancel
-   Cancelled task
+   Canceled task
    {
        "name": "foo",
        "start": "2020-10-04 12:30:58.404926"

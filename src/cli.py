@@ -34,7 +34,7 @@ import docopt
 import handlers
 from app import guess_task_id_from_string, do_report
 from log import RAFFAELLO
-from configuration import get_configuration
+from configuration import get_configuration, get_task_file_path
 
 
 def _p(msg):
@@ -60,7 +60,7 @@ def main():
         )
 
     elif args["edit"]:
-        is_ok, msg = handlers.edit_file_handler(Configuration().task_fullpath)
+        is_ok, msg = handlers.edit_file_handler(get_task_file_path())
         print(msg)
         if not is_ok:
             return 1
