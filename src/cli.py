@@ -86,8 +86,11 @@ def main():
         is_ok, msg = handlers.goto_task_handler(tid)
 
     if args["see"]:
-        if args["<query>"]:
-            args["<query>"] = " ".join(args["<query>"])
+        args["<query>"] = " ".join(args["<query>"])
+        if args["all"]:
+            args["<query>"] = None
+        elif not args["<query>"]:
+            args["<query>"] = "today"
 
         tasks = handlers.get_tasks_by_query(args["<query>"])
         for t in tasks:

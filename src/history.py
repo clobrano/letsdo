@@ -34,13 +34,14 @@ class CSVHistory:
         dataFrame["start"] = pd.to_datetime(dataFrame["start"]).dt.date
         dataFrame["stop"] = pd.to_datetime(dataFrame["stop"]).dt.date
 
-        dates = parse_dates_from_query(query)
-        if not dates:
-            dataFrame = dataFrame[dataFrame["description"].str.contains(query)]
-        elif len(dates) > 1:
-            dataFrame = filter_dataframe_via_date(dataFrame, dates[0], dates[1])
-        else:
-            dataFrame = get_dataframe_row_via_date(dataFrame, dates[0])
+        if query:
+            dates = parse_dates_from_query(query)
+            if not dates:
+                dataFrame = dataFrame[dataFrame["description"].str.contains(query)]
+            elif len(dates) > 1:
+                dataFrame = filter_dataframe_via_date(dataFrame, dates[0], dates[1])
+            else:
+                dataFrame = get_dataframe_row_via_date(dataFrame, dates[0])
 
         return [
             Task(
