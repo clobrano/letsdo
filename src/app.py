@@ -142,17 +142,64 @@ def group_task_by(tasks, group=None):
     return tasks
 
 
-def report_task(tasks, title=None, detailed=False, ascii=False):
-    """Display table with tasks data"""
+def show_table(tasks: list[Task]):
+    """Show tasks on a table"""
+
+    # sort tasks by stop date
+    tasks = sorted(tasks, key=lambda x: x.stop, reverse=True)
+
+    # total work time to compute percentage later
+    total_work_time_in_seconds = sum(t.work.seconds for t in tasks)
+
+    # get all unique activities by description
+    activities = {t.description for t in tasks}
+
+    # sum working time and get latest update of same activity
+    data = [["Description", "Last update", "Work time", "%"]]
+    for activity in activities:
+        filtered_tasks = [t for t in tasks if t.description == activity]
+        last_update = max(t.stop for t in filtered_tasks)
+        work_time_in_seconds = sum(
+            same_task.work.seconds for same_task in filtered_tasks
+        )
+        work_time = timedelta(seconds=work_time_in_seconds)
+        percentage = work_time_in_seconds / total_work_time_in_seconds * 100
+        data.append(
+            [
+                activity,
+                last_update.strftime("%x"),
+                strfdelta(work_time),
+                f"{percentage:.0f}%",
+            ]
+        )
+
+    table = SingleTable(data, "Tasks")
+    table.outer_border = True
+    table.inner_column_border = False
+    table.inner_heading_row_border = True
+    # table.inner_footing_row_border = True
+    table.justify_columns[0] = "right"
+    table.justify_columns[1] = "center"
+    table.justify_columns[2] = "right"
+    table.justify_columns[3] = "left"
+
+    print("")
+    print(table.table)
+
+
+def report_task(
+    tasks: Task, title: str = None, detailed: bool = False, ascii: bool = False
+):
+    """Display Tasks on a table on stdout"""
 
     table_data = [["ID", "Last update", "Work time", "Description"]]
     if detailed:
         table_data = [["ID", "Last update", "Work time", "Interval", "Description"]]
-        tasks = sorted(tasks, key=lambda x: x.end_time, reverse=True)
+        tasks = sorted(tasks, key=lambda x: x.stop, reverse=True)
 
     tot_work_time = timedelta()
     for task in tasks:
-        tot_work_time += task.work_time
+        tot_work_time += task.work
 
     for task in tasks:
         last_time = ""

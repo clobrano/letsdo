@@ -28,20 +28,21 @@ class CSVHistory:
         self,
         query: str,
     ) -> list[Task]:
-        dataFrame = pd.read_csv(Path(get_history_file_path()))
+        data_frame = pd.read_csv(Path(get_history_file_path()))
 
         # convert start and stop column to datetime dropping hours and minutes
-        dataFrame["start"] = pd.to_datetime(dataFrame["start"]).dt.date
-        dataFrame["stop"] = pd.to_datetime(dataFrame["stop"]).dt.date
+        data_frame["start"] = pd.to_datetime(data_frame["start"])
+        data_frame["stop"] = pd.to_datetime(data_frame["stop"])
+        # data_frame["work"] = pd.to_datetime(data_frame["work"]).dt.time
 
         if query:
             dates = parse_dates_from_query(query)
             if not dates:
-                dataFrame = dataFrame[dataFrame["description"].str.contains(query)]
+                data_frame = data_frame[data_frame["description"].str.contains(query)]
             elif len(dates) > 1:
-                dataFrame = filter_dataframe_via_date(dataFrame, dates[0], dates[1])
+                data_frame = filter_dataframe_via_date(data_frame, dates[0], dates[1])
             else:
-                dataFrame = get_dataframe_row_via_date(dataFrame, dates[0])
+                data_frame = get_dataframe_row_via_date(data_frame, dates[0])
 
         return [
             Task(
@@ -50,22 +51,25 @@ class CSVHistory:
                 stop=row["stop"],
                 description=row["description"],
             )
-            for index, row in dataFrame.iterrows()
+            for index, row in data_frame.iterrows()
         ]
 
 
-def get_dataframe_row_via_date(dataFrame: pd.DataFrame, date: str):
+def get_dataframe_row_via_date(data_frame: pd.DataFrame, date: str):
     """Get a row from a data frame via date"""
-    row = dataFrame.loc[dataFrame["stop"] == date]
+    row = data_frame.loc[data_frame["stop"].dt.date == date]
     return row
 
 
-def filter_dataframe_via_date(dataFrame: pd.DataFrame, start_date: str, stop_date: str):
+def filter_dataframe_via_date(
+    data_frame: pd.DataFrame, start_date: str, stop_date: str
+):
     """Filter a data frame via date"""
-    filtered_dataFrame = dataFrame.loc[
-        (dataFrame["stop"] >= start_date) & (dataFrame["stop"] <= stop_date)
+    filtered_data_frame = data_frame.loc[
+        (data_frame["stop"].dt.date >= start_date)
+        & (data_frame["stop"].dt.date <= stop_date)
     ]
-    return filtered_dataFrame
+    return filtered_data_frame
 
 
 def infer_query_is_date_range(query: str):

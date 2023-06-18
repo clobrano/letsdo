@@ -32,7 +32,7 @@ import os
 import docopt
 
 import handlers
-from app import guess_task_id_from_string, do_report
+from app import guess_task_id_from_string, show_table
 from log import RAFFAELLO
 from configuration import get_configuration, get_task_file_path
 
@@ -93,12 +93,12 @@ def main():
             args["<query>"] = "today"
 
         tasks = handlers.get_tasks_by_query(args["<query>"])
-        for t in tasks:
-            print(t)
+        show_table(tasks)
 
     print(msg)
     if not is_ok:
         return 1
+
     return 0
 
 
