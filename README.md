@@ -1,6 +1,11 @@
+[![Project Status: Under Rework](https://img.shields.io/badge/Project%20Status-Under%20Rework-yellow.svg)](https://github.com/your-username/your-project) [![Stable Version: On Pip](https://img.shields.io/badge/Stable%20Version-On%20Pip-brightgreen.svg)](https://pypi.org/project/your-project)
+
+---
+
 [![Snap Status](https://github.com/snapcore/snap-store-badges/blob/master/EN/%5BEN%5D-snap-store-black-uneditable%401x.png)](https://snapcraft.io/letsdo)
 [![PyPI version](https://badge.fury.io/py/letsdo.svg)](https://badge.fury.io/py/letsdo)
 [![Build Status](https://travis-ci.org/clobrano/letsdo.svg?branch=master)](https://travis-ci.org/clobrano/letsdo)
+
 # Letsdo, the CLI time-tracker
 
 Letsdo helps you to be more focused and productive tracking the time you spend on your work activities.
