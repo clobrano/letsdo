@@ -7,6 +7,7 @@ from configuration import get_configuration, get_history_file_path
 from timetoolkit import str2datetime, strfdelta
 
 
+
 def _p(msg):
     """Colorize message"""
     if msg and get_configuration()["color"] and RAFFAELLO:
