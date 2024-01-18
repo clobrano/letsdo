@@ -119,7 +119,7 @@ class Task(object):
             stop_time = str2datetime(stop_time_str)
             if stop_time < task.start_time:
                 LOGGER.warning(
-                    "Given stop time (%s) is more recent than start time (%s)",
+                    "Stop time (%s) is more recent than start time (%s)",
                     stop_time,
                     task.start_time,
                 )
@@ -346,7 +346,8 @@ def get_tasks(condition=None):
         conditioned = filter(condition, tasks)
         return list(conditioned)
     except IOError as error:
-        LOGGER.error("could not get tasks' history: %s", error)
+        if error is not FileNotFoundError:
+            LOGGER.error("could not get tasks' history: %s", error)
         return []
 
 
