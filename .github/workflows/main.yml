@@ -1,8 +1,25 @@
 name: try-reusable
 on:
   workflow_dispatch:
+    inputs:
+        version:
+          description: "The version to release, without the leading `v`"
+          required: true
+          type: string
+        previous_version:
+          description: "The previous version, used for the CVS's `replaces` field, without the leading `v`"
+          required: true
+          type: string
+        skip_range_lower:
+          description: "Lower bound for the skipRange field in the CSV, should be set to the oldest supported version, without the leading `v`"
+          required: true
+          type: string
 
 jobs:
   reusing-job:
     uses: clobrano/.github/.github/workflows/blank.yml@main
+    with:
+      version: ${{inputs.version}}
+      previous_version: ${{inputs.previous_version}}
+      skip_range_lower: ${{inputs.skip_range_lower}}
     
