@@ -1,0 +1,8 @@
+name: try-reusable
+on:
+  workflow_dispatch:
+
+jobs:
+  reusing-job:
+    uses: clobrano/.github/.github/workflows/blank.yml@main
+    
