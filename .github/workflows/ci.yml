@@ -3,6 +3,7 @@ name: Lestdo CI/CD
 on:
   push:
     branches:
+      - release
       - main
       - tags
   pull_request:
@@ -50,10 +51,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install 'build[virtualenv]'
 
     - name: Build package
       run: |
-        python setup.py sdist bdist_wheel
+        python -m build
 
     - name: Publish package to PyPI
       env:
@@ -61,5 +63,5 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
         python -m pip install --upgrade twine
-        twine upload dist/*
+        python -m twine upload dist/*
 
