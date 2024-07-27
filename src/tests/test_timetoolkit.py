@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vi: set ft=python :
 from datetime import datetime
-from ..src.timetoolkit import format_h_m, strfdelta, str2datetime
+from timetoolkit import format_h_m, strfdelta, str2datetime
 
 
 def test_str2datetime():

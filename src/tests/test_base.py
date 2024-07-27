@@ -3,20 +3,19 @@
 """Tests for letsdo"""
 import os
 import unittest
-import tempfile
 from time import sleep
 from datetime import timedelta
 
-from ..src.tasks import Task
-from ..src.configuration import (
+from tasks import Task
+from configuration import (
     create_default_configuration,
     get_configuration,
     get_task_file_path,
     get_history_file_path,
 )
-from ..src.app import work_on
-from ..src.app import group_task_by
-from ..src.app import get_tasks
+from app import work_on
+from app import group_task_by
+from app import get_tasks
 
 
 class TestLetsdo(unittest.TestCase):
