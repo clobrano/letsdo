@@ -16,7 +16,7 @@ push:
 
 
 clean: clean_src
-	-rm -r build dist __pycache__
+	-rm -r build dist __pycache__ src/__version__.py
 
 clean_src:
 	-rm -r src/__pycache__
