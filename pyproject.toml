@@ -30,7 +30,7 @@ classifiers = [
 dynamic = ["version"]
 
 [project.scripts]
-lets = "app:main"
+lets = "cli:main"
 
 [project.urls]
 Homepage = "https://github.com/clobrano/letsdo"
