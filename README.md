@@ -1,6 +1,15 @@
 [![Snap Status](https://github.com/snapcore/snap-store-badges/blob/master/EN/%5BEN%5D-snap-store-black-uneditable%401x.png)](https://snapcraft.io/letsdo)
 [![PyPI version](https://badge.fury.io/py/letsdo.svg)](https://badge.fury.io/py/letsdo)
 
+
+# Breaking changes
+
+Starting from v2.0.0, Letsdo has this configuration changes:
+- the configuration file name changes from `$HOME/.letsdo` to `$HOME/.letsdo.yaml`
+- the data file name changes from `<data_directory>/letsdo-data` to `<data_directory>/letsdo-history`
+
+If you have old data and configuration, just change the names accordingly and all will work as before.
+
 # Letsdo, the CLI time-tracker
 
 Letsdo helps you to be more focused and productive tracking the time you spend on your work activities.
@@ -95,11 +104,11 @@ Don't you like the default location? let's have a look at the **config** sub-com
 $ lets config
 ~~~
 
-**config** opens the configuration file (HOME/.letsdo) with two configurable fields
+**config** opens the configuration file (HOME/.letsdo.yaml) with two configurable fields
 
 ```
-COLOR_ENABLED: true
-DATA_DIRECTORY: /home/carlo
+color: true
+data_directory: /home/username/
 ```
 
 Let's see now the history: you can rapidly have a look at **today** and **yesterday** work done by typing:
