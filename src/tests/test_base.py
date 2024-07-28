@@ -12,6 +12,7 @@ from configuration import (
     get_configuration,
     get_task_file_path,
     get_history_file_path,
+    CONFIG_FILE_NAME
 )
 from app import work_on
 from app import group_task_by
@@ -22,7 +23,7 @@ class TestLetsdo(unittest.TestCase):
     """Test class"""
 
     def setUp(self):
-        self.config_file = os.path.join("~", ".letsdo.yaml")
+        self.config_file = os.path.join("~", CONFIG_FILE_NAME)
         create_default_configuration()
         self.conf = get_configuration()
 

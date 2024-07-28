@@ -6,28 +6,35 @@ import yaml
 from log import info, LOGGER
 
 
+CONFIG_FILE_NAME = ".letsdo.yaml"
+TASK_FILE_NAME = "letsdo-task"
+HISTORY_FILE_NAME = "letsdo-history"
+
+
 def get_configuration(home="~"):
     """Returns the Yaml configuration"""
-    file_path = os.path.join(os.path.expanduser(home), ".letsdo.yaml")
+    file_path = os.path.join(os.path.expanduser(home), CONFIG_FILE_NAME)
+    if not os.path.exists(file_path):
+        create_default_configuration(home)
     with open(file_path, "r", encoding="utf-8") as stream:
         return yaml.safe_load(stream)
 
 
 def create_default_configuration(home="~"):
     default_config = {"color": True, "data_directory": f"{os.path.expanduser(home)}"}
-    file_path = os.path.join(os.path.expanduser(home), ".letsdo.yaml")
+    file_path = os.path.join(os.path.expanduser(home), CONFIG_FILE_NAME)
     with open(file_path, "w") as f:
         return yaml.dump(default_config, f)
 
 
 def get_task_file_path(home="~"):
     """Return the running task data file path"""
-    return os.path.join(get_configuration(home)["data_directory"], "letsdo-task")
+    return os.path.join(get_configuration(home)["data_directory"], TASK_FILE_NAME)
 
 
 def get_history_file_path(home="~"):
     """Return task history file path"""
-    return os.path.join(get_configuration(home)["data_directory"], "letsdo-history")
+    return os.path.join(get_configuration(home)["data_directory"], HISTORY_FILE_NAME)
 
 
 def autocomplete():
@@ -49,7 +56,7 @@ def autocomplete():
 
     Letsdo can copy the script in your $HOME for you if you replay with "Y" at
     this message, otherwise the letsdo_completion file will be printed out here
-    and it is up to you to copy and save it as said above. 
+    and it is up to you to copy and save it as said above.
 
     Do you want Letsdo to copy the script in your $HOME directory? [Y/n]
     """

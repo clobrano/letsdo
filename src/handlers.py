@@ -7,7 +7,7 @@ The Handler module provides a simple way to redirect incoming requests to specif
 import os
 from datetime import datetime
 from app import Task, guess_task_id_from_string, work_on, get_tasks
-from configuration import autocomplete
+from configuration import autocomplete, create_default_configuration
 
 
 def autocomplete_handler():
@@ -40,7 +40,7 @@ def start_task_handler(description: str, start_str: str) -> (bool, str):
 def edit_file_handler(filename) -> (bool, str):
     """handles a request to edit a file with the system default editor"""
     if not os.path.exists(filename):
-        return False, f"could not find {filename}"
+        create_default_configuration()
 
     default_editor = os.getenv("EDITOR")
     edit_command = f"{default_editor} {filename}"

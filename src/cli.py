@@ -34,7 +34,7 @@ import docopt
 import handlers
 from app import guess_task_id_from_string, do_report
 from log import RAFFAELLO
-from configuration import get_configuration
+from configuration import get_configuration, CONFIG_FILE_NAME
 
 
 def _p(msg):
@@ -68,7 +68,7 @@ def main():
 
     elif args["config"]:
         is_ok, msg = handlers.edit_file_handler(
-            os.path.join(os.path.expanduser("~"), ".letsdo"),
+            os.path.join(os.path.expanduser("~"), CONFIG_FILE_NAME),
         )
 
     elif args["cancel"]:

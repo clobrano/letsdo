@@ -8,6 +8,8 @@ from configuration import (
     create_default_configuration,
     get_configuration,
     get_task_file_path,
+    CONFIG_FILE_NAME,
+    TASK_FILE_NAME
 )
 
 
@@ -31,5 +33,10 @@ class TestConfiguration(unittest.TestCase):
         create_default_configuration(self.test_dir.name)
         self.assertEqual(
             get_task_file_path(self.test_dir.name),
-            os.path.join(self.test_dir.name, "letsdo-task"),
+            os.path.join(self.test_dir.name, TASK_FILE_NAME),
         )
+
+
+    def test_create_default_configuration_if_does_not_exist(self):
+        """ Test the creation of a default configuration file if it does not exist already """
+        self.assertIsNotNone(get_configuration(self.test_dir.name))

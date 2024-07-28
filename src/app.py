@@ -1,3 +1,4 @@
+import os
 import re
 from datetime import datetime, timedelta
 from terminaltables import SingleTable, AsciiTable
@@ -73,6 +74,11 @@ def get_tasks(condition=None):
     tid = 0
     uids = dict()
     try:
+        history_file_path = get_history_file_path()
+        if not os.path.exists(history_file_path):
+            LOGGER.info("No Task recorded yet")
+            return []
+
         with open(get_history_file_path()) as cfile:
             for line in reversed(cfile.readlines()):
                 fields = line.strip().split(",")
