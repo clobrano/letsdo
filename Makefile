@@ -1,6 +1,6 @@
 .PHONY: test
 test:
-	pytest
+	python -m pytest
 
 build:
 	python3 -m pip install --upgrade build
@@ -11,6 +11,3 @@ clean: clean_src
 
 clean_src:
 	-rm -r src/__pycache__
-
-clean_tests:
-	rm -r tests/__pycache__
