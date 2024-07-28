@@ -14,12 +14,23 @@ authors = [
 description = "Time tracker for Command Line"
 readme = "README.md"
 requires-python = ">=3.8"
+dependencies = [
+    "docopt",
+    "PyYaml",
+    "terminaltables",
+    "parsedatetime",
+    "raffaello"
+]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Topic :: Utilities",
-    "Operating System :: OS Independent"
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
 ]
 dynamic = ["version"]
+
+[project.scripts]
+lets = "app:main"
 
 [project.urls]
 Homepage = "https://github.com/clobrano/letsdo"
