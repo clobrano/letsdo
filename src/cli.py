@@ -34,14 +34,7 @@ import docopt
 import handlers
 from app import guess_task_id_from_string, do_report
 from log import RAFFAELLO
-from configuration import get_configuration, CONFIG_FILE_NAME
-
-
-def _p(msg):
-    """Colorize message"""
-    if msg and get_configuration()["color"] and RAFFAELLO:
-        return RAFFAELLO.paint(str(msg))
-    return msg
+from configuration import get_configuration, get_task_file_path, CONFIG_FILE_NAME
 
 
 def main():
@@ -60,7 +53,7 @@ def main():
         )
 
     elif args["edit"]:
-        is_ok, msg = handlers.edit_file_handler(Configuration().task_fullpath)
+        is_ok, msg = handlers.edit_file_handler(get_task_file_path())
         print(msg)
         if not is_ok:
             return 1
