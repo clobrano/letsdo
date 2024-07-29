@@ -20,3 +20,7 @@ clean: clean_src
 
 clean_src:
 	-rm -r src/__pycache__
+
+
+replace:
+	make clean && make build && pip install .

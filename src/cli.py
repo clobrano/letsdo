@@ -78,12 +78,8 @@ def main():
         is_ok, msg = handlers.stop_task_handler(" ".join(args["<time>"]))
 
     elif args["goto"]:
-        name = " ".join(args["<newtask>"])
-        tid, is_ok = guess_task_id_from_string(name)
-        if not is_ok:
-            msg = f"could not get task ID from: {name}"
-
-        is_ok, msg = handlers.goto_task_handler(tid)
+        description = " ".join(args["<newtask>"])
+        is_ok, msg = handlers.goto_task_handler(description)
 
     if args["see"]:
         if args["<query>"]:
