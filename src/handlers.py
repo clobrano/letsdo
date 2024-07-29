@@ -15,7 +15,7 @@ def autocomplete_handler():
     return autocomplete()
 
 
-def start_task_handler(description: str, start_str: str) -> (bool, str):
+def start_task_handler(description: str, start_str: str="") -> (bool, str):
     """handles a request to start a task"""
     if not description:
         return False, "task description is mandatory"
@@ -70,15 +70,21 @@ def stop_task_handler(stop_time: str) -> (bool, str):
     return True, msg
 
 
-def goto_task_handler(tid: int) -> (bool, str):
+def goto_task_handler(description: str) -> (bool, str):
     """handles a request to switch to another task given the ID"""
-    tasks = get_tasks(lambda x: x.tid == tid)
-    if not tasks:
-        return False, f"could not find task with ID {tid}"
-    task = tasks[0]
+    if not description:
+        return False, "task description is mandatory"
 
-    now = datetime.now().strftime("%H:%M")
-    is_ok, msg = stop_task_handler(now)
-    if not is_ok:
-        return False, msg
-    return start_task_handler(task.name, now)
+    if Task.get_running():
+        now = datetime.now().strftime("%H:%M")
+        is_ok, msg = stop_task_handler(now)
+        if not is_ok:
+            return False, msg
+
+    tid, got_id = guess_task_id_from_string(description)
+    if got_id:
+        work_on(task_id=tid)
+        return True, ""
+    else:
+        return Task(description).start(), ""
+
