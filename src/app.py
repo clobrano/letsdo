@@ -209,7 +209,7 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
             len(tasks),
             recap,
             "total time:",
-            _p(strfdelta(tot_work_time, fmt="{D:2}d {H:2}h {M:02}m")),
+            _p(strfdelta(tot_work_time, fmt="{H:2}h {M:02}m")),
         ]
     )
 
