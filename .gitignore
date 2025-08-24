@@ -1,1 +1,4 @@
 __version__.py
+build/
+dist/
+src/letsdo.egg-info
