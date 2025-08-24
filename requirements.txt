@@ -3,3 +3,4 @@ pytest
 PyYaml
 terminaltables
 parsedatetime
+pytest-cov-6.2.1

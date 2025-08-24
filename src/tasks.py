@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from log import LOGGER, RAFFAELLO
 from configuration import get_configuration, get_task_file_path, get_history_file_path
 from timetoolkit import str2datetime
+from typing import Optional
 
 
 def _p(msg):
@@ -68,7 +69,7 @@ class Task(object):
         return os.path.exists(get_task_file_path())
 
     @staticmethod
-    def get_running():
+    def get_running() -> Optional["Task"]:
         """Check whether a task is running"""
         if Task.__is_running():
             with open(get_task_file_path(), "r", encoding="utf-8") as cfile:
@@ -132,7 +133,7 @@ class Task(object):
                 content = f.read()
             os.remove(get_task_file_path())
             return content
-        return None
+        return ""
 
     @staticmethod
     def status():
@@ -153,11 +154,11 @@ class Task(object):
         print("No task running")
         return False
 
-    def start(self):
+    def start(self) -> bool:
         """Start task"""
         if not Task.__is_running():
             if self.__create():
-                return Task.get_running()
+                return Task.get_running() is not None
 
             LOGGER.error("Could not create new task")
             return False

@@ -1,6 +1,6 @@
 .PHONY: test
 test:
-	python -m pytest
+	python -m pytest --cov=src
 
 build:
 	python3 -m pip install --upgrade build

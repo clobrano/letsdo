@@ -6,8 +6,9 @@ The Handler module provides a simple way to redirect incoming requests to specif
 
 import os
 from datetime import datetime
-from app import Task, guess_task_id_from_string, work_on, get_tasks
+from app import Task, guess_task_id_from_string, work_on
 from configuration import autocomplete, create_default_configuration
+from typing import Tuple
 
 
 def autocomplete_handler():
@@ -15,7 +16,7 @@ def autocomplete_handler():
     return autocomplete()
 
 
-def start_task_handler(description: str, start_str: str="") -> (bool, str):
+def start_task_handler(description: str, start_str: str="") -> Tuple[bool, str]:
     """handles a request to start a task"""
     if not description:
         return False, "task description is mandatory"
@@ -34,10 +35,12 @@ def start_task_handler(description: str, start_str: str="") -> (bool, str):
         Task(description, start_str=start_str).start()
 
     task = Task.get_running()
-    return True, f"{task.start_time}: {task.name} started"
+    if task:
+        return True, f"{task.start_time}: {task.name} started"
+    return False, "No task running"
 
 
-def edit_file_handler(filename) -> (bool, str):
+def edit_file_handler(filename) -> Tuple[bool, str]:
     """handles a request to edit a file with the system default editor"""
     if not os.path.exists(filename):
         create_default_configuration()
@@ -48,7 +51,7 @@ def edit_file_handler(filename) -> (bool, str):
     return True, ""
 
 
-def cancel_task_handler() -> (bool, str):
+def cancel_task_handler() -> Tuple[bool, str]:
     """handles a request to cancel the current task"""
     msg = Task.cancel()
     if not msg:
@@ -56,7 +59,7 @@ def cancel_task_handler() -> (bool, str):
     return True, f"cancelled task: {msg}"
 
 
-def stop_task_handler(stop_time: str) -> (bool, str):
+def stop_task_handler(stop_time: str) -> Tuple[bool, str]:
     """handles a request to stop the current task"""
     task = Task.get_running()
     if not task:
@@ -70,7 +73,7 @@ def stop_task_handler(stop_time: str) -> (bool, str):
     return True, msg
 
 
-def goto_task_handler(description: str) -> (bool, str):
+def goto_task_handler(description: str) -> Tuple[bool, str]:
     """handles a request to switch to another task given the ID"""
     if not description:
         return False, "task description is mandatory"

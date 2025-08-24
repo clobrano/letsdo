@@ -37,14 +37,14 @@ class TestLetsdo(unittest.TestCase):
 
     def test_group_task_by(self):
         """Test group_task_by"""
-        task = Task("group 1", start_str="15:00").start()
-        task.stop("15:05")
+        Task("group 1", start_str="15:00").start()
+        Task.stop("15:05")
 
-        task = Task("group 2", start_str="16:00").start()
-        task.stop("16:01")
+        Task("group 2", start_str="16:00").start()
+        Task.stop("16:01")
 
-        task = Task("group 1", start_str="16:02").start()
-        task.stop("16:03")
+        Task("group 1", start_str="16:02").start()
+        Task.stop("16:03")
 
         real = group_task_by(get_tasks(), "name")
         self.assertEqual(len(real), 2)
