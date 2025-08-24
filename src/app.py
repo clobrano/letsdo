@@ -7,7 +7,6 @@ from log import LOGGER, RAFFAELLO
 from configuration import get_configuration, get_history_file_path
 from timetoolkit import str2datetime, strfdelta
 
-
 def _p(msg):
     """Colorize message"""
     if msg and get_configuration()["color"] and RAFFAELLO:
@@ -176,11 +175,25 @@ def report_task(tasks, title=None, detailed=False, ascii=False):
 
         # smart break message at boundaries
         task_name = task.name
-        if len(task.name) > 53:
-            word_break = task_name.find(" ", 45)
-            if word_break == -1:
-                word_break = 45
-            task_name = task_name[:word_break] + "\n ⤷" + task_name[word_break:]
+        HARD_MAX_LINE_LENGTH = 72
+        INDENT_STRING = "\n⤷ "
+
+        current_text_segment = task.name
+        wrapped_lines = []
+
+        while current_text_segment:
+            if len(current_text_segment) <= HARD_MAX_LINE_LENGTH:
+                wrapped_lines.append(current_text_segment)
+                break
+
+            # try to break at a words boundary as close as possible to the limit
+            split_at = min(current_text_segment.rfind(" "), HARD_MAX_LINE_LENGTH)
+            wrapped_lines.append(current_text_segment[:split_at])
+
+            remaining_part = current_text_segment[split_at:].lstrip()
+            current_text_segment = INDENT_STRING + remaining_part
+
+        task_name = "".join(wrapped_lines)
 
         if detailed:
             begin = task.start_time.strftime("%H:%M")
