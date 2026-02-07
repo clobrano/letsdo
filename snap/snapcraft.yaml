@@ -1,5 +1,7 @@
 name: letsdo
-base: core20
+base: core24
+platforms:
+  amd64:
 version: '2.0.2' # just for humans, typically '1.2+git' or '1.3.2'
 summary: The time-tracker for command-line
 description: |
@@ -27,14 +29,4 @@ parts:
       - parsedatetime
       - raffaello
     source: https://github.com/clobrano/letsdo.git
-    stage-packages:
-      - python3.9-venv
-    build-packages:
-      - python3.9-venv
-    build-environment:
-      - SNAPCRAFT_PYTHON_INTERPRETER: python3.9
-    override-build: |
-      rm -r $SNAPCRAFT_PART_INSTALL/usr/lib/python3.9/distutils
-      cp -r /usr/lib/python3.9/distutils/ $SNAPCRAFT_PART_INSTALL/usr/lib/python3.9/
-      snapcraftctl build
 
