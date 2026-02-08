@@ -22,7 +22,11 @@ apps:
 parts:
   lets:
     plugin: python
-    requirements:
-      - requirements.txt
+    python-packages:
+      - docopt
+      - PyYaml
+      - terminaltables
+      - parsedatetime
+      - raffaello
     source: https://github.com/clobrano/letsdo.git
 
