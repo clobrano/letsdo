@@ -8,6 +8,7 @@ import os
 from datetime import datetime
 from app import Task, guess_task_id_from_string, work_on
 from configuration import autocomplete, create_default_configuration
+from hooks import run_hooks
 from typing import Tuple
 
 
@@ -36,6 +37,7 @@ def start_task_handler(description: str, start_str: str="") -> Tuple[bool, str]:
 
     task = Task.get_running()
     if task:
+        run_hooks("start", task.name)
         return True, f"{task.start_time}: {task.name} started"
     return False, "No task running"
 
@@ -65,11 +67,13 @@ def stop_task_handler(stop_time: str) -> Tuple[bool, str]:
     if not task:
         return False, "no task running, nothing to do"
 
+    task_name = task.name
     work_time = Task.stop(stop_time)
     if not work_time:
         return False, "error: could not get stop time"
+    run_hooks("stop", task_name)
     now = datetime.now().strftime("%H:%M")
-    msg = f"{now}: stopped task: {task.name}, after {work_time[0]}hours, {work_time[1]} minutes"
+    msg = f"{now}: stopped task: {task_name}, after {work_time[0]}hours, {work_time[1]} minutes"
     return True, msg
 
 
