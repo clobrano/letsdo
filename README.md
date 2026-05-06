@@ -111,6 +111,33 @@ color: true
 data_directory: /home/username/
 ```
 
+An optional `hooks_directory` field can also be set:
+
+```
+color: true
+data_directory: /home/username/
+hooks_directory: /home/username/.letsdo-hooks/
+```
+
+## Hooks
+
+Letsdo supports hooks similarly to Taskwarrior. A hook is any executable script placed in the directory defined by `hooks_directory` in `.letsdo.yaml`. If `hooks_directory` is not set, the feature is silently ignored.
+
+Hook scripts are called with two arguments:
+1. The event name: `start` when a task has just started, `stop` when a task has just stopped.
+2. The full description of the task.
+
+Example hook script (`~/.letsdo-hooks/notify`):
+
+```sh
+#!/bin/sh
+event="$1"
+task="$2"
+notify-send "letsdo" "$event: $task"
+```
+
+All executable files in `hooks_directory` are called in alphabetical order on each event.
+
 Let's see now the history: you can rapidly have a look at **today** and **yesterday** work done by typing:
 
 ```
