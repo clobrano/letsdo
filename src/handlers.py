@@ -55,10 +55,13 @@ def edit_file_handler(filename) -> Tuple[bool, str]:
 
 def cancel_task_handler() -> Tuple[bool, str]:
     """handles a request to cancel the current task"""
-    msg = Task.cancel()
-    if not msg:
+    task = Task.get_running()
+    if not task:
         return False, "No task running, nothing to do"
-    return True, f"cancelled task: {msg}"
+    task_name = task.name
+    Task.cancel()
+    run_hooks("cancel", task_name)
+    return True, f"cancelled task: {task_name}"
 
 
 def stop_task_handler(stop_time: str) -> Tuple[bool, str]:
