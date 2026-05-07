@@ -27,6 +27,15 @@ def create_default_configuration(home="~"):
         return yaml.dump(default_config, f)
 
 
+def get_hooks_directory(home="~"):
+    """Return the hooks directory path if configured, otherwise None"""
+    config = get_configuration(home)
+    hooks_dir = config.get("hooks_directory")
+    if hooks_dir:
+        return os.path.expanduser(hooks_dir)
+    return None
+
+
 def get_task_file_path(home="~"):
     """Return the running task data file path"""
     return os.path.join(get_configuration(home)["data_directory"], TASK_FILE_NAME)
